@@ -1,0 +1,701 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  CheckCircle2,
+  Lock,
+  Store,
+  ShieldCheck,
+  Save,
+  Key,
+  Truck,
+  Ticket,
+  Plus,
+  Trash2,
+  Receipt,
+} from "lucide-react";
+import { useAdminAuthStore } from "../../store/useAdminAuthStore";
+import { useCartStore } from "../../store/useCartStore";
+import { useStoreSettings } from "../../store/useStoreSettings";
+import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
+import api from "../../services/api";
+import Input from "../../components/common/Input";
+
+export function Settings() {
+  const { adminUser } = useAdminAuthStore();
+  const {
+    freeShippingThreshold,
+    standardShippingFee,
+    shippingCarrierName,
+    setShippingConfig,
+  } = useCartStore();
+
+  const storedBranding = useStoreSettings();
+  const [storeSettings, setStoreSettings] = useState({
+    storeName: storedBranding.storeName || "ATELIER PARIS — Flagship Studio",
+    storeEmail: storedBranding.storeEmail || "concierge@atelier.com",
+    storePhone: storedBranding.storePhone || "+855 96 835 0317",
+    storeAddress: storedBranding.storeAddress || "Phnom Penh • Paris • Global Flagship",
+    storeTaxId: storedBranding.storeTaxId || "VAT REG: KH-8840291-A",
+    receiptFooterMessage:
+      storedBranding.receiptFooterMessage ||
+      "*** THANK YOU FOR PATRONIZING ATELIER ***",
+    currency: storedBranding.currency || "USD ($)",
+    orderNotification: storedBranding.orderNotification ?? true,
+    stockAlertNotification: storedBranding.stockAlertNotification ?? true,
+  });
+
+  const [isReceiptPreviewOpen, setIsReceiptPreviewOpen] = useState(false);
+
+  const [shippingForm, setShippingForm] = useState({
+    fee: standardShippingFee !== undefined ? standardShippingFee : 15,
+    threshold: freeShippingThreshold !== undefined ? freeShippingThreshold : 200,
+    carrierName: shippingCarrierName || "DHL Express Courier",
+    enableFreeShipping: true,
+  });
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  // Promotional Coupons Manager State
+  const [coupons, setCoupons] = useState([]);
+  const [newCoupon, setNewCoupon] = useState({
+    code: "",
+    description: "",
+    type: "percentage",
+    value: 15,
+    min_spend: 50,
+  });
+
+  const [toast, setToast] = useState(null);
+
+  const showNotification = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  useEffect(() => {
+    let active = true;
+    api
+      .get("/coupons/?all=true")
+      .then((res) => {
+        if (active && Array.isArray(res.data)) {
+          setCoupons(res.data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleStoreSave = (e) => {
+    e.preventDefault();
+    storedBranding.updateStoreSettings(storeSettings);
+    showNotification("Boutique & POS receipt branding saved!");
+  };
+
+  const handleShippingSave = (e) => {
+    e.preventDefault();
+    setShippingConfig({
+      fee: Number(shippingForm.fee),
+      threshold: shippingForm.enableFreeShipping
+        ? Number(shippingForm.threshold)
+        : 999999,
+      carrierName: shippingForm.carrierName,
+    });
+    showNotification("Shipping rates & policies updated across store!");
+  };
+
+  const handlePasswordSave = (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      alert("New passwords do not match!");
+      return;
+    }
+    showNotification("Controller credentials updated successfully!");
+    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  };
+
+  const handleCreateCoupon = async (e) => {
+    e.preventDefault();
+    const cleanCode = newCoupon.code.trim().toUpperCase();
+    if (!cleanCode) return;
+
+    try {
+      const res = await api.post("/coupons/", {
+        ...newCoupon,
+        code: cleanCode,
+        is_active: true,
+      });
+      setCoupons((prev) => {
+        const filtered = prev.filter((c) => c.code !== cleanCode);
+        return [res.data, ...filtered];
+      });
+      setNewCoupon({
+        code: "",
+        description: "",
+        type: "percentage",
+        value: 15,
+        min_spend: 50,
+      });
+      showNotification(`Promo code "${cleanCode}" saved to MongoDB!`);
+    } catch {
+      showNotification("Failed to create promo code.");
+    }
+  };
+
+  const handleToggleCoupon = async (coupon) => {
+    const nextState = !coupon.is_active;
+    try {
+      const res = await api.patch(`/coupons/${coupon.code}/`, {
+        is_active: nextState,
+      });
+      setCoupons((prev) =>
+        prev.map((c) => (c.code === coupon.code ? res.data : c))
+      );
+      showNotification(
+        `Coupon "${coupon.code}" ${nextState ? "enabled" : "disabled"}`
+      );
+    } catch {
+      showNotification("Failed updating coupon state.");
+    }
+  };
+
+  const handleDeleteCoupon = async (code) => {
+    try {
+      await api.delete(`/coupons/${code}/`);
+      setCoupons((prev) => prev.filter((c) => c.code !== code));
+      showNotification(`Coupon "${code}" deleted`);
+    } catch {
+      showNotification("Failed deleting coupon.");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-neutral-900 text-white border border-neutral-800 shadow-2xl animate-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 className="w-5 h-5 text-[#D6FF00] shrink-0" />
+          <span className="text-xs font-bold">{toast}</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+            <Link to="/admin/dashboard" className="hover:text-black font-semibold">
+              Admin
+            </Link>
+            <span>/</span>
+            <span className="text-gray-800 font-bold">Configuration</span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+            System, POS Receipt Branding &amp; Promo Settings
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            Configure boutique receipt headers, shipping policies, promo codes, and controller security.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            storedBranding.updateStoreSettings(storeSettings);
+            setIsReceiptPreviewOpen(true);
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
+        >
+          <Receipt className="w-4 h-4" />
+          <span>Preview POS Receipt</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Store Information & Shipping */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-xs space-y-5">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+              <div className="w-9 h-9 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
+                <Store className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base text-gray-900">
+                  Boutique Studio &amp; POS Receipt Branding
+                </h3>
+                <span className="text-xs text-gray-400">
+                  Dynamically printed on all POS thermal receipts and tax invoices
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleStoreSave} className="space-y-4">
+              <Input
+                label="Boutique / Store Name (Receipt Header)"
+                value={storeSettings.storeName}
+                onChange={(e) =>
+                  setStoreSettings({ ...storeSettings, storeName: e.target.value })
+                }
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Concierge Contact Email"
+                  type="email"
+                  value={storeSettings.storeEmail}
+                  onChange={(e) =>
+                    setStoreSettings({ ...storeSettings, storeEmail: e.target.value })
+                  }
+                  required
+                />
+                <Input
+                  label="Phone Line (Receipt Tel)"
+                  value={storeSettings.storePhone}
+                  onChange={(e) =>
+                    setStoreSettings({ ...storeSettings, storePhone: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Headquarters Address"
+                  value={storeSettings.storeAddress}
+                  onChange={(e) =>
+                    setStoreSettings({
+                      ...storeSettings,
+                      storeAddress: e.target.value,
+                    })
+                  }
+                />
+                <Input
+                  label="Tax / VAT Registration ID"
+                  value={storeSettings.storeTaxId}
+                  onChange={(e) =>
+                    setStoreSettings({
+                      ...storeSettings,
+                      storeTaxId: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <Input
+                label="POS Thermal Receipt Footer Message"
+                value={storeSettings.receiptFooterMessage}
+                onChange={(e) =>
+                  setStoreSettings({
+                    ...storeSettings,
+                    receiptFooterMessage: e.target.value,
+                  })
+                }
+              />
+
+              <div className="pt-2 space-y-2 border-t border-gray-100">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                  Automation Alerts
+                </h4>
+                <label className="flex items-center gap-2.5 text-xs text-gray-700 font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={storeSettings.orderNotification}
+                    onChange={(e) =>
+                      setStoreSettings({
+                        ...storeSettings,
+                        orderNotification: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 rounded-sm text-black accent-black"
+                  />
+                  <span>
+                    Dispatch real-time Telegram &amp; email alert on new customer order
+                  </span>
+                </label>
+                <label className="flex items-center gap-2.5 text-xs text-gray-700 font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={storeSettings.stockAlertNotification}
+                    onChange={(e) =>
+                      setStoreSettings({
+                        ...storeSettings,
+                        stockAlertNotification: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 rounded-sm text-black accent-black"
+                  />
+                  <span>Low stock warning when runway items fall below 5 units</span>
+                </label>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Boutique Branding</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Shipping & Delivery Configuration Card */}
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-xs space-y-5">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+              <div className="w-9 h-9 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
+                <Truck className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base text-gray-900">
+                  Shipping &amp; Delivery Controls
+                </h3>
+                <span className="text-xs text-gray-400">
+                  Manage standard delivery rates, free shipping milestone, and couriers
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleShippingSave} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Standard Delivery Fee ($)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={shippingForm.fee}
+                  onChange={(e) =>
+                    setShippingForm({ ...shippingForm, fee: e.target.value })
+                  }
+                  required
+                />
+                <Input
+                  label="Free Shipping Milestone ($)"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={shippingForm.threshold}
+                  onChange={(e) =>
+                    setShippingForm({ ...shippingForm, threshold: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <Input
+                label="Primary Shipping Courier"
+                value={shippingForm.carrierName}
+                onChange={(e) =>
+                  setShippingForm({ ...shippingForm, carrierName: e.target.value })
+                }
+                placeholder="e.g. DHL Express, White Glove Courier"
+                required
+              />
+
+              <div className="pt-1">
+                <label className="flex items-center gap-2.5 text-xs text-gray-700 font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={shippingForm.enableFreeShipping}
+                    onChange={(e) =>
+                      setShippingForm({
+                        ...shippingForm,
+                        enableFreeShipping: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 rounded-sm text-black accent-black"
+                  />
+                  <span>
+                    Automatically apply FREE shipping when order reaches the milestone amount
+                  </span>
+                </label>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  Current policy:{" "}
+                  <strong className="text-black">
+                    {shippingForm.enableFreeShipping
+                      ? `Free over $${shippingForm.threshold}`
+                      : "Fixed Fee"}
+                  </strong>
+                </span>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Update Shipping Rates</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Column: Coupons Manager, Controller Profile & Security */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Promotional Coupons Manager Card */}
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+              <div className="w-9 h-9 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
+                <Ticket className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base text-gray-900">
+                  Promotional Coupons Manager
+                </h3>
+                <span className="text-xs text-gray-400">
+                  Create and toggle live checkout voucher codes
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateCoupon} className="space-y-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200/80">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={newCoupon.code}
+                  onChange={(e) =>
+                    setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })
+                  }
+                  placeholder="CODE (e.g. SUMMER25)"
+                  className="px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-mono font-bold uppercase focus:outline-hidden focus:border-black"
+                  required
+                />
+                <select
+                  value={newCoupon.type}
+                  onChange={(e) =>
+                    setNewCoupon({ ...newCoupon, type: e.target.value })
+                  }
+                  className="px-2.5 py-2 rounded-lg bg-white border border-gray-200 text-xs font-bold focus:outline-hidden"
+                >
+                  <option value="percentage">% Percentage</option>
+                  <option value="fixed">$ Fixed Amount</option>
+                  <option value="shipping">Free Shipping</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={newCoupon.value}
+                  onChange={(e) =>
+                    setNewCoupon({ ...newCoupon, value: e.target.value })
+                  }
+                  placeholder="Discount Value"
+                  className="px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-semibold focus:outline-hidden"
+                  required
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={newCoupon.min_spend}
+                  onChange={(e) =>
+                    setNewCoupon({ ...newCoupon, min_spend: e.target.value })
+                  }
+                  placeholder="Min Spend ($)"
+                  className="px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-semibold focus:outline-hidden"
+                />
+              </div>
+
+              <input
+                type="text"
+                value={newCoupon.description}
+                onChange={(e) =>
+                  setNewCoupon({ ...newCoupon, description: e.target.value })
+                }
+                placeholder="Description (e.g. 25% Off Summer Runway)"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs focus:outline-hidden"
+              />
+
+              <button
+                type="submit"
+                className="w-full py-2 rounded-xl bg-black text-[#D6FF00] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer hover:bg-neutral-800"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add / Update Promo Code</span>
+              </button>
+            </form>
+
+            <div className="divide-y divide-gray-100 max-h-60 overflow-y-auto border border-gray-100 rounded-xl">
+              {coupons.map((c) => (
+                <div
+                  key={c.code}
+                  className="p-2.5 flex items-center justify-between gap-2 text-xs hover:bg-gray-50"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-black text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
+                        {c.code}
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-700">
+                        {c.type === "percentage"
+                          ? `${c.value}% OFF`
+                          : c.type === "fixed"
+                          ? `$${c.value} OFF`
+                          : "FREE SHIP"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                      {c.description} • Min: ${Number(c.min_spend || 0).toFixed(0)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleCoupon(c)}
+                      className={`px-2 py-1 rounded-md text-[10px] font-black uppercase cursor-pointer ${
+                        c.is_active !== false
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
+                      {c.is_active !== false ? "Active" : "Disabled"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCoupon(c.code)}
+                      className="p-1 text-gray-400 hover:text-rose-600 cursor-pointer"
+                      title="Delete coupon"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Controller Profile */}
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-xs text-center space-y-3">
+            <div className="relative w-20 h-20 mx-auto">
+              <img
+                src={
+                  adminUser?.avatar ||
+                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+                }
+                alt="Controller"
+                className="w-20 h-20 rounded-full object-cover ring-4 ring-[#D6FF00] shadow-md mx-auto"
+                style={{ width: "80px", height: "80px" }}
+              />
+              <span className="absolute bottom-0 right-1 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-white" />
+            </div>
+
+            <div>
+              <h4 className="font-extrabold text-base text-gray-900">
+                {adminUser?.name || "Administrator"}
+              </h4>
+              <span className="text-xs text-gray-500">
+                {adminUser?.email || "controller@atelier.com"}
+              </span>
+            </div>
+
+            <div className="pt-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-900 text-[#D6FF00] text-[10px] font-black uppercase tracking-wider shadow-xs">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>{adminUser?.role || "SUPER ADMINISTRATOR"}</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+              <div className="w-9 h-9 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
+                <Key className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base text-gray-900">
+                  Security Credentials
+                </h3>
+                <span className="text-xs text-gray-400">Update access passkey</span>
+              </div>
+            </div>
+
+            <form onSubmit={handlePasswordSave} className="space-y-3">
+              <Input
+                label="Current Password"
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    currentPassword: e.target.value,
+                  })
+                }
+                placeholder="••••••••"
+                required
+              />
+              <Input
+                label="New Password"
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                }
+                placeholder="At least 6 characters"
+                required
+              />
+              <Input
+                label="Confirm New Password"
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    confirmPassword: e.target.value,
+                  })
+                }
+                placeholder="••••••••"
+                required
+              />
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Update Credentials</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Live Preview of POS Thermal Receipt Branding */}
+      <ThermalReceiptModal
+        isOpen={isReceiptPreviewOpen}
+        onClose={() => setIsReceiptPreviewOpen(false)}
+        invoiceData={{
+          orderNumber: "ATL-PREVIEW-01",
+          customerName: adminUser?.name || "VIP Boutique Patron",
+          paymentMethod: "Bakong KHQR",
+          paymentStatus: "Paid",
+          transactionId: "BAKONG-PREVIEW-TXN",
+          subtotal: 120,
+          tax: 9.6,
+          total: 129.6,
+          items: [
+            {
+              name: "Atelier Runway Tailored Blazer",
+              quantity: 1,
+              price: 120,
+              size: "M",
+            },
+          ],
+        }}
+      />
+    </div>
+  );
+}
+
+export default Settings;

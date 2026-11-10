@@ -1,0 +1,186 @@
+/* Authentication Styling for Login, Register, Forgot Password */
+
+.auth-wrapper {
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 15px;
+  background-color: #f9f9f6;
+}
+
+.auth-card {
+  background: #fff;
+  border: 1px solid #e8e8e0;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 480px;
+  padding: 36px 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #363432;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.auth-subtitle {
+  font-size: 14px;
+  color: #696763;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.auth-field {
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.auth-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #363432;
+  margin-bottom: 6px;
+}
+
+.auth-field input[type="text"],
+.auth-field input[type="email"],
+.auth-field input[type="password"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #dcdcd0;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background-color: #fff;
+  transition: border-color 0.2s;
+}
+
+.auth-field input:focus {
+  outline: none;
+  border-color: #fe980f;
+  box-shadow: 0 0 0 3px rgba(254, 152, 15, 0.15);
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 34px;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.password-toggle-btn:hover {
+  color: #fe980f;
+}
+
+.auth-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.auth-actions-row a {
+  color: #fe980f;
+  text-decoration: none;
+}
+
+.auth-actions-row a:hover {
+  text-decoration: underline;
+}
+
+.btn-auth-submit {
+  width: 100%;
+  background-color: #fe980f;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-auth-submit:hover {
+  background-color: #e08305;
+}
+
+.btn-auth-submit:disabled {
+  background-color: #f7c588;
+  cursor: not-allowed;
+}
+
+/* Quick Demo Login Fill Buttons */
+.demo-accounts-box {
+  background-color: #fdfaf5;
+  border: 1px dashed #f5c88c;
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 24px;
+  font-size: 12px;
+}
+
+.demo-accounts-box h5 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a5300;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+}
+
+.demo-buttons-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-demo-fill {
+  flex: 1;
+  background-color: #fff;
+  border: 1px solid #f5c88c;
+  color: #8a5300;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-demo-fill:hover {
+  background-color: #fe980f;
+  color: #fff;
+  border-color: #fe980f;
+}
+
+.auth-footer-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: #696763;
+}
+
+.auth-footer-link a {
+  color: #fe980f;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-footer-link a:hover {
+  text-decoration: underline;
+}
+

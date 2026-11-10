@@ -1,0 +1,237 @@
+/* Enhanced Shop & Product styling for E-Shopper */
+
+.product-image-wrapper {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  background: #fff;
+  border: 1px solid #f7f7f0;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.product-image-wrapper:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.product-badge-discount {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #fe980f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 3px;
+  z-index: 5;
+}
+
+.product-badge-stock {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #4caf50;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  z-index: 5;
+}
+
+.product-badge-out {
+  background-color: #e53935;
+}
+
+.product-original-price {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 14px;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+.product-card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-view-details {
+  background: #f5f5ed;
+  border: 1px solid #e0e0d5;
+  color: #696763;
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 0;
+  transition: all 0.3s;
+  display: inline-block;
+}
+
+.btn-view-details:hover {
+  background: #fe980f;
+  border-color: #fe980f;
+  color: #fff;
+}
+
+/* Product Detail Page Enhancements */
+.product-gallery-thumbnails {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.product-gallery-thumb {
+  width: 70px;
+  height: 70px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.product-gallery-thumb.active {
+  border-color: #fe980f;
+}
+
+.product-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-qty-selector {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e0e0d5;
+  margin-right: 15px;
+}
+
+.product-qty-selector button {
+  background: #f5f5ed;
+  border: none;
+  width: 32px;
+  height: 32px;
+  font-weight: bold;
+  color: #696763;
+}
+
+.product-qty-selector button:hover {
+  background: #fe980f;
+  color: #fff;
+}
+
+.product-qty-selector input {
+  width: 45px;
+  height: 32px;
+  text-align: center;
+  border: none;
+  border-left: 1px solid #e0e0d5;
+  border-right: 1px solid #e0e0d5;
+  font-weight: 600;
+}
+
+.btn-buy-now {
+  background-color: #363432;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  margin-left: 8px;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.btn-buy-now:hover {
+  background-color: #fe980f;
+  color: #fff;
+}
+
+/* Cart Page */
+.cart-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: #fff;
+  border: 1px solid #f7f7f0;
+  margin-bottom: 40px;
+}
+
+.cart-empty-state i {
+  font-size: 64px;
+  color: #d0d0c8;
+  margin-bottom: 20px;
+}
+
+/* Shop Sorting & Filters */
+.shop-toolbar {
+  background: #f5f5ed;
+  padding: 12px 18px;
+  margin-bottom: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-radius: 4px;
+}
+
+.shop-sort-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shop-sort-group select {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+}
+
+/* Active Filter Pill */
+.active-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fe980f;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 12px;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.active-filter-badge i {
+  font-size: 10px;
+}
+
+/* Cart quantity controls */
+.cart_quantity_button {
+  display: inline-flex;
+  align-items: center;
+}
+
+.cart_quantity_button a {
+  display: inline-block;
+  background: #F0F0E9;
+  color: #696763;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.cart_quantity_button a:hover {
+  background: #FE980F;
+  color: #fff;
+}
+
+.cart_quantity_input {
+  width: 40px;
+  height: 28px;
+  text-align: center;
+  border: 1px solid #E0E0D5;
+  margin: 0 4px;
+}
+
