@@ -1,419 +1,828 @@
 import { Product } from "../types";
 
+// Instant static fallback catalog using your actual products
+// Loads in 5ms if Render backend database is waking up
 export const PRODUCTS: Product[] = [
   {
-    id: "prod-1",
-    name: "Oversized Wool Trench Coat",
-    subtitle: "Double-breasted virgin wool silhouette",
-    category: "Women",
-    price: 495,
-    originalPrice: 620,
-    discount: "20% OFF",
-    rating: 4.9,
-    reviewsCount: 34,
-    images: [
-      "https://images.unsplash.com/photo-1544022613-e87ce7526edb?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1cd7c2a94af309d383db7",
+    "name": "Jorch",
+    "subtitle": "Curated MEN Essential",
+    "category": "MEN",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/8a82fc7bb76c.jpg",
+      "/uploads/d34a58d32b3b.jpg",
+      "/uploads/83aa655c8a7a.jpg"
     ],
-    colors: [
-      { name: "Oatmeal Camel", hex: "#C2A68D" },
-      { name: "Obsidian Black", hex: "#111111" },
-      { name: "Slate Grey", hex: "#5C6167" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["XS", "S", "M", "L"],
-    description:
-      "Crafted from heavy 100% Italian virgin wool, this oversized trench redefines modern tailoring with structured dropped shoulders, horn buttons, and an elongated floor-skimming silhouette.",
-    details: [
-      "100% Italian virgin wool shell",
-      "Viscose jacquard lining with interior chest pocket",
-      "Detachable self-fabric waist belt with brushed brass buckle",
-      "Dry clean only. Hand-finished in Milan",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "100% Virgin Wool",
-    inStock: true,
-    stockCount: 14,
-    badge: "BEST SELLER",
-    isFeatured: true,
-    isNewArrival: false,
+    "description": "Authentic Jorch crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 3,
+    "stock": 3,
+    "quantity": 3,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-2",
-    name: "Architectural Boxy Blazer",
-    subtitle: "Structured tailoring with clean lapels",
-    category: "Men",
-    price: 380,
-    originalPrice: 450,
-    discount: "15% OFF",
-    rating: 4.8,
-    reviewsCount: 28,
-    images: [
-      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1cdbb2a94af309d383db8",
+    "name": "Jacket",
+    "subtitle": "Curated MEN Essential",
+    "category": "MEN",
+    "brand": "ATELIER",
+    "price": 0.2,
+    "originalPrice": 0.2,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/b061da3cea5f.jpg",
+      "/uploads/95f51e27c603.jpg",
+      "/uploads/cae565d97b6f.jpg"
     ],
-    colors: [
-      { name: "Charcoal Melange", hex: "#2B2D2F" },
-      { name: "Deep Ink Navy", hex: "#151F30" },
-      { name: "Chalk Ecru", hex: "#E7E4DC" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["S", "M", "L", "XL"],
-    description:
-      "A statement jacket featuring sharp architectural shoulders and clean unvented back. Tailored in durable twill weave with a modern fluid drape that transitions seamlessly from studio to evening.",
-    details: [
-      "Wool and silk blend twill",
-      "Signature sharp padded shoulders",
-      "Concealed welt pockets and jetted ticket pocket",
-      "Single horn button closure",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "85% Wool, 15% Silk",
-    inStock: true,
-    stockCount: 18,
-    badge: "NEW",
-    isFeatured: true,
-    isNewArrival: true,
+    "description": "Authentic Jacket crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 14,
+    "stock": 14,
+    "quantity": 14,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-3",
-    name: "Curved Calfskin Crescent Bag",
-    subtitle: "Sculptural minimalist shoulder accessory",
-    category: "Bags",
-    price: 420,
-    originalPrice: 420,
-    rating: 5.0,
-    reviewsCount: 19,
-    images: [
-      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1cde32a94af309d383db9",
+    "name": "Trousser",
+    "subtitle": "Curated MEN Essential",
+    "category": "MEN",
+    "brand": "ATELIER",
+    "price": 0.2,
+    "originalPrice": 0.2,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 1,
+    "images": [
+      "/uploads/e0939ab32e27.jpg",
+      "/uploads/87e7cc5ddb4e.jpg",
+      "/uploads/ab8e8cef76e3.jpg"
     ],
-    colors: [
-      { name: "Noir Gloss", hex: "#0E0E0E" },
-      { name: "Espresso Brown", hex: "#3D2B1F" },
-      { name: "Acid Lime Accent", hex: "#D6FF00" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["One Size"],
-    description:
-      "Handmade by Tuscan leather artisans, the Crescent Bag boasts a clean ergonomic arch that sits comfortably under the arm. Fitted with polished palladium hardware and magnetic flap closure.",
-    details: [
-      "Smooth full-grain Italian calf leather",
-      "Supple suede interior lining with card slot",
-      "Magnetic flap closure with engraved logo subtle foil stamp",
-      "Includes protective organic cotton dust bag",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "100% Full-Grain Calfskin",
-    inStock: true,
-    stockCount: 9,
-    badge: "HOT",
-    isFeatured: true,
-    isNewArrival: true,
+    "description": "Authentic Trousser crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 9,
+    "stock": 9,
+    "quantity": 9,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-4",
-    name: "Chunky Lug-Sole Leather Loafers",
-    subtitle: "Commando platform with penny cutout",
-    category: "Shoes",
-    price: 340,
-    originalPrice: 400,
-    discount: "15% OFF",
-    rating: 4.7,
-    reviewsCount: 42,
-    images: [
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1cdfd2a94af309d383dba",
+    "name": "Dress",
+    "subtitle": "Curated WOMEN Essential",
+    "category": "WOMEN",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/7ae357bc66ce.jpg",
+      "/uploads/eda6eaed7c9e.jpg",
+      "/uploads/77a2cdd44699.jpg"
     ],
-    colors: [
-      { name: "Polished Black", hex: "#1A1A1A" },
-      { name: "Burgundy Cordovan", hex: "#4A1525" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["39", "40", "41", "42", "43", "44"],
-    description:
-      "Combining historic penny loafer heritage with a brutalist 45mm extruded rubber commando sole. Features hand-stitched apron details and memory foam insoles for all-day city walking.",
-    details: [
-      "Box calf leather upper with high-sheen wax finish",
-      "Goodyear-welted lightweight EVA platform sole (45mm)",
-      "Padded leather insole with arch support",
-      "Crafted in Porto, Portugal",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "100% Box Calf Leather",
-    inStock: true,
-    stockCount: 12,
-    badge: "BEST SELLER",
-    isFeatured: true,
-    isNewArrival: false,
+    "description": "Authentic Dress crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 12,
+    "stock": 12,
+    "quantity": 12,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-5",
-    name: "Heavyweight Boxy Cashmere Knit",
-    subtitle: "7-gauge chunky rib mock turtleneck",
-    category: "Women",
-    price: 320,
-    originalPrice: 380,
-    rating: 4.9,
-    reviewsCount: 22,
-    images: [
-      "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1ce182a94af309d383dbb",
+    "name": "Shirt",
+    "subtitle": "Curated WOMEN Essential",
+    "category": "WOMEN",
+    "brand": "ATELIER",
+    "price": 10.0,
+    "originalPrice": 10.0,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/bed6e30a33b2.jpg",
+      "/uploads/45898079e17b.jpg",
+      "/uploads/a478074be9e3.jpg"
     ],
-    colors: [
-      { name: "Ecru Ivory", hex: "#F3EDE2" },
-      { name: "Sage Moss", hex: "#7E8D7B" },
-      { name: "Onyx Black", hex: "#111111" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["XS", "S", "M", "L"],
-    description:
-      "Spun from ultra-soft Grade-A Mongolian cashmere. Engineered with a relaxed wide sleeve and high mock neckline that retains its sculptured shape through seasons of wear.",
-    details: [
-      "100% Grade-A Mongolian Cashmere",
-      "Subtle ribbed cuffs and dropped shoulder seams",
-      "Seamless knit construction for maximum comfort",
-      "Certified sustainable cashmere sourcing",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "100% Cashmere",
-    inStock: true,
-    stockCount: 16,
-    badge: "NEW",
-    isFeatured: false,
-    isNewArrival: true,
+    "description": "Authentic Shirt crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 11,
+    "stock": 11,
+    "quantity": 11,
+    "status": "Active",
+    "badge": "BEST SELLER",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-6",
-    name: "Minimalist Pleated Wide Trousers",
-    subtitle: "High-waist fluid tailored trousers",
-    category: "Men",
-    price: 240,
-    originalPrice: 290,
-    discount: "17% OFF",
-    rating: 4.6,
-    reviewsCount: 18,
-    images: [
-      "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1ce552a94af309d383dbc",
+    "name": "Traditional cloth",
+    "subtitle": "Curated WOMEN Essential",
+    "category": "WOMEN",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/eb521e91f7bc.jpg",
+      "/uploads/5e7ea40118ab.jpg",
+      "/uploads/4c9872a52544.jpg"
     ],
-    colors: [
-      { name: "Black Noir", hex: "#181818" },
-      { name: "Desert Sand", hex: "#D4C7B5" },
-      { name: "Olive Drab", hex: "#4B5320" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["28", "30", "32", "34", "36"],
-    description:
-      "Deep double front pleats create a dramatic drape that breaks cleanly over modern boots and sneakers. Cut with an extended tab waistband and internal curtain waistband finish.",
-    details: [
-      "Breathable wool-viscose tropical blend",
-      "Double forward pleats with pressed center crease",
-      "Corozo button fly and slanted side pockets",
-      "Unfinished hem for bespoke length adjustment",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "60% Wool, 38% Viscose, 2% Elastane",
-    inStock: true,
-    stockCount: 22,
-    badge: "SALE",
-    isFeatured: false,
-    isNewArrival: false,
+    "description": "Authentic Traditional cloth crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 7,
+    "stock": 7,
+    "quantity": 7,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-7",
-    name: "Sculptural Chunky Chain Necklace",
-    subtitle: "Solid brass dipped in 18k yellow gold",
-    category: "Accessories",
-    price: 185,
-    originalPrice: 220,
-    rating: 4.9,
-    reviewsCount: 31,
-    images: [
-      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1ce762a94af309d383dbd",
+    "name": "White Rob",
+    "subtitle": "Curated WOMEN Essential",
+    "category": "WOMEN",
+    "brand": "ATELIER",
+    "price": 2.0,
+    "originalPrice": 2.0,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/4c349d4d2b3b.jpg",
+      "/uploads/a7e09a2a1646.jpg",
+      "/uploads/9c23899b1b38.jpg"
     ],
-    colors: [
-      { name: "18K Gold Vermeil", hex: "#E5C158" },
-      { name: "Polished Rhodium", hex: "#D6D9DC" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["One Size"],
-    description:
-      "Hand-cast interlocking links featuring organic textures and a hidden spring-gate clasp. Designed to be worn as a solo centerpiece or layered with delicate chains.",
-    details: [
-      "Heavy 3-micron 18K gold plating over solid brass",
-      "Length: 46cm / 18 inches",
-      "Hypoallergenic and nickel-free",
-      "Anti-tarnish protective ceramic coating",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "18K Gold Plated Brass",
-    inStock: true,
-    stockCount: 25,
-    badge: "HOT",
-    isFeatured: true,
-    isNewArrival: false,
+    "description": "Authentic White Rob crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 9,
+    "stock": 9,
+    "quantity": 9,
+    "status": "Active",
+    "badge": "BEST SELLER",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-8",
-    name: "Beveled Bio-Acetate Sunglasses",
-    subtitle: "Rectangular 90s inspired frames with UV400",
-    category: "Accessories",
-    price: 210,
-    originalPrice: 210,
-    rating: 4.8,
-    reviewsCount: 15,
-    images: [
-      "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1ce9a2a94af309d383dbe",
+    "name": "Black Tee",
+    "subtitle": "Curated MEN Essential",
+    "category": "MEN",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/d8e4e1819b04.jpg",
+      "/uploads/e3281a8bedf1.jpg",
+      "/uploads/512b8c74537f.jpg"
     ],
-    colors: [
-      { name: "Tortoiseshell Amber", hex: "#6C4F3D" },
-      { name: "Solid Jet Black", hex: "#111111" },
-      { name: "Acid Neon Yellow", hex: "#D6FF00" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["One Size"],
-    description:
-      "Bold beveled profile cut from 8mm Italian Mazzucchelli bio-acetate. Outfitted with Category 3 scratch-resistant lenses that ensure 100% UVA/UVB optical clarity.",
-    details: [
-      "Custom 7-barrel OBE German steel hinges",
-      "Category 3 tinted CR-39 lenses with anti-reflective coating",
-      "Includes hard case and recycled microfiber cleaning cloth",
-      "Handcrafted in Belluno, Italy",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "Mazzucchelli Bio-Acetate",
-    inStock: true,
-    stockCount: 15,
-    badge: "LIMITED",
-    isFeatured: false,
-    isNewArrival: true,
+    "description": "Authentic Black Tee crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 8,
+    "stock": 8,
+    "quantity": 8,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-9",
-    name: "Minimalist Low-Top Leather Sneaker",
-    subtitle: "Clean vulcanized cupsole with tonal stitching",
-    category: "Shoes",
-    price: 260,
-    originalPrice: 300,
-    discount: "13% OFF",
-    rating: 4.7,
-    reviewsCount: 48,
-    images: [
-      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af1ceb92a94af309d383dbf",
+    "name": "Short",
+    "subtitle": "Curated WOMEN Essential",
+    "category": "WOMEN",
+    "brand": "ATELIER",
+    "price": 1.0,
+    "originalPrice": 1.0,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/4111b5949d27.jpg",
+      "/uploads/da6b67254021.jpg",
+      "/uploads/d04c551b3eef.jpg"
     ],
-    colors: [
-      { name: "Optic Chalk White", hex: "#FAFAFA" },
-      { name: "Triple Monochrome Black", hex: "#1A1A1A" },
-      { name: "Warm Greige", hex: "#C7BFB5" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["39", "40", "41", "42", "43", "44", "45"],
-    description:
-      "The definitive daily luxury sneaker. Smooth nappa leather paired with subtle gold foil serial number stamping and an Italian Margom rubber cupsole.",
-    details: [
-      "Full nappa calf leather upper and calfskin lining",
-      "Original Italian Margom rubber outsole",
-      "Waxed cotton tonal laces with steel aglets",
-      "Constructed and hand-stitched in Civitanova, Italy",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "100% Nappa Leather",
-    inStock: true,
-    stockCount: 30,
-    badge: "BEST SELLER",
-    isFeatured: true,
-    isNewArrival: false,
+    "description": "Authentic Short crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 12,
+    "stock": 12,
+    "quantity": 12,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-10",
-    name: "Structured Minimalist Weekender Duffle",
-    subtitle: "Heavyweight cotton canvas with bridle leather trim",
-    category: "Bags",
-    price: 360,
-    originalPrice: 420,
-    discount: "14% OFF",
-    rating: 4.9,
-    reviewsCount: 16,
-    images: [
-      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af210cd4d12e2b3a8c23add",
+    "name": "Unisex Charm Oval Carabiner Keychain",
+    "subtitle": "Curated ACCESSORIES Essential",
+    "category": "ACCESSORIES",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/1f6be5d74247.png"
     ],
-    colors: [
-      { name: "Raw Olive Canvas", hex: "#424738" },
-      { name: "Midnight Black", hex: "#141414" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["45L Cabin Size"],
-    description:
-      "Engineered for effortless 48-hour escapes. Features an exterior passport slip pocket, two-way YKK Excella zippers, and an interior padded 16-inch laptop compartment.",
-    details: [
-      "Water-repellent 24oz organic cotton canvas",
-      "Full-grain vegetable-tanned bridle leather straps",
-      "Detachable padded shoulder strap with solid brass clasps",
-      "Meets all major international carry-on airline regulations",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "24oz Organic Cotton Canvas & Leather",
-    inStock: true,
-    stockCount: 8,
-    badge: "LIMITED",
-    isFeatured: false,
-    isNewArrival: true,
+    "description": "Authentic Unisex Charm Oval Carabiner Keychain crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 15,
+    "stock": 15,
+    "quantity": 15,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-11",
-    name: "Draped Silk-Satin Slip Dress",
-    subtitle: "Bias-cut fluid silhouette with cowl neckline",
-    category: "Women",
-    price: 290,
-    originalPrice: 350,
-    discount: "17% OFF",
-    rating: 4.8,
-    reviewsCount: 27,
-    images: [
-      "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af210f44d12e2b3a8c23ade",
+    "name": "Unisex Charm Oval Carabiner Keychain",
+    "subtitle": "Curated ACCESSORIES Essential",
+    "category": "ACCESSORIES",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/75ced366ebd8.png"
     ],
-    colors: [
-      { name: "Champagne Pearl", hex: "#E9DFCE" },
-      { name: "Onyx Silk", hex: "#121212" },
-      { name: "Emerald Forest", hex: "#1E3F2D" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["XS", "S", "M", "L"],
-    description:
-      "Cut on the bias from heavyweight 22-momme mulberry silk satin for a liquid-like drape that effortlessly flatters the natural curves of the body.",
-    details: [
-      "100% Grade-6A Mulberry Silk (22-momme weight)",
-      "Gentle cowl neckline and adjustable cross-back straps",
-      "French seams throughout and subtle side slit",
-      "OEKO-TEX Standard 100 certified non-toxic dye",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "100% Mulberry Silk",
-    inStock: true,
-    stockCount: 11,
-    badge: "NEW",
-    isFeatured: true,
-    isNewArrival: true,
+    "description": "Authentic Unisex Charm Oval Carabiner Keychain crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 15,
+    "stock": 15,
+    "quantity": 15,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
   {
-    id: "prod-12",
-    name: "Brushed Mohair V-Neck Cardigan",
-    subtitle: "Plush tactile knit with mother-of-pearl buttons",
-    category: "New Arrivals",
-    price: 310,
-    originalPrice: 310,
-    rating: 5.0,
-    reviewsCount: 9,
-    images: [
-      "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80",
+    "id": "6af211104d12e2b3a8c23adf",
+    "name": "Heart iron chain",
+    "subtitle": "Curated ACCESSORIES Essential",
+    "category": "ACCESSORIES",
+    "brand": "ATELIER",
+    "price": 1.0,
+    "originalPrice": 1.0,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/8f75e20d87d0.png"
     ],
-    colors: [
-      { name: "Acid Lime Glow", hex: "#D6FF00" },
-      { name: "Smoky Lilac", hex: "#8A7D8F" },
-      { name: "Charcoal Heather", hex: "#333333" },
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
     ],
-    sizes: ["S", "M", "L", "XL"],
-    description:
-      "A standout runway knit featuring high-pile brushed South African mohair. Designed with a boxy relaxed crop and genuine iridescent mother-of-pearl button fastenings.",
-    details: [
-      "70% Mohair, 30% Polyamide yarn blend",
-      "Hand-brushed finish for rich tactile surface",
-      "Ribbed placket, cuffs, and hemline",
-      "Spun and dyed in Biella, Italy",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
     ],
-    material: "70% Mohair, 30% Polyamide",
-    inStock: true,
-    stockCount: 7,
-    badge: "HOT",
-    isFeatured: true,
-    isNewArrival: true,
+    "description": "Authentic Heart iron chain crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 15,
+    "stock": 15,
+    "quantity": 15,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
   },
+  {
+    "id": "6af211294d12e2b3a8c23ae0",
+    "name": "Genzy chain ",
+    "subtitle": "Curated ACCESSORIES Essential",
+    "category": "ACCESSORIES",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/1bdbee1b4360.png"
+    ],
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "description": "Authentic Genzy chain  crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 15,
+    "stock": 15,
+    "quantity": 15,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
+  },
+  {
+    "id": "6af2114e4d12e2b3a8c23ae1",
+    "name": "sneaker",
+    "subtitle": "Curated SHOES Essential",
+    "category": "SHOES",
+    "brand": "ATELIER",
+    "price": 1.1,
+    "originalPrice": 1.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/6f4a5f2e8c56.jpg",
+      "/uploads/650873803a93.jpg"
+    ],
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "description": "Authentic sneaker crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 15,
+    "stock": 15,
+    "quantity": 15,
+    "status": "Active",
+    "badge": "BEST SELLER",
+    "isFeatured": true,
+    "isNewArrival": true
+  },
+  {
+    "id": "6af2116d4d12e2b3a8c23ae2",
+    "name": "Sneaker2",
+    "subtitle": "Curated SHOES Essential",
+    "category": "SHOES",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/60af2b3fe1fb.jpg",
+      "/uploads/48cb56f595a0.jpg"
+    ],
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "description": "Authentic Sneaker2 crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 15,
+    "stock": 15,
+    "quantity": 15,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
+  },
+  {
+    "id": "6af2119c4d12e2b3a8c23ae3",
+    "name": "Black duct",
+    "subtitle": "Curated SHOES Essential",
+    "category": "SHOES",
+    "brand": "ATELIER",
+    "price": 1.0,
+    "originalPrice": 1.0,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "/uploads/04174a390535.jpg",
+      "/uploads/7ccd83734b66.jpg"
+    ],
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "description": "Authentic Black duct crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 15,
+    "stock": 15,
+    "quantity": 15,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
+  },
+  {
+    "id": "6af33b7930b7cb5c3882d61d",
+    "name": "Deployment",
+    "subtitle": "Curated MEN Essential",
+    "category": "MEN",
+    "brand": "ATELIER",
+    "price": 0.1,
+    "originalPrice": 0.1,
+    "discount": "SALE",
+    "rating": 5.0,
+    "reviewsCount": 0,
+    "images": [
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQekVFbYHCCnIdhNE8MCB45uQFSvDtiWdAQSA&s"
+    ],
+    "colors": [
+      {
+        "name": "Obsidian Black",
+        "hex": "#111111"
+      },
+      {
+        "name": "Chalk Ecru",
+        "hex": "#E7E4DC"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "description": "Authentic Deployment crafted for effortless modernity.",
+    "details": [
+      "Hand-finished bespoke construction",
+      "Premium materials tailored for durability",
+      "Instant NBC Bakong KHQR checkout eligible"
+    ],
+    "material": "Premium Cotton & Silk Blend",
+    "inStock": true,
+    "stockCount": 15,
+    "stock": 15,
+    "quantity": 15,
+    "status": "Active",
+    "badge": "HOT",
+    "isFeatured": true,
+    "isNewArrival": true
+  }
 ];
 
+export default PRODUCTS;
