@@ -14,9 +14,9 @@ import {
   Search,
   Download,
 } from "lucide-react";
-import api from "../../services/api";
 import Loader from "../../components/common/Loader";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
+import { khqrService } from "../../services/khqrService";
 
 export function ManagePayments() {
   const [payments, setPayments] = useState([]);
@@ -40,16 +40,16 @@ export function ManagePayments() {
     else setIsRefreshing(true);
 
     try {
-      const [payRes, gwRes] = await Promise.allSettled([
-        api.get("/payments/"),
-        api.get("/payments/khqr/gateway-status/"),
+      const [payList, gwInfo] = await Promise.allSettled([
+        khqrService.getPayments(),
+        khqrService.getGatewayStatus(),
       ]);
 
-      if (payRes.status === "fulfilled" && Array.isArray(payRes.value.data)) {
-        setPayments(payRes.value.data);
+      if (payList.status === "fulfilled" && Array.isArray(payList.value)) {
+        setPayments(payList.value);
       }
-      if (gwRes.status === "fulfilled" && gwRes.value.data) {
-        setGatewayInfo(gwRes.value.data);
+      if (gwInfo.status === "fulfilled" && gwInfo.value) {
+        setGatewayInfo(gwInfo.value);
       }
     } catch (e) {
       console.error("Failed loading payments ledger:", e);
@@ -60,28 +60,8 @@ export function ManagePayments() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    Promise.allSettled([
-      api.get("/payments/"),
-      api.get("/payments/khqr/gateway-status/"),
-    ])
-      .then(([payRes, gwRes]) => {
-        if (!active) return;
-        if (payRes.status === "fulfilled" && Array.isArray(payRes.value.data)) {
-          setPayments(payRes.value.data);
-        }
-        if (gwRes.status === "fulfilled" && gwRes.value.data) {
-          setGatewayInfo(gwRes.value.data);
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    loadPayments(false);
+  }, [loadPayments]);
 
   const handleCopyHash = (hash) => {
     if (!hash) return;
@@ -96,15 +76,15 @@ export function ManagePayments() {
 
     setVerifyingId(targetKey);
     try {
-      const res = await api.post(`/payments/khqr/${targetKey}/verify/`, {});
-      if (res.data?.is_paid) {
+      const res = await khqrService.verifyPayment(targetKey);
+      if (res.is_paid || res.success) {
         showNotification(
-          `Verified PAID! Bakong Ref: ${res.data.transaction_id || "CONFIRMED"}`
+          `Verified PAID! Bakong Ref: ${res.transaction_id || "CONFIRMED"}`
         );
         await loadPayments(true);
       } else {
         showNotification(
-          res.data?.message || "Payment is still PENDING on NBC Bakong network."
+          res.message || "Payment is still PENDING on NBC Bakong network."
         );
       }
     } catch {

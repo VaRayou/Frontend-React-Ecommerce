@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { orderService } from "../../services/orderService";
+import { khqrService } from "../../services/khqrService";
+import { KhqrPaymentModal } from "../../components/checkout/KhqrPaymentModal";
 import Input from "../../components/common/Input";
 import CartSummary from "../../components/shop/CartSummary";
 
@@ -16,14 +18,17 @@ function Checkout() {
     email: user?.email || "",
     phone: user?.phone || "",
     address: user?.address || "",
-    city: user?.city || "",
-    country: user?.country || "United States",
+    city: user?.city || "Phnom Penh",
+    country: user?.country || "Cambodia",
     notes: "",
-    paymentMethod: "Cash on Delivery",
+    paymentMethod: "Bakong KHQR",
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showKhqrModal, setShowKhqrModal] = useState(false);
+  const [khqrData, setKhqrData] = useState(null);
+  const [pendingOrderPayload, setPendingOrderPayload] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,39 +64,109 @@ function Checkout() {
 
     if (!validate()) return;
 
+    const orderNumber = `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const basePayload = {
+      order_number: orderNumber,
+      orderNumber: orderNumber,
+      customerId: user?.id || null,
+      customerName: formData.fullName,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      shippingAddress: `${formData.address}, ${formData.city}, ${formData.country}`,
+      items: cart.map((item) => ({
+        id: item.product.id,
+        productId: item.product.id,
+        product_id: item.product.id,
+        name: item.product.name,
+        productName: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        image: item.product.image,
+      })),
+      subtotal: cartSubtotal,
+      shippingFee,
+      tax,
+      total: cartTotal,
+      currency: "USD",
+      paymentMethod: formData.paymentMethod,
+      paymentStatus: formData.paymentMethod === "Bakong KHQR" ? "Pending" : "Pending COD",
+      notes: formData.notes,
+    };
+
+    if (formData.paymentMethod === "Bakong KHQR") {
+      setLoading(true);
+      try {
+        setPendingOrderPayload(basePayload);
+        const khqrRes = await khqrService.createPayment({
+          amount: cartTotal,
+          currency: "USD",
+          order_number: orderNumber,
+          customer_name: formData.fullName,
+          customer_phone: formData.phone,
+        });
+        setKhqrData(khqrRes);
+        setShowKhqrModal(true);
+      } catch (err) {
+        console.error("KHQR Generation Error:", err);
+        alert("Failed to initialize Bakong KHQR payment. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Direct Cash on Delivery or Bank Transfer flow
     setLoading(true);
-
     try {
-      const orderPayload = {
-        customerId: user?.id || null,
-        customerName: formData.fullName,
-        customerEmail: formData.email,
-        customerPhone: formData.phone,
-        shippingAddress: `${formData.address}, ${formData.city}, ${formData.country}`,
-        items: cart.map((item) => ({
-          id: item.product.id,
-          name: item.product.name,
-          price: item.product.price,
-          quantity: item.quantity,
-          image: item.product.image,
-        })),
-        subtotal: cartSubtotal,
-        shippingFee,
-        tax,
-        total: cartTotal,
-        paymentMethod: formData.paymentMethod,
-        notes: formData.notes,
-      };
-
-      const createdOrder = await orderService.createOrder(orderPayload);
+      const createdOrder = await orderService.createOrder(basePayload);
       clearCart();
-
-      // Navigate to Order Success page with order details in state
       navigate("/order-success", { state: { order: createdOrder } });
     } catch (err) {
       alert("Failed to submit order. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleKhqrSuccess = async (transactionId) => {
+    setShowKhqrModal(false);
+    if (!pendingOrderPayload) return;
+
+    setLoading(true);
+    try {
+      const finalPayload = {
+        ...pendingOrderPayload,
+        paymentStatus: "Paid",
+        notes: (pendingOrderPayload.notes ? pendingOrderPayload.notes + " " : "") + `[Bakong Ref: ${transactionId}]`,
+      };
+      const createdOrder = await orderService.createOrder(finalPayload);
+      clearCart();
+      navigate("/order-success", { state: { order: createdOrder } });
+    } catch (err) {
+      console.error("Error creating order after payment:", err);
+      clearCart();
+      navigate("/order-success", {
+        state: { order: { ...pendingOrderPayload, id: transactionId, payment_status: "Paid" } },
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegenerateKhqr = async () => {
+    try {
+      const newOrderNum = `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      setPendingOrderPayload((prev) => (prev ? { ...prev, order_number: newOrderNum } : prev));
+      const khqrRes = await khqrService.createPayment({
+        amount: cartTotal,
+        currency: "USD",
+        order_number: newOrderNum,
+        customer_name: formData.fullName,
+        customer_phone: formData.phone,
+      });
+      setKhqrData(khqrRes);
+    } catch (e) {
+      console.warn("Regenerate failed:", e);
     }
   };
 
@@ -233,11 +308,30 @@ function Checkout() {
 
                 {/* Payment Selection UI */}
                 <h3 style={{ fontSize: 20, fontWeight: 700, margin: "24px 0 16px 0", color: "#363432" }}>
-                  2. Payment Method (Demo)
+                  2. Payment Method
                 </h3>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, background: "#f9f9f6", padding: 18, borderRadius: 4 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", margin: 0 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, background: "#f9f9f6", padding: 18, borderRadius: 6 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", margin: 0, padding: "12px 14px", borderRadius: 6, border: formData.paymentMethod === "Bakong KHQR" ? "2px solid #fe980f" : "1px solid #e0e0e0", background: formData.paymentMethod === "Bakong KHQR" ? "#fff9f0" : "#fff", transition: "all 0.2s" }}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="Bakong KHQR"
+                      checked={formData.paymentMethod === "Bakong KHQR"}
+                      onChange={handleChange}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontWeight: 700, color: "#d90429", fontSize: 15 }}>Bakong KHQR (Live NBC Gateway)</span>
+                        <span style={{ fontSize: 11, background: "#d90429", color: "#fff", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>INSTANT</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+                        Universal QR: Scan & Pay with ABA Mobile, Bakong, ACLEDA, or any Cambodian bank app.
+                      </div>
+                    </div>
+                  </label>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", margin: 0, padding: "10px 14px", borderRadius: 6, border: formData.paymentMethod === "Cash on Delivery" ? "2px solid #fe980f" : "1px solid #e0e0e0", background: formData.paymentMethod === "Cash on Delivery" ? "#fff9f0" : "#fff" }}>
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -245,12 +339,13 @@ function Checkout() {
                       checked={formData.paymentMethod === "Cash on Delivery"}
                       onChange={handleChange}
                     />
-                    <span>
-                      <strong>Cash on Delivery (COD)</strong> — Pay with cash upon delivery
-                    </span>
+                    <div>
+                      <strong>Cash on Delivery (COD)</strong>
+                      <div style={{ fontSize: 12, color: "#777" }}>Pay with cash upon physical delivery.</div>
+                    </div>
                   </label>
 
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", margin: 0 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", margin: 0, padding: "10px 14px", borderRadius: 6, border: formData.paymentMethod === "Direct Bank Transfer" ? "2px solid #fe980f" : "1px solid #e0e0e0", background: formData.paymentMethod === "Direct Bank Transfer" ? "#fff9f0" : "#fff" }}>
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -258,22 +353,10 @@ function Checkout() {
                       checked={formData.paymentMethod === "Direct Bank Transfer"}
                       onChange={handleChange}
                     />
-                    <span>
-                      <strong>Direct Bank Transfer</strong> — Demo wire transfer
-                    </span>
-                  </label>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", margin: 0 }}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="PayPal"
-                      checked={formData.paymentMethod === "PayPal"}
-                      onChange={handleChange}
-                    />
-                    <span>
-                      <strong>Bakong KHQR Gateway</strong> — Universal NBC QR payment
-                    </span>
+                    <div>
+                      <strong>Direct Bank Transfer</strong>
+                      <div style={{ fontSize: 12, color: "#777" }}>Manual wire transfer with reference slip.</div>
+                    </div>
                   </label>
                 </div>
               </div>
@@ -355,6 +438,16 @@ function Checkout() {
           </div>
         </form>
       </div>
+
+      {showKhqrModal && khqrData && (
+        <KhqrPaymentModal
+          isOpen={showKhqrModal}
+          onClose={() => setShowKhqrModal(false)}
+          onPaymentSuccess={handleKhqrSuccess}
+          khqrData={khqrData}
+          onRegenerate={handleRegenerateKhqr}
+        />
+      )}
     </section>
   );
 }
