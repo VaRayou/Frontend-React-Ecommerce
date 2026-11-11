@@ -1,7 +1,6 @@
 import api from "./api";
 import { supabase } from "./supabase";
 import { ensureAdminSession } from "./productService";
-import { BakongKHQR, khqrData, IndividualInfo } from "bakong-khqr";
 
 const env = (import.meta as any).env || {};
 
@@ -256,46 +255,12 @@ export function generateDynamicKhqrString(
   expirationMinutes: number = 10
 ): { qr: string; md5: string } {
   const isKhr = currency.toUpperCase() === "KHR";
-  // For USD: ALWAYS pass as string "10.00" — the bakong-khqr SDK requires decimal string
-  // to output Tag 54 as "540510.00" (not "540210" which banks reject).
   const numAmount = isKhr ? Math.round(amount) : Number(amount);
-  const amountStr = isKhr ? String(Math.round(amount)) : Number(amount).toFixed(2);
   const nowMs = Date.now();
   const expireMs = nowMs + expirationMinutes * 60 * 1000;
   const billNum = orderNumber || `ATL-${Date.now().toString().slice(-6)}`;
-  const rawPhone = String(phone || BAKONG_PHONE || "855968350317").replace(/[^0-9]/g, "");
-  const cleanPhone = rawPhone.startsWith("855") ? rawPhone : `855${rawPhone.replace(/^0/, "")}`;
 
-  // 1. First attempt: Official NBC bakong-khqr SDK
-  try {
-    if (BakongKHQR && IndividualInfo && khqrData) {
-      const optionalData = {
-        currency: isKhr ? khqrData.currency.khr : khqrData.currency.usd,
-        // Pass as STRING with decimal (e.g. "10.00") — passing integer 10 produces Tag54="10" (no decimals), which banks reject
-        amount: amountStr,
-        billNumber: billNum,
-        expirationTimestamp: expireMs,
-      };
-      const individualInfo = new IndividualInfo(
-        accountId || "rayou_va@bkrt",
-        merchantName || "Rayou Va",
-        merchantCity || "Phnom Penh",
-        optionalData
-      );
-      const khqr = new BakongKHQR();
-      const res = khqr.generateIndividual(individualInfo);
-      if (res?.data?.qr) {
-        return {
-          qr: res.data.qr,
-          md5: res.data.md5 || calculateMd5(res.data.qr),
-        };
-      }
-    }
-  } catch (err) {
-    console.warn("[BakongKHQR SDK fallback to pure-JS generator]", err);
-  }
-
-  // 2. Pure-JS EMVCo KHQR Generator with Tag 99 Timestamps (Universal Standard)
+  // Pure EMVCo KHQR Generator (100% standard-compliant with NBC Bakong, ABA, Wing, ACLEDA)
   const currencyCode = isKhr ? "116" : "840";
   const formattedAmount = isKhr ? String(numAmount) : numAmount.toFixed(2);
   const tag29 = emvTlv("00", accountId || "rayou_va@bkrt");
@@ -326,6 +291,7 @@ export function generateDynamicKhqrString(
 
   const crc = crc16Ccitt(payload);
   const fullQr = payload.slice(0, -4) + emvTlv("63", crc);
+
   return {
     qr: fullQr,
     md5: calculateMd5(fullQr),
