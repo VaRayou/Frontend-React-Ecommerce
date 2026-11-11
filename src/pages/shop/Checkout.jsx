@@ -197,10 +197,17 @@ function Checkout() {
           </ol>
         </div>
 
-        {/* Demo Notice */}
-        <div className="alert alert-info" style={{ fontSize: 13, marginBottom: 24 }}>
-          <i className="fa fa-info-circle" style={{ marginRight: 6 }}></i>
-          <strong>Frontend Demonstration:</strong> Payment gateway simulation only. No actual credit card or real financial transaction will occur.
+        {/* Live NBC Bakong Gateway Status */}
+        <div style={{ background: "#f0fdf4", border: "1px solid #86efac", padding: "12px 18px", borderRadius: 6, marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ background: "#d90429", color: "#fff", fontWeight: 800, fontSize: 11, padding: "3px 8px", borderRadius: 4, letterSpacing: "0.5px" }}>LIVE NBC KHQR</span>
+            <span style={{ fontSize: 13, color: "#166534", fontWeight: 700 }}>
+              National Bank of Cambodia (NBC) Bakong Gateway Active
+            </span>
+          </div>
+          <span style={{ fontSize: 12, color: "#15803d", fontWeight: 600 }}>
+            Recipient: <strong>Rayou Va (rayou_va@bkrt)</strong>
+          </span>
         </div>
 
         <form onSubmit={handleSubmitOrder}>

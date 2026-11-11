@@ -270,11 +270,7 @@ export function generateDynamicKhqrString(
         currency: isKhr ? khqrData.currency.khr : khqrData.currency.usd,
         amount: numAmount,
         billNumber: billNum,
-        mobileNumber: cleanPhone,
-        storeLabel: merchantName || "Rayou Va",
-        terminalLabel: "Online POS",
         expirationTimestamp: expireMs,
-        merchantCategoryCode: "5999",
       };
       const individualInfo = new IndividualInfo(
         accountId || "rayou_va@bkrt",
@@ -300,11 +296,8 @@ export function generateDynamicKhqrString(
   const formattedAmount = isKhr ? String(numAmount) : numAmount.toFixed(2);
   const tag29 = emvTlv("00", accountId || "rayou_va@bkrt");
 
-  const sub01 = emvTlv("01", billNum.slice(0, 25));
-  const sub02 = emvTlv("02", cleanPhone.slice(0, 25));
-  const sub03 = emvTlv("03", (merchantName || "Rayou Va").slice(0, 25));
-  const sub07 = emvTlv("07", "Online POS");
-  const tag62 = `${sub01}${sub02}${sub03}${sub07}`;
+  // Tag 62: Clean Order Reference
+  const tag62 = emvTlv("01", billNum.slice(0, 25));
 
   // Tag 99: Mandatory Timestamp Data for Dynamic KHQR
   // Subtag 00 (Creation Timestamp, 13 ms digits)
