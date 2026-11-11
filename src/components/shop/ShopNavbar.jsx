@@ -28,12 +28,6 @@ function ShopNavbar() {
 
   return (
     <header id="header">
-      {/* Demo Environment Notice Banner */}
-      <div className="demo-badge-banner">
-        <i className="fa fa-info-circle me-1" style={{ marginRight: 6 }}></i>
-        Frontend Demo Mode — Products, Cart & Authentication persist locally until Django REST API is connected.
-      </div>
-
       {/* header_top */}
       <div className="header_top">
         <div className="container">

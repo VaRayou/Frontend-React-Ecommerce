@@ -176,9 +176,6 @@ function Cart() {
                     <p style={{ fontSize: 13, color: "#666", lineHeight: 1.6, margin: 0 }}>
                       Standard delivery takes 3-5 business days. Free delivery applies automatically to all orders exceeding $150.
                     </p>
-                    <div style={{ marginTop: 14, fontSize: 12, color: "#888" }}>
-                      * Note: All transactions and currency conversions are demo frontend simulations.
-                    </div>
                   </div>
                 </div>
 

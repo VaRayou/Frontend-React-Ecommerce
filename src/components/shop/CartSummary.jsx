@@ -44,7 +44,7 @@ function CartSummary({ showCheckoutButton = true }) {
         )}
 
         <li style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #e2e2d8" }}>
-          <span>Eco Tax (Demo)</span>
+          <span>Eco Tax</span>
           <span style={{ fontWeight: 600 }}>${tax}</span>
         </li>
 

@@ -69,7 +69,7 @@ function OrderSuccess() {
 
             <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #e2e2d8", paddingBottom: 10, marginBottom: 12 }}>
               <span style={{ color: "#64748b", fontSize: 13 }}>Payment Method:</span>
-              <span style={{ fontSize: 13, fontWeight: 500 }}>{order.paymentMethod} (Demo)</span>
+              <span style={{ fontSize: 13, fontWeight: 500 }}>{order.paymentMethod}</span>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 6, fontSize: 16 }}>
