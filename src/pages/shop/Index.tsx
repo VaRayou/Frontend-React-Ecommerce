@@ -182,34 +182,34 @@ export const Shop: React.FC = () => {
     selectedColors.length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-12">
       {/* Editorial Dark Obsidian Header Banner with Quick Category Pills */}
-      <div className="relative rounded-3xl overflow-hidden bg-[#111111] text-white p-6 sm:p-10 mb-8 shadow-xl border border-white/10">
+      <div className="relative rounded-3xl overflow-hidden bg-[#111111] text-white p-5 sm:p-10 mb-5 sm:mb-8 shadow-xl border border-white/10">
         <div
           className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-20 blur-3xl"
           style={{ background: "radial-gradient(circle, #D6FF00 0%, transparent 70%)" }}
         />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[#D6FF00] text-[10px] font-black tracking-[0.2em] uppercase mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[#D6FF00] text-[10px] font-black tracking-[0.2em] uppercase mb-2.5 sm:mb-3">
               <Sparkles className="w-3 h-3" />
               <span>Autumn / Winter 2026 Catalog</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase leading-none">
+            <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-white uppercase leading-none">
               {selectedCategory === "all"
                 ? "Complete Collection"
                 : selectedCategory === "new-arrivals"
                 ? "New Runway Arrivals"
                 : `${selectedCategory} Archive`}
             </h1>
-            <p className="text-xs sm:text-sm text-gray-400 mt-2.5 max-w-xl">
+            <p className="text-xs sm:text-sm text-gray-400 mt-2 max-w-xl">
               Architectural silhouettes, fine Italian wools, and sculptural accessories. Showing{" "}
               <strong className="text-[#D6FF00]">{filteredProducts.length}</strong> available pieces.
             </p>
           </div>
 
           {/* Animated Quick-Switch Category Pills */}
-          <div className="flex flex-wrap gap-1.5 p-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md overflow-x-auto no-scrollbar max-w-full sm:flex-wrap">
             {[
               { label: "All Pieces", slug: "all" },
               ...liveCategories.slice(0, 6).map((c) => ({
@@ -230,7 +230,7 @@ export const Shop: React.FC = () => {
                       setSearchParams({ category: pill.slug });
                     }
                   }}
-                  className={`relative px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer z-10 ${
+                  className={`relative px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer z-10 shrink-0 whitespace-nowrap ${
                     isSelected ? "text-black" : "text-gray-300 hover:text-white"
                   }`}
                 >
@@ -250,7 +250,7 @@ export const Shop: React.FC = () => {
       </div>
 
       {/* Top Controls Bar: Search, Mobile Filter Toggle, Sort Dropdown */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-gray-100 shadow-xs mb-8">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-white border border-gray-100 shadow-xs mb-6 sm:mb-8">
         {/* Search Input */}
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />

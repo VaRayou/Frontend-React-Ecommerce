@@ -60,30 +60,30 @@ export const Wishlist: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 pb-6 border-b border-gray-200 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 sm:mb-10 pb-5 sm:pb-6 border-b border-gray-200 gap-4">
         <div>
           <span className="text-xs font-bold tracking-widest uppercase text-gray-400 block mb-1">
             Saved Designs
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-black uppercase">
+          <h1 className="text-2xl sm:text-4xl font-black text-black uppercase">
             My Wishlist ({items.length} {items.length === 1 ? "Piece" : "Pieces"})
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={handleAddAllToBag}
-            className="px-5 py-2.5 rounded-full bg-[#111111] text-[#D6FF00] text-xs font-black uppercase tracking-wider hover:bg-black transition-all flex items-center gap-2 shadow-xs"
+            className="flex-1 sm:flex-initial justify-center px-4 sm:px-5 py-2.5 rounded-full bg-[#111111] text-[#D6FF00] text-xs font-black uppercase tracking-wider hover:bg-black transition-all flex items-center gap-2 shadow-xs"
           >
-            <ShoppingBag className="w-4 h-4" />
+            <ShoppingBag className="w-4 h-4 shrink-0" />
             <span>Move All to Bag</span>
           </button>
 
           <button
             onClick={clearWishlist}
-            className="px-4 py-2.5 rounded-full border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-full border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Clear</span>
@@ -92,7 +92,7 @@ export const Wishlist: React.FC = () => {
       </div>
 
       {/* Grid of Wishlist Items */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-2.5 sm:gap-x-6 gap-y-4 sm:gap-y-10">
         {items.map((product, idx) => (
           <ProductCard key={product.id} product={product} index={idx} />
         ))}

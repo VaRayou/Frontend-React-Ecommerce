@@ -17,7 +17,12 @@ import {
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
 import { orderService } from "../../services/orderService";
 
-export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {
+export function AdminSidebar({
+  collapsed,
+  onToggleCollapse,
+  mobileOpen,
+  onCloseMobile,
+}) {
   const { adminUser, adminLogout } = useAdminAuthStore();
   const navigate = useNavigate();
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
@@ -39,7 +44,8 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
 
     const handleSync = () => fetchPending();
     window.addEventListener("atelier_order_updated", handleSync);
-    return () => window.removeEventListener("atelier_order_updated", handleSync);
+    return () =>
+      window.removeEventListener("atelier_order_updated", handleSync);
   }, []);
 
   const handleLogout = () => {
@@ -124,23 +130,33 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
   const menuSections = allMenuSections
     .map((sec) => ({
       ...sec,
-      items: sec.items.filter((item) => !item.roles || item.roles.includes(currentRole)),
+      items: sec.items.filter(
+        (item) => !item.roles || item.roles.includes(currentRole),
+      ),
     }))
     .filter((sec) => sec.items.length > 0);
 
   const isCollapsed = collapsed && !mobileOpen;
 
   return (
-    <aside className={`admin-sidebar ${isCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}>
+    <aside
+      className={`admin-sidebar ${isCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}
+    >
       {/* Sidebar Header / Brand */}
       <div className="admin-sidebar-header">
-        <Link to="/admin/dashboard" className="sidebar-brand-link" onClick={onCloseMobile}>
+        <Link
+          to="/admin/dashboard"
+          className="sidebar-brand-link"
+          onClick={onCloseMobile}
+        >
           <div className="sidebar-brand-icon">
             <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-xs" />
           </div>
           {!isCollapsed && (
             <div className="sidebar-brand-text">
-              <span className="brand-main tracking-tight font-black">ATELIER</span>
+              <span className="brand-main tracking-tight font-black">
+                ATELIER
+              </span>
               <span className="brand-sub font-mono font-bold tracking-widest text-[#D6FF00]">
                 CONTROLLER
               </span>
@@ -155,7 +171,11 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
           onClick={onToggleCollapse}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {collapsed ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <ChevronLeft className="w-4 h-4" />
+          )}
         </button>
 
         {/* Mobile Close Button */}
@@ -171,21 +191,49 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
 
       {/* Controller User Quick Info */}
       {!isCollapsed && (
-        <div className="sidebar-user-card" style={{ background: "rgba(255, 255, 255, 0.04)", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: 12, margin: "12px 14px", padding: "10px 12px" }}>
+        <div
+          className="sidebar-user-card"
+          style={{
+            background: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.06)",
+            borderRadius: 12,
+            margin: "12px 14px",
+            padding: "10px 12px",
+          }}
+        >
           <div className="sidebar-user-avatar-wrap">
             <img
-              src={adminUser?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"}
+              src={
+                adminUser?.avatar ||
+                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+              }
               alt="Admin"
               className="sidebar-user-avatar"
               style={{ borderColor: "#D6FF00" }}
             />
-            <span className="sidebar-status-dot" style={{ background: "#D6FF00" }} title="Online Controller"></span>
+            <span
+              className="sidebar-status-dot"
+              style={{ background: "#D6FF00" }}
+              title="Online Controller"
+            ></span>
           </div>
           <div className="sidebar-user-details">
-            <div className="sidebar-user-name" style={{ fontWeight: 700, fontSize: 13 }}>
+            <div
+              className="sidebar-user-name"
+              style={{ fontWeight: 700, fontSize: 13 }}
+            >
               {adminUser?.name || "Admin Controller"}
             </div>
-            <div className="sidebar-user-role" style={{ color: "#D6FF00", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <div
+              className="sidebar-user-role"
+              style={{
+                color: "#D6FF00",
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
               {adminUser?.role || "Super Administrator"}
             </div>
           </div>
@@ -197,7 +245,9 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
         <nav className="sidebar-nav">
           {menuSections.map((sec, secIdx) => (
             <div key={secIdx} className="sidebar-section">
-              {!isCollapsed && <div className="sidebar-section-title">{sec.header}</div>}
+              {!isCollapsed && (
+                <div className="sidebar-section-title">{sec.header}</div>
+              )}
               <ul className="sidebar-menu-list">
                 {sec.items.map((item, itemIdx) => {
                   const IconComponent = item.icon;
@@ -205,14 +255,20 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
                     <li key={itemIdx} className="sidebar-menu-item">
                       <NavLink
                         to={item.path}
-                        className={({ isActive }) => `sidebar-menu-link ${isActive ? "active" : ""}`}
+                        className={({ isActive }) =>
+                          `sidebar-menu-link ${isActive ? "active" : ""}`
+                        }
                         onClick={onCloseMobile}
                         title={isCollapsed ? item.title : undefined}
                       >
                         <span className="sidebar-icon">
                           <IconComponent className="w-4 h-4" />
                         </span>
-                        {!isCollapsed && <span className="sidebar-link-text">{item.title}</span>}
+                        {!isCollapsed && (
+                          <span className="sidebar-link-text">
+                            {item.title}
+                          </span>
+                        )}
                         {!isCollapsed && item.badge && (
                           <span className="sidebar-link-badge">
                             {item.badge}
@@ -228,7 +284,9 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
 
           {/* Customer Storefront Shortcut */}
           <div className="sidebar-section">
-            {!isCollapsed && <div className="sidebar-section-title">STORE SHORTCUT</div>}
+            {!isCollapsed && (
+              <div className="sidebar-section-title">STORE SHORTCUT</div>
+            )}
             <ul className="sidebar-menu-list">
               <li className="sidebar-menu-item">
                 <Link
@@ -240,7 +298,9 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
                   <span className="sidebar-icon">
                     <Store className="w-4 h-4" />
                   </span>
-                  {!isCollapsed && <span className="sidebar-link-text">Customer Store</span>}
+                  {!isCollapsed && (
+                    <span className="sidebar-link-text">Customer Store</span>
+                  )}
                 </Link>
               </li>
             </ul>

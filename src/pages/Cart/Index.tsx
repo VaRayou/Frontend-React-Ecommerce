@@ -86,20 +86,20 @@ export const Cart: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16">
       {/* Page Title */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 pb-6 border-b border-gray-200 gap-4">
+      <div className="flex flex-row items-end justify-between mb-6 sm:mb-8 pb-4 sm:pb-6 border-b border-gray-200 gap-4">
         <div>
           <span className="text-xs font-bold tracking-widest uppercase text-gray-400 block mb-1">
             Review Bag
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-black uppercase">
-            Shopping Bag ({itemCount} {itemCount === 1 ? "Item" : "Items"})
+          <h1 className="text-2xl sm:text-4xl font-black text-black uppercase">
+            Shopping Bag ({itemCount})
           </h1>
         </div>
         <button
           onClick={clearCart}
-          className="text-xs text-gray-400 hover:text-red-500 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+          className="text-xs text-gray-400 hover:text-red-500 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear Bag</span>
@@ -107,21 +107,21 @@ export const Cart: React.FC = () => {
       </div>
 
       {/* Free Shipping Progress Card */}
-      <div className="mb-10 p-5 rounded-2xl bg-white border border-gray-100 shadow-xs">
-        <div className="flex items-center justify-between text-xs font-bold text-black mb-2">
+      <div className="mb-6 sm:mb-10 p-4 sm:p-5 rounded-2xl bg-white border border-gray-100 shadow-xs">
+        <div className="flex items-center justify-between text-xs font-bold text-black mb-2 gap-2">
           <span className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#D6FF00] fill-[#D6FF00]" />
+            <Sparkles className="w-4 h-4 text-[#D6FF00] fill-[#D6FF00] shrink-0" />
             {amountRemaining === 0 ? (
               <span className="text-emerald-700">
                 Congratulations! You qualify for <strong>FREE Express Worldwide Shipping</strong>.
               </span>
             ) : (
               <span>
-                Add <strong className="text-black">{formatPrice(amountRemaining)}</strong> more to qualify for <strong>FREE Express Shipping</strong>
+                Add <strong className="text-black">{formatPrice(amountRemaining)}</strong> more for <strong>FREE Express Shipping</strong>
               </span>
             )}
           </span>
-          <span>{progress}%</span>
+          <span className="shrink-0">{progress}%</span>
         </div>
         <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
           <div
@@ -132,54 +132,56 @@ export const Cart: React.FC = () => {
       </div>
 
       {/* Grid: Left Bag Items (8 Cols) + Right Summary (4 Cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-start">
         {/* Left: Items List */}
-        <div className="lg:col-span-8 space-y-4">
+        <div className="lg:col-span-8 space-y-3 sm:space-y-4">
           {items.map((item) => (
             <div
               key={item.id}
-              className="p-4 sm:p-6 rounded-3xl bg-white border border-gray-100 shadow-xs flex flex-col sm:flex-row gap-5 items-start sm:items-center hover:border-gray-200 transition-colors"
+              className="p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-gray-100 shadow-xs flex flex-col sm:flex-row gap-3.5 sm:gap-5 items-start sm:items-center hover:border-gray-200 transition-colors"
             >
-              {/* Product Thumbnail */}
-              <Link
-                to={`/shop/${item.product?.id || item.id}`}
-                className="w-24 h-32 sm:w-28 sm:h-36 rounded-2xl overflow-hidden bg-gray-100 shrink-0"
-              >
-                <img
-                  src={item.product?.images?.[0] || item.product?.image || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80"}
-                  alt={item.product?.name || "Product"}
-                  className="w-full h-full object-cover"
-                />
-              </Link>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0 space-y-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
-                  {item.product?.category || "Apparel"}
-                </span>
+              <div className="flex gap-3.5 sm:gap-5 items-center w-full sm:w-auto flex-1 min-w-0">
+                {/* Product Thumbnail */}
                 <Link
                   to={`/shop/${item.product?.id || item.id}`}
-                  className="text-base font-extrabold text-black hover:underline block leading-snug"
+                  className="w-20 h-26 sm:w-28 sm:h-36 rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 shrink-0"
                 >
-                  {item.product?.name || "Fashion Piece"}
+                  <img
+                    src={item.product?.images?.[0] || item.product?.image || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80"}
+                    alt={item.product?.name || "Product"}
+                    className="w-full h-full object-cover"
+                  />
                 </Link>
 
-                <div className="flex items-center gap-3 text-xs text-gray-500 pt-1">
-                  <span>Size: <strong className="text-black">{item.selectedSize || "M"}</strong></span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1.5">
-                    <span
-                      className="w-3 h-3 rounded-full border border-gray-300"
-                      style={{ backgroundColor: typeof item.selectedColor === "object" ? item.selectedColor?.hex : "#111111" }}
-                    />
-                    <strong className="text-black">
-                      {typeof item.selectedColor === "object" && item.selectedColor?.name ? item.selectedColor.name : String(item.selectedColor || "Standard")}
-                    </strong>
+                {/* Info */}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                    {item.product?.category || "Apparel"}
                   </span>
-                </div>
+                  <Link
+                    to={`/shop/${item.product?.id || item.id}`}
+                    className="text-sm sm:text-base font-extrabold text-black hover:underline block leading-snug line-clamp-2"
+                  >
+                    {item.product?.name || "Fashion Piece"}
+                  </Link>
 
-                <div className="text-xs text-gray-400 font-semibold pt-1">
-                  Unit Price: {formatPrice(Number(item.product?.price || 0))}
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-gray-500 pt-0.5">
+                    <span>Size: <strong className="text-black">{item.selectedSize || "M"}</strong></span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1.5">
+                      <span
+                        className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-gray-300"
+                        style={{ backgroundColor: typeof item.selectedColor === "object" ? item.selectedColor?.hex : "#111111" }}
+                      />
+                      <strong className="text-black">
+                        {typeof item.selectedColor === "object" && item.selectedColor?.name ? item.selectedColor.name : String(item.selectedColor || "Standard")}
+                      </strong>
+                    </span>
+                  </div>
+
+                  <div className="text-[11px] sm:text-xs text-gray-400 font-semibold pt-0.5">
+                    Unit Price: {formatPrice(Number(item.product?.price || 0))}
+                  </div>
                 </div>
               </div>
 

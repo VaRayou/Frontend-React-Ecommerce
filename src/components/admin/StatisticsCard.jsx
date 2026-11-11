@@ -1,7 +1,13 @@
 import React from "react";
 import { ArrowUpRight } from "lucide-react";
 
-export function StatisticsCard({ title, value, change, icon: Icon, color = "bg-neutral-900 text-[#D6FF00]" }) {
+export function StatisticsCard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  color = "bg-neutral-900 text-[#D6FF00]",
+}) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
       <div>
@@ -20,7 +26,9 @@ export function StatisticsCard({ title, value, change, icon: Icon, color = "bg-n
       </div>
 
       {Icon && (
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${color}`}>
+        <div
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${color}`}
+        >
           <Icon className="w-6 h-6" />
         </div>
       )}

@@ -58,24 +58,24 @@ export const Navbar: React.FC = () => {
     <header
       className={`sticky top-0 z-40 transition-all duration-300 ${
         isScrolled
-          ? "bg-white/90 backdrop-blur-md shadow-xs border-b border-gray-100 py-3.5"
-          : "bg-white/80 backdrop-blur-sm border-b border-gray-100/60 py-4"
+          ? "bg-white/95 backdrop-blur-md shadow-xs border-b border-gray-100 py-2.5 sm:py-3.5"
+          : "bg-white/90 backdrop-blur-sm border-b border-gray-100/60 py-3 sm:py-4"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex items-center justify-between gap-2">
         {/* Left: Mobile Menu Toggle & Brand Logo */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <button
             onClick={toggleMobileMenu}
             className="lg:hidden p-1.5 -ml-1 text-black hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Toggle Navigation"
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
           </button>
 
           <Link to="/" className="flex items-center gap-1.5 group">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-xs group-hover:scale-125 transition-transform" />
-            <span className="font-extrabold tracking-[-0.05em] text-xl sm:text-2xl text-black">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-xs group-hover:scale-125 transition-transform" />
+            <span className="font-extrabold tracking-[-0.05em] text-lg sm:text-2xl text-black">
               ATELIER
             </span>
             <span className="text-[9px] font-bold tracking-widest text-gray-400 uppercase hidden sm:inline ml-1">
@@ -113,38 +113,38 @@ export const Navbar: React.FC = () => {
         </nav>
 
         {/* Right: Actions (Search, Wishlist, Bag, Profile, Currency) */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-0.5 sm:gap-2">
           {/* Currency Switcher */}
           <button
             type="button"
             onClick={() => setCurrency(currency === "USD" ? "KHR" : "USD")}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black tracking-wider border border-gray-200 hover:border-black bg-gray-50/80 hover:bg-black hover:text-[#D6FF00] transition-all cursor-pointer shadow-2xs mr-1"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black tracking-wider border border-gray-200 hover:border-black bg-gray-50/80 hover:bg-black hover:text-[#D6FF00] transition-all cursor-pointer shadow-2xs mr-0.5 sm:mr-1"
             title="Switch Currency between USD ($) and Khmer Riel (៛)"
           >
             <span className={currency === "USD" ? "text-emerald-600 font-black" : "text-gray-400"}>$</span>
             <span className="text-gray-300">/</span>
             <span className={currency === "KHR" ? "text-emerald-600 font-black" : "text-gray-400"}>៛</span>
-            <span className="ml-0.5 uppercase text-[10px]">{currency}</span>
+            <span className="hidden xs:inline ml-0.5 uppercase text-[10px]">{currency}</span>
           </button>
 
           {/* Search Trigger */}
           <button
             onClick={openSearchModal}
-            className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors relative"
+            className="p-1.5 sm:p-2 text-black hover:bg-gray-100 rounded-full transition-colors relative"
             title="Search Products (Press ESC)"
           >
-            <Search className="w-5 h-5 stroke-[1.8]" />
+            <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.8]" />
           </button>
 
           {/* Wishlist Link */}
           <Link
             to="/wishlist"
-            className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors relative"
+            className="p-1.5 sm:p-2 text-black hover:bg-gray-100 rounded-full transition-colors relative"
             title="Wishlist"
           >
-            <Heart className="w-5 h-5 stroke-[1.8]" />
+            <Heart className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.8]" />
             {wishlistCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-black text-[#D6FF00] text-[9px] font-black rounded-full flex items-center justify-center animate-in zoom-in">
+              <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-black text-[#D6FF00] text-[8px] sm:text-[9px] font-black rounded-full flex items-center justify-center animate-in zoom-in">
                 {wishlistCount}
               </span>
             )}
@@ -153,12 +153,12 @@ export const Navbar: React.FC = () => {
           {/* Cart Drawer Trigger */}
           <button
             onClick={openCartDrawer}
-            className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors relative"
+            className="p-1.5 sm:p-2 text-black hover:bg-gray-100 rounded-full transition-colors relative"
             title="Shopping Bag"
           >
-            <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
+            <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.8]" />
             {cartCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-[#D6FF00] text-black text-[9px] font-black rounded-full flex items-center justify-center shadow-xs">
+              <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#D6FF00] text-black text-[8px] sm:text-[9px] font-black rounded-full flex items-center justify-center shadow-xs">
                 {cartCount}
               </span>
             )}

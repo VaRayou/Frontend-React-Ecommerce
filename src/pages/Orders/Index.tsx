@@ -178,42 +178,47 @@ export const Orders: React.FC = () => {
           return (
             <div
               key={order.id || order.orderNumber}
-              className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-5"
+              className="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-white border border-gray-100 shadow-xs space-y-4 sm:space-y-5"
             >
               {/* Order Top Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-3 text-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-black text-[#D6FF00] flex items-center justify-center font-bold">
-                    <Package className="w-4 h-4" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 sm:pb-4 border-b border-gray-100 gap-3 text-xs">
+                <div className="flex items-center justify-between sm:justify-start gap-3">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black text-[#D6FF00] flex items-center justify-center font-bold shrink-0">
+                      <Package className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <strong className="text-xs sm:text-sm font-extrabold text-black block">
+                        {order.orderNumber || order.order_number}
+                      </strong>
+                      <span className="text-[10px] sm:text-[11px] text-gray-400">
+                        Placed on {orderDate}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <strong className="text-sm font-extrabold text-black block">
-                      {order.orderNumber || order.order_number}
-                    </strong>
-                    <span className="text-[11px] text-gray-400">
-                      Placed on {orderDate}
-                    </span>
-                  </div>
+                  <span className="font-extrabold text-sm text-black sm:hidden">
+                    {formatPrice(totalVal)}
+                  </span>
                 </div>
 
                 {/* Status Badge & Actions */}
-                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <Link
                     to={`/track/${order.orderNumber || order.order_number}`}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-200 hover:border-black text-gray-800 hover:text-black font-bold text-xs uppercase tracking-wider transition-colors"
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full border border-gray-200 hover:border-black text-gray-800 hover:text-black font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-colors"
                     title="Live Shipment Tracking"
                   >
-                    <Truck className="w-3.5 h-3.5" />
+                    <Truck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     <span>Track</span>
                   </Link>
 
                   <button
                     type="button"
                     onClick={() => handleBuyOrderAgain(order)}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-800 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-800 font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-colors cursor-pointer"
                     title="Add all items from this order back to your shopping bag"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
+                    <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     <span>Buy Again</span>
                   </button>
 
@@ -221,10 +226,10 @@ export const Orders: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleCancelOrder(order)}
-                      className="flex items-center gap-1 px-3 py-1 rounded-full bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-colors cursor-pointer"
                       title="Cancel Pending Order"
                     >
-                      <XCircle className="w-3.5 h-3.5" />
+                      <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       <span>Cancel</span>
                     </button>
                   )}
@@ -232,25 +237,25 @@ export const Orders: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setReceiptOrder(order)}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-colors cursor-pointer"
                     title="Print POS Thermal Receipt"
                   >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>POS Receipt</span>
+                    <Printer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    <span>Receipt</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setInvoiceOrder(order)}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-200 hover:border-black text-gray-700 hover:text-black font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full border border-gray-200 hover:border-black text-gray-700 hover:text-black font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-colors cursor-pointer"
                     title="Official Tax Invoice & Receipt"
                   >
-                    <Printer className="w-3.5 h-3.5" />
+                    <Printer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     <span>Invoice</span>
                   </button>
 
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                    className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1 ${
                       status === "Delivered"
                         ? "bg-emerald-50 text-emerald-700"
                         : status === "Cancelled"
@@ -259,15 +264,15 @@ export const Orders: React.FC = () => {
                     }`}
                   >
                     {status === "Delivered" ? (
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     ) : status === "Cancelled" ? (
-                      <XCircle className="w-3.5 h-3.5" />
+                      <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     ) : (
-                      <Clock className="w-3.5 h-3.5" />
+                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     )}
                     <span>{status}</span>
                   </span>
-                  <span className="font-extrabold text-sm text-black">
+                  <span className="font-extrabold text-sm text-black hidden sm:inline">
                     {formatPrice(totalVal)}
                   </span>
                 </div>

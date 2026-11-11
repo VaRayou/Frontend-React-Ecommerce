@@ -192,7 +192,7 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="space-y-20 sm:space-y-28 pb-20 overflow-hidden">
+    <div className="space-y-12 sm:space-y-24 pb-12 sm:pb-20 overflow-hidden">
       {/* =====================================================================
           1. CINEMATIC MULTI-SLIDE HERO SECTION + INTERACTIVE SPOTLIGHT STUDIO
           ===================================================================== */}
@@ -269,22 +269,22 @@ export const Home: React.FC = () => {
                   </p>
 
                   {/* Action CTAs */}
-                  <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                  <div className="pt-1 grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
                     <Link
                       to={spotlightProduct ? `/shop/${spotlightProduct.id}` : currentSlide.ctaPrimary.link}
-                      className="px-5 py-2.5 rounded-full bg-[#D6FF00] hover:bg-[#c6ef00] text-black text-[11px] font-black tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(214,255,0,0.25)] hover:scale-[1.02] active:scale-98 flex items-center justify-center gap-1.5 group"
+                      className="px-3.5 sm:px-5 py-2.5 rounded-full bg-[#D6FF00] hover:bg-[#c6ef00] text-black text-[10px] sm:text-[11px] font-black tracking-wider sm:tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(214,255,0,0.25)] hover:scale-[1.02] active:scale-98 flex items-center justify-center gap-1.5 group truncate"
                     >
-                      <span>
+                      <span className="truncate">
                         {spotlightProduct ? `Shop ${spotlightProduct.name}` : currentSlide.ctaPrimary.label}
                       </span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-3.5 h-3.5 shrink-0 group-hover:translate-x-1 transition-transform" />
                     </Link>
 
                     <Link
                       to="/shop"
-                      className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/25 text-[11px] font-black tracking-widest uppercase transition-all hover:scale-[1.02] flex items-center justify-center gap-1.5"
+                      className="px-3.5 sm:px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/25 text-[10px] sm:text-[11px] font-black tracking-wider sm:tracking-widest uppercase transition-all hover:scale-[1.02] flex items-center justify-center gap-1.5"
                     >
-                      <span>Explore All Pieces</span>
+                      <span>Explore All</span>
                     </Link>
                   </div>
                 </motion.div>
@@ -510,7 +510,7 @@ export const Home: React.FC = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           {categoriesList.slice(0, 6).map((cat, idx) => {
             const dynamicCount =
               productsList.filter((p) => normalizeCatKey(p.category) === normalizeCatKey(cat.name))
@@ -527,34 +527,35 @@ export const Home: React.FC = () => {
               >
                 <Link
                   to={`/shop?category=${cat.slug}`}
-                  className="group relative aspect-[4/5] rounded-3xl overflow-hidden bg-[#111111] flex flex-col justify-between p-5 sm:p-6 shadow-xs hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 block transform-gpu"
+                  className="group relative aspect-[3/4] sm:aspect-[4/5] rounded-2xl sm:rounded-3xl overflow-hidden bg-[#111111] flex flex-col justify-between p-3.5 sm:p-6 shadow-xs hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 block transform-gpu"
                 >
                   <img
                     src={cat.image}
                     alt={cat.name}
                     loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108 opacity-90"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/15 group-hover:from-black/95 transition-colors" />
 
                   <div className="relative z-10 flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[10px] font-black text-[#D6FF00] tracking-widest uppercase">
+                    <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-black text-[#D6FF00] tracking-wider sm:tracking-widest uppercase">
                       {dynamicCount} {dynamicCount === 1 ? "Piece" : "Pieces"}
                     </span>
-                    <div className="w-9 h-9 rounded-full bg-white/15 backdrop-blur-md border border-white/20 group-hover:bg-[#D6FF00] group-hover:border-[#D6FF00] text-white group-hover:text-black flex items-center justify-center transition-all duration-300">
-                      <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/15 backdrop-blur-md border border-white/20 group-hover:bg-[#D6FF00] group-hover:border-[#D6FF00] text-white group-hover:text-black flex items-center justify-center transition-all duration-300">
+                      <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     </div>
                   </div>
 
-                  <div className="relative z-10 text-white space-y-1">
-                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300 block">
-                      Atelier Department 0{idx + 1}
+                  <div className="relative z-10 text-white space-y-0.5 sm:space-y-1">
+                    <span className="text-[8px] sm:text-[10px] font-bold tracking-[0.16em] sm:tracking-[0.2em] uppercase text-gray-300 block">
+                      Dept 0{idx + 1}
                     </span>
-                    <h3 className="font-black text-xl sm:text-2xl tracking-tight uppercase leading-none">
+                    <h3 className="font-black text-base sm:text-2xl tracking-tight uppercase leading-none truncate">
                       {cat.name}
                     </h3>
                     {cat.description && (
-                      <p className="text-xs text-gray-300 line-clamp-1 pt-0.5 font-light">
+                      <p className="text-[10px] sm:text-xs text-gray-300 line-clamp-1 pt-0.5 font-light hidden xs:block">
                         {cat.description}
                       </p>
                     )}
@@ -587,7 +588,7 @@ export const Home: React.FC = () => {
           </div>
 
           {/* Animated Motion Filter Pills */}
-          <div className="flex flex-wrap gap-1.5 p-1.5 rounded-full bg-white border border-gray-200/80 shadow-2xs w-fit">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-white border border-gray-200/80 shadow-2xs max-w-full overflow-x-auto no-scrollbar sm:flex-wrap sm:w-fit">
             {filterTabs.map((tab) => {
               const isActive = activeTab === tab;
               return (
@@ -595,7 +596,7 @@ export const Home: React.FC = () => {
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`relative px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider transition-colors cursor-pointer z-10 ${
+                  className={`relative px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-extrabold uppercase tracking-wider transition-colors cursor-pointer z-10 shrink-0 whitespace-nowrap ${
                     isActive ? "text-[#D6FF00]" : "text-gray-600 hover:text-black"
                   }`}
                 >
@@ -644,9 +645,9 @@ export const Home: React.FC = () => {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         >
-          <div className="relative rounded-3xl overflow-hidden bg-[#111111] text-white grid grid-cols-1 lg:grid-cols-12 min-h-[540px] shadow-2xl border border-neutral-800">
+          <div className="relative rounded-3xl overflow-hidden bg-[#111111] text-white grid grid-cols-1 lg:grid-cols-12 min-h-[480px] sm:min-h-[540px] shadow-2xl border border-neutral-800">
             {/* Left Editorial Narrative & Selected Look Product Card (6 Cols) */}
-            <div className="lg:col-span-6 p-8 sm:p-12 md:p-14 flex flex-col justify-between space-y-8 z-10">
+            <div className="lg:col-span-6 p-5 sm:p-10 md:p-14 flex flex-col justify-between space-y-6 sm:space-y-8 z-10">
               <div className="space-y-4">
                 <span className="px-3.5 py-1 rounded-full bg-[#D6FF00] text-black font-black text-[11px] tracking-widest uppercase inline-block w-fit">
                   Interactive Lookbook • AW26
@@ -716,29 +717,29 @@ export const Home: React.FC = () => {
               </AnimatePresence>
 
               {/* Look Selector Pills */}
-              <div className="flex items-center gap-3 pt-1">
+              <div className="flex items-center gap-2 sm:gap-3 pt-1 overflow-x-auto no-scrollbar max-w-full pb-1">
                 {lookbookProducts.map((lp, idx) => (
                   <button
                     key={lp.id}
                     type="button"
                     onClick={() => setActiveHotspot(idx)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+                    className={`px-3 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                       activeHotspot === idx
-                        ? "bg-white text-black shadow-md scale-105"
+                        ? "bg-white text-black shadow-md scale-102"
                         : "bg-white/10 text-gray-300 hover:bg-white/20"
                     }`}
                   >
-                    <span className="w-4 h-4 rounded-full bg-black text-[#D6FF00] text-[10px] font-black flex items-center justify-center">
+                    <span className="w-4 h-4 rounded-full bg-black text-[#D6FF00] text-[10px] font-black flex items-center justify-center shrink-0">
                       {idx + 1}
                     </span>
-                    <span className="truncate max-w-[110px]">{lp.name}</span>
+                    <span className="truncate max-w-[95px] sm:max-w-[110px]">{lp.name}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Right Interactive Image with Pulsing Hotspot Pins (6 Cols) */}
-            <div className="lg:col-span-6 relative min-h-[380px] lg:min-h-full overflow-hidden group">
+            <div className="lg:col-span-6 relative min-h-[300px] sm:min-h-[380px] lg:min-h-full overflow-hidden group">
               <AnimatePresence initial={false}>
                 <motion.img
                   key={`look-img-${selectedLookProduct.id}`}
@@ -824,64 +825,64 @@ export const Home: React.FC = () => {
         transition={{ duration: 0.65 }}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       >
-        <div className="rounded-3xl bg-white border border-gray-200/80 p-8 sm:p-12 shadow-xs">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="space-y-2">
-              <div className="w-11 h-11 rounded-2xl bg-[#111111] text-[#D6FF00] flex items-center justify-center">
-                <Award className="w-5 h-5" />
+        <div className="rounded-3xl bg-white border border-gray-200/80 p-5 sm:p-12 shadow-xs">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-8">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-[#111111] text-[#D6FF00] flex items-center justify-center">
+                <Award className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="text-2xl sm:text-3xl font-black text-black block pt-1">
+              <span className="text-lg sm:text-3xl font-black text-black block pt-1">
                 100% Traceable
               </span>
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-900">
-                OEKO-TEX® Certified Fabrics
+              <h4 className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-gray-900">
+                OEKO-TEX® Fabrics
               </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-3 sm:line-clamp-none">
                 Every virgin wool, organic silk, and calfskin hide is ethically sourced from family-owned mills in Biella and Florence.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <div className="w-11 h-11 rounded-2xl bg-[#111111] text-[#D6FF00] flex items-center justify-center">
-                <QrCode className="w-5 h-5" />
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-[#111111] text-[#D6FF00] flex items-center justify-center">
+                <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="text-2xl sm:text-3xl font-black text-black block pt-1">
+              <span className="text-lg sm:text-3xl font-black text-black block pt-1">
                 Instant KHQR
               </span>
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-900">
-                NBC Bakong Direct Clearing
+              <h4 className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-gray-900">
+                NBC Bakong Direct
               </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-3 sm:line-clamp-none">
                 Seamless dual-currency ($ USD &amp; ៛ KHR) EMVCo QR settlement with real-time cryptographic verification and thermal receipts.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <div className="w-11 h-11 rounded-2xl bg-[#111111] text-[#D6FF00] flex items-center justify-center">
-                <Globe className="w-5 h-5" />
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-[#111111] text-[#D6FF00] flex items-center justify-center">
+                <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="text-2xl sm:text-3xl font-black text-black block pt-1">
+              <span className="text-lg sm:text-3xl font-black text-black block pt-1">
                 24h Dispatch
               </span>
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-900">
-                White-Glove Global Courier
+              <h4 className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-gray-900">
+                Global Courier
               </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-3 sm:line-clamp-none">
                 Orders are inspected, steamed, and sealed in signature garment vaults with live milestone tracking from warehouse to door.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <div className="w-11 h-11 rounded-2xl bg-[#111111] text-[#D6FF00] flex items-center justify-center">
-                <Star className="w-5 h-5" />
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-[#111111] text-[#D6FF00] flex items-center justify-center">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="text-2xl sm:text-3xl font-black text-black block pt-1">
+              <span className="text-lg sm:text-3xl font-black text-black block pt-1">
                 4.9 / 5.0 ★
               </span>
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-900">
-                Verified Patron Satisfaction
+              <h4 className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-gray-900">
+                Patron Satisfaction
               </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-3 sm:line-clamp-none">
                 Trusted by discerning collectors across Paris, Phnom Penh, Tokyo, and New York with 24/7 private styling support.
               </p>
             </div>

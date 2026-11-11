@@ -342,9 +342,9 @@ export const ProductDetails: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-16">
       {/* Breadcrumb Navigation */}
-      <nav className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-8 flex items-center gap-2">
+      <nav className="text-[11px] sm:text-xs text-gray-400 font-semibold uppercase tracking-wider mb-5 sm:mb-8 flex flex-wrap items-center gap-1.5 sm:gap-2">
         <Link to="/" className="hover:text-black transition-colors">Home</Link>
         <span>/</span>
         <Link to="/shop" className="hover:text-black transition-colors">Shop</Link>
@@ -353,16 +353,16 @@ export const ProductDetails: React.FC = () => {
           {product.category}
         </Link>
         <span>/</span>
-        <span className="text-black truncate max-w-xs">{product.name}</span>
+        <span className="text-black truncate max-w-[180px] sm:max-w-xs">{product.name}</span>
       </nav>
 
       {/* Main Product Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 lg:gap-14 items-start">
         {/* Left: Gallery Showcase (7 Cols) */}
-        <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4">
+        <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-3 sm:gap-4">
           {/* Thumbnails Sidebar */}
           {product.images.length > 1 && (
-            <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-visible shrink-0 pb-2 md:pb-0">
+            <div className="flex md:flex-col gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar md:overflow-visible shrink-0 pb-1 md:pb-0">
               {product.images.map((img, idx) => (
                 <button
                   key={idx}

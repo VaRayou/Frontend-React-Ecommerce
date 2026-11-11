@@ -134,14 +134,14 @@ export const TrackOrder: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10">
+    <div className="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16 space-y-6 sm:space-y-10">
       {/* Page Header */}
-      <div className="text-center max-w-xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black text-[#D6FF00] text-[11px] font-black uppercase tracking-widest">
+      <div className="text-center max-w-xl mx-auto space-y-2.5 sm:space-y-3">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black text-[#D6FF00] text-[10px] sm:text-[11px] font-black uppercase tracking-widest">
           <Truck className="w-3.5 h-3.5" />
           <span>Real-Time Logistics Tracker</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-black uppercase tracking-tight">
+        <h1 className="text-2xl sm:text-4xl font-black text-black uppercase tracking-tight">
           Track Your Runway Order
         </h1>
         <p className="text-xs sm:text-sm text-gray-500 font-light">
@@ -153,24 +153,24 @@ export const TrackOrder: React.FC = () => {
       <div className="max-w-2xl mx-auto">
         <form
           onSubmit={handleSubmit}
-          className="flex items-center bg-white p-2 rounded-2xl border-2 border-gray-200 focus-within:border-black shadow-lg transition-all gap-2"
+          className="flex flex-col xs:flex-row items-stretch xs:items-center bg-white p-2 rounded-2xl border-2 border-gray-200 focus-within:border-black shadow-lg transition-all gap-2"
         >
-          <div className="pl-3 text-gray-400">
-            <Search className="w-5 h-5" />
+          <div className="flex items-center flex-1 gap-2 px-2">
+            <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Enter Order ID (ATL-2026-...) or Email..."
+              className="flex-1 py-2 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 bg-transparent focus:outline-hidden font-medium min-w-0"
+            />
           </div>
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Enter Order ID (ATL-2026-...) or Patron Email..."
-            className="flex-1 py-2 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 bg-transparent focus:outline-hidden font-medium"
-          />
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3 bg-black hover:bg-neutral-800 text-[#D6FF00] font-black text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shrink-0"
+            className="px-5 sm:px-6 py-2.5 sm:py-3 bg-black hover:bg-neutral-800 text-[#D6FF00] font-black text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
           >
-            {loading ? "Searching..." : "Track Package"}
+            {loading ? "Searching..." : "Track"}
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </form>
@@ -226,18 +226,18 @@ export const TrackOrder: React.FC = () => {
           </div>
 
           {/* Visual Milestone Stepper */}
-          <div className="py-4">
-            <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-6">
+          <div className="py-2 sm:py-4">
+            <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-4 sm:mb-6">
               Dispatch Milestones
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 relative">
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3.5 sm:gap-4 relative">
               {steps.map((st, idx) => {
                 const Icon = st.icon;
                 const isCompleted = currentStep >= st.step;
                 const isCurrent = currentStep === st.step;
 
                 return (
-                  <div key={idx} className="relative flex flex-col items-center text-center space-y-2.5">
+                  <div key={idx} className="relative flex flex-row sm:flex-col items-center text-left sm:text-center gap-3.5 sm:gap-0 sm:space-y-2.5">
                     {/* Connecting line on desktop */}
                     {idx < steps.length - 1 && (
                       <div
@@ -248,13 +248,13 @@ export const TrackOrder: React.FC = () => {
                     )}
 
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold z-10 transition-all ${
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold z-10 shrink-0 transition-all ${
                         isCompleted
                           ? "bg-black text-[#D6FF00] ring-4 ring-black/10 shadow-md"
                           : "bg-gray-100 text-gray-400"
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
 
                     <div>
