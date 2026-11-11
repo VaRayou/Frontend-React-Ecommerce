@@ -1,120 +1,109 @@
-import api from "./api";
-import { initialUsers } from "../data/demoUsers.js";
+import { supabase } from "./supabase";
+import { ensureAdminSession } from "./productService";
 
-const USERS_STORAGE_KEY = "eshopper_users";
+const USERS_STORAGE_KEY = "atelier_users_v3";
 
-const getUsersStorage = () => {
-  const stored = localStorage.getItem(USERS_STORAGE_KEY);
-  if (!stored) {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-    return initialUsers;
-  }
-  try {
-    return JSON.parse(stored);
-  } catch {
-    return initialUsers;
-  }
-};
-
-const saveUsersStorage = (users) => {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-};
+const formatUser = (u) => ({
+  id: String(u.id),
+  name: u.full_name || u.name || (u.email ? u.email.split("@")[0] : "Patron"),
+  email: u.email || "",
+  phone: u.phone || "",
+  avatar: u.avatar_url || u.avatar || "/admin/img/avatars/avatar-2.jpg",
+  role: u.role || "customer",
+  status: u.status || "Active",
+  registeredDate: u.created_at ? String(u.created_at).split("T")[0] : new Date().toISOString().split("T")[0],
+  shippingAddress: u.shipping_address || {},
+});
 
 export const userService = {
   getUsers: async () => {
     try {
-      const response = await api.get("/users/");
-      return response.data;
+      await ensureAdminSession();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data.map(formatUser);
+      }
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      return getUsersStorage().map((u) => {
-        const safe = { ...u };
-        delete safe.password;
-        return safe;
-      });
+      console.warn("[Supabase] getUsers note:", err.message);
     }
+    return [];
   },
 
   getUserById: async (id) => {
     try {
-      const response = await api.get(`/users/${id}/`);
-      return response.data;
+      await ensureAdminSession();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (!error && data) return formatUser(data);
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getUsersStorage();
-      const user = list.find((u) => String(u.id) === String(id));
-      if (!user) throw new Error("User not found");
-      const safe = { ...user };
-      delete safe.password;
-      return safe;
+      console.warn("[Supabase] getUserById note:", err.message);
     }
+    throw new Error("User not found");
   },
 
   createUser: async (userData) => {
     try {
-      const response = await api.post("/users/", userData);
-      return response.data;
+      await ensureAdminSession();
+      const { data, error } = await supabase.from("profiles").insert([
+        {
+          full_name: userData.name,
+          email: userData.email,
+          phone: userData.phone || "",
+          role: userData.role || "customer",
+          status: userData.status || "Active",
+          avatar_url: userData.avatar || "/admin/img/avatars/avatar-2.jpg",
+        },
+      ]).select().single();
+
+      if (error) throw error;
+      return formatUser(data);
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getUsersStorage();
-      const exists = list.some(
-        (u) => u.email.toLowerCase() === userData.email.trim().toLowerCase()
-      );
-      if (exists) throw new Error("User with this email already exists");
-
-      const newUser = {
-        id: Date.now(),
-        name: userData.name,
-        email: userData.email,
-        password: userData.password || "password123",
-        role: userData.role || "customer",
-        phone: userData.phone || "+1 (555) 000-0000",
-        address: userData.address || "123 Main Street",
-        city: userData.city || "New York",
-        country: userData.country || "United States",
-        status: userData.status || "Active",
-        registeredDate: new Date().toISOString().split("T")[0],
-        avatar: "/admin/img/avatars/avatar-2.jpg",
-      };
-
-      list.unshift(newUser);
-      saveUsersStorage(list);
-
-      const safe = { ...newUser };
-      delete safe.password;
-      return safe;
+      console.error("[Supabase] createUser error:", err.message);
+      throw err;
     }
   },
 
   updateUser: async (id, updatedFields) => {
     try {
-      const response = await api.put(`/users/${id}/`, updatedFields);
-      return response.data;
+      await ensureAdminSession();
+      const patch = {};
+      if (updatedFields.name !== undefined) patch.full_name = updatedFields.name;
+      if (updatedFields.phone !== undefined) patch.phone = updatedFields.phone;
+      if (updatedFields.role !== undefined) patch.role = updatedFields.role;
+      if (updatedFields.status !== undefined) patch.status = updatedFields.status;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .update(patch)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return formatUser(data);
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getUsersStorage();
-      const index = list.findIndex((u) => String(u.id) === String(id));
-      if (index === -1) throw new Error("User not found");
-
-      list[index] = { ...list[index], ...updatedFields };
-      saveUsersStorage(list);
-
-      const safe = { ...list[index] };
-      delete safe.password;
-      return safe;
+      console.error("[Supabase] updateUser error:", err.message);
+      throw err;
     }
   },
 
   deleteUser: async (id) => {
     try {
-      await api.delete(`/users/${id}/`);
+      await ensureAdminSession();
+      const { error } = await supabase.from("profiles").delete().eq("id", id);
+      if (error) throw error;
       return true;
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getUsersStorage();
-      const filtered = list.filter((p) => String(p.id) !== String(id));
-      saveUsersStorage(filtered);
-      return true;
+      console.error("[Supabase] deleteUser error:", err.message);
+      throw err;
     }
   },
 };

@@ -1,55 +1,36 @@
-import api from "./api";
-import { initialOrders } from "../data/demoOrders.js";
+import { supabase } from "./supabase";
+import { ensureAdminSession } from "./productService";
 
-const ORDERS_STORAGE_KEY = "eshopper_orders";
-const AUTH_STORAGE_KEY = "atelier_auth_v3";
-
-// Known legacy demo order identifiers to actively purge so only real orders appear
-const DEMO_ORDER_NUMBERS = new Set([
-  "ORD-9021",
-  "ORD-9022",
-  "ORD-9023",
-  "ORD-9024",
-  "ord-9821",
-  "ord-8710",
-  "101",
-  "102",
-  "103",
-  "104",
-]);
+const ORDERS_STORAGE_KEY = "atelier_orders_v3";
 
 /**
- * Checks if an order is a sample/demo seed order.
- * Any real order created during checkout (e.g. starting with "ATL-") is NEVER considered demo.
- */
-export const isDemoOrder = (order) => {
-  if (!order) return true;
-  const num = String(order.orderNumber || order.order_number || order.id || "").trim();
-  if (num.startsWith("ATL-")) return false;
-  return DEMO_ORDER_NUMBERS.has(num);
-};
-
-/**
- * Normalizes an order from any source (Django API, useAuthStore, or client storage)
- * so that both frontend components (ManageOrders & Customer Orders) can access all required fields safely.
+ * Normalizes an order record from Supabase or memory for frontend consumption
  */
 export const normalizeOrder = (order, idx = 0) => {
   if (!order) return null;
 
-  const rawId = order.id || order._id || `ord-${Date.now()}-${idx}`;
+  const rawId = String(order.id || order._id || `ord-${Date.now()}-${idx}`);
   const orderNumber =
-    order.orderNumber ||
     order.order_number ||
+    order.orderNumber ||
     (order.id ? `ORD-${order.id}` : `ATL-${Date.now().toString().slice(-6)}`);
 
   // Customer info extraction
-  let customerName = order.customerName || order.customer_name;
-  let customerEmail = order.customerEmail || order.customer_email;
-  let customerPhone = order.customerPhone || order.customer_phone;
+  let customerName = order.customer_name || order.customerName;
+  let customerEmail = order.customer_email || order.customerEmail;
+  let customerPhone = order.customer_phone || order.customerPhone;
   let shippingAddressStr = "";
 
-  if (typeof order.shippingAddress === "string") {
+  if (typeof order.shipping_address === "string") {
+    shippingAddressStr = order.shipping_address;
+  } else if (typeof order.shippingAddress === "string") {
     shippingAddressStr = order.shippingAddress;
+  } else if (order.shipping_address && typeof order.shipping_address === "object") {
+    const sa = order.shipping_address;
+    customerName = customerName || sa.fullName || sa.name;
+    customerEmail = customerEmail || sa.email;
+    customerPhone = customerPhone || sa.phone;
+    shippingAddressStr = [sa.street, sa.city, sa.postalCode, sa.country].filter(Boolean).join(", ");
   } else if (order.shippingAddress && typeof order.shippingAddress === "object") {
     const sa = order.shippingAddress;
     customerName = customerName || sa.fullName || sa.name;
@@ -66,72 +47,60 @@ export const normalizeOrder = (order, idx = 0) => {
   // Date normalization
   const dateStr =
     order.date ||
-    (order.createdAt ? String(order.createdAt).split("T")[0] : new Date().toISOString().split("T")[0]);
-  const createdAtStr =
-    order.createdAt || (order.date ? new Date(order.date).toISOString() : new Date().toISOString());
+    (order.created_at ? String(order.created_at).split("T")[0] : new Date().toISOString().split("T")[0]);
+  const createdAtStr = order.created_at || order.createdAt || new Date().toISOString();
 
   // Statuses
-  const orderStatus =
-    order.orderStatus || order.order_status || order.status || "Processing";
-  const paymentMethod =
-    order.paymentMethod || order.payment_method || "Bakong KHQR";
-  let paymentStatus =
-    order.paymentStatus || order.payment_status;
-  if (!paymentStatus) {
-    paymentStatus =
-      paymentMethod.toLowerCase().includes("khqr") ||
-      paymentMethod.toLowerCase().includes("paypal") ||
-      paymentMethod.toLowerCase().includes("transfer") ||
-      paymentMethod.toLowerCase().includes("card")
-        ? "Paid"
-        : "Pending";
-  }
+  const orderStatus = order.order_status || order.orderStatus || order.status || "Processing";
+  const paymentMethod = order.payment_method || order.paymentMethod || "Bakong KHQR";
+  const paymentStatus = order.payment_status || order.paymentStatus || "Paid";
 
-  // Items normalization
-  const rawItems = Array.isArray(order.items) ? order.items : [];
-  const items = rawItems.map((item, itemIdx) => {
-    const name =
-      item.name ||
-      item.productName ||
-      item.product_name ||
-      item.title ||
-      "Fashion Piece";
-    const price = Number(item.price) || 0;
-    const quantity = Number(item.quantity) || 1;
-    const image =
-      item.image ||
-      item.images?.[0] ||
-      "/user/images/home/product1.jpg";
-    const size = item.size || item.selectedSize || "M";
-    const color =
-      typeof item.color === "object" && item.color?.name
-        ? item.color.name
-        : (item.color || "Standard");
+  // Order Items normalization
+  const rawItems = order.order_items || order.items || [];
+  const items = Array.isArray(rawItems)
+    ? rawItems.map((item, iIdx) => {
+        const pId = String(item.product_id || item.productId || item.id || `item-${iIdx}`);
+        const pName = item.product_name || item.productName || item.name || "Haute Couture Piece";
+        const price = Number(item.price || 0);
+        const qty = Number(item.quantity || 1);
+        const itemSubtotal = Number(item.subtotal || price * qty);
+        const img = item.image || (Array.isArray(item.images) && item.images[0]) || "/uploads/8a82fc7bb76c.jpg";
+        const size = item.size || item.selected_size || item.selectedSize || "M";
+        const color =
+          item.color ||
+          (typeof item.selected_color === "string"
+            ? item.selected_color
+            : item.selectedColor?.name || "Obsidian Black");
 
-    return {
-      id: item.id || item.productId || `item-${itemIdx}`,
-      productId: item.productId || item.id || `prod-${itemIdx}`,
-      name,
-      productName: name,
-      price,
-      quantity,
-      image,
-      size,
-      color,
-    };
-  });
+        return {
+          id: String(item.id || `item-${iIdx}`),
+          productId: pId,
+          product_id: pId,
+          productName: pName,
+          product_name: pName,
+          name: pName,
+          price,
+          quantity: qty,
+          subtotal: itemSubtotal,
+          image: img,
+          size,
+          color,
+        };
+      })
+    : [];
 
   const total = Number(order.total) || 0;
   const subtotal = Number(order.subtotal) || total;
-  const shippingFee = Number(order.shippingFee ?? order.shipping ?? 0);
+  const shippingFee = Number(order.shipping_fee ?? order.shippingFee ?? 0);
   const tax = Number(order.tax) || 0;
+  const discount = Number(order.discount) || 0;
 
   return {
     id: rawId,
     _id: rawId,
     orderNumber,
     order_number: orderNumber,
-    customerId: order.customerId || order.customer_id || null,
+    customerId: order.customer_id || order.customerId || null,
     customerName,
     customer_name: customerName,
     customerEmail,
@@ -139,13 +108,19 @@ export const normalizeOrder = (order, idx = 0) => {
     customerPhone,
     customer_phone: customerPhone,
     shippingAddress: shippingAddressStr,
+    shipping_address: order.shipping_address || { street: shippingAddressStr },
     date: dateStr,
     createdAt: createdAtStr,
+    created_at: createdAtStr,
     items,
+    order_items: items,
     subtotal,
     shippingFee,
+    shipping_fee: shippingFee,
     tax,
+    discount,
     total,
+    currency: order.currency || "USD",
     paymentMethod,
     payment_method: paymentMethod,
     paymentStatus,
@@ -157,415 +132,297 @@ export const normalizeOrder = (order, idx = 0) => {
   };
 };
 
-/**
- * Reads and merges orders from all local client storage keys,
- * automatically filtering out demo orders.
- */
-const getLocalMergedOrders = () => {
-  const mergedMap = new Map();
+let _memoryOrders = null;
 
-  // 1. Initial orders (clean empty array in real mode)
-  if (Array.isArray(initialOrders)) {
-    for (const demo of initialOrders) {
-      if (isDemoOrder(demo)) continue;
-      const norm = normalizeOrder(demo);
-      if (norm && !isDemoOrder(norm)) mergedMap.set(norm.orderNumber, norm);
-    }
-  }
-
-  // 2. eshopper_orders (clean out demo entries if present)
-  let cleanedEshopper = false;
+const getOrdersStorage = () => {
+  if (_memoryOrders && _memoryOrders.length > 0) return _memoryOrders;
   try {
-    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        for (const o of parsed) {
-          if (isDemoOrder(o)) {
-            cleanedEshopper = true;
-            continue;
-          }
-          const norm = normalizeOrder(o);
-          if (norm && !isDemoOrder(norm)) mergedMap.set(norm.orderNumber, norm);
-        }
+    const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        _memoryOrders = parsed.map(normalizeOrder);
+        return _memoryOrders;
       }
     }
-  } catch (e) {
-    console.warn("Failed reading eshopper_orders:", e);
-  }
-
-  // 3. atelier_auth_v2 (clean out demo entries if present)
-  let cleanedAuth = false;
-  try {
-    const authStored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (authStored) {
-      const parsedAuth = JSON.parse(authStored);
-      const authOrders = parsedAuth?.state?.orders;
-      if (Array.isArray(authOrders)) {
-        const remainingAuth = [];
-        for (const o of authOrders) {
-          if (isDemoOrder(o)) {
-            cleanedAuth = true;
-            continue;
-          }
-          remainingAuth.push(o);
-          const norm = normalizeOrder(o);
-          if (norm && !isDemoOrder(norm)) {
-            const existing = mergedMap.get(norm.orderNumber);
-            mergedMap.set(norm.orderNumber, existing ? { ...existing, ...norm } : norm);
-          }
-        }
-        if (cleanedAuth) {
-          parsedAuth.state.orders = remainingAuth;
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsedAuth));
-        }
-      }
-    }
-  } catch (e) {
-    console.warn("Failed reading atelier_auth_v2 orders:", e);
-  }
-
-  const list = Array.from(mergedMap.values()).filter((o) => !isDemoOrder(o));
-  if (cleanedEshopper) {
-    saveOrdersStorage(list);
-  }
-
-  list.sort((a, b) => {
-    const timeA = new Date(a.createdAt || a.date).getTime() || 0;
-    const timeB = new Date(b.createdAt || b.date).getTime() || 0;
-    return timeB - timeA;
-  });
-
-  return list;
+  } catch {}
+  return [];
 };
 
-/**
- * Saves orders list back to localStorage.
- */
 const saveOrdersStorage = (orders) => {
+  _memoryOrders = orders;
   try {
-    const cleanList = orders.filter((o) => !isDemoOrder(o));
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(cleanList));
-  } catch (e) {
-    console.warn("Failed writing eshopper_orders:", e);
-  }
-};
-
-/**
- * Syncs an order into atelier_auth_v2 so Customer Orders (/orders) stays in sync.
- */
-const syncToAuthStore = (order) => {
-  if (isDemoOrder(order)) return;
-  try {
-    const authStored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (authStored) {
-      const parsedAuth = JSON.parse(authStored);
-      if (parsedAuth && parsedAuth.state) {
-        const currentOrders = (parsedAuth.state.orders || []).filter((o) => !isDemoOrder(o));
-        const exists = currentOrders.some((o) => o.orderNumber === order.orderNumber);
-        if (!exists) {
-          parsedAuth.state.orders = [order, ...currentOrders];
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsedAuth));
-        }
-      }
-    }
-  } catch (e) {
-    console.warn("Failed syncing to atelier_auth_v2:", e);
-  }
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  } catch {}
 };
 
 export const orderService = {
   /**
-   * Retrieves real customer orders across backend and client storage.
+   * Retrieves all customer orders directly from Supabase
    */
   getOrders: async () => {
-    const localOrders = getLocalMergedOrders();
-    const orderMap = new Map();
-
-    // Seed map with real local orders
-    for (const o of localOrders) {
-      if (!isDemoOrder(o)) {
-        orderMap.set(o.orderNumber, o);
-      }
-    }
-
     try {
-      const response = await api.get("/orders/");
-      if (Array.isArray(response.data)) {
-        for (const backendOrder of response.data) {
-          if (isDemoOrder(backendOrder)) continue;
-          const norm = normalizeOrder(backendOrder);
-          if (norm && !isDemoOrder(norm)) {
-            const existing = orderMap.get(norm.orderNumber);
-            orderMap.set(norm.orderNumber, existing ? { ...existing, ...norm } : norm);
-          }
-        }
+      await ensureAdminSession();
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.warn("[Supabase] getOrders note:", error.message);
+      } else if (Array.isArray(data)) {
+        const normalized = data.map(normalizeOrder);
+        saveOrdersStorage(normalized);
+        return normalized;
       }
+      return getOrdersStorage();
     } catch (err) {
-      console.warn("Backend API offline or unreachable, using unified real local storage:", err.message);
+      console.warn("[Supabase] getOrders exception:", err.message);
+      return getOrdersStorage();
     }
-
-    const mergedList = Array.from(orderMap.values()).filter((o) => !isDemoOrder(o));
-    mergedList.sort((a, b) => {
-      const timeA = new Date(a.createdAt || a.date).getTime() || 0;
-      const timeB = new Date(b.createdAt || b.date).getTime() || 0;
-      return timeB - timeA;
-    });
-
-    saveOrdersStorage(mergedList);
-    return mergedList;
   },
 
+  /**
+   * Retrieves a single order by UUID or orderNumber
+   */
   getOrderById: async (id) => {
+    if (!id) return null;
+    const cleanId = String(id).trim();
+
     try {
-      const response = await api.get(`/orders/${id}/`);
-      const norm = normalizeOrder(response.data);
-      if (norm && !isDemoOrder(norm)) return norm;
-      throw new Error("Order not found");
+      await ensureAdminSession();
+      const isUUID = cleanId.includes("-") && cleanId.length > 20;
+
+      let query = supabase.from("orders").select("*, order_items(*)");
+      if (isUUID) {
+        query = query.eq("id", cleanId);
+      } else {
+        query = query.eq("order_number", cleanId);
+      }
+
+      const { data, error } = await query.maybeSingle();
+      if (!error && data) {
+        return normalizeOrder(data);
+      }
     } catch (err) {
-      console.warn("Backend API offline, searching local storage:", err.message);
-      const orders = getLocalMergedOrders();
-      const order = orders.find(
-        (o) => String(o.id) === String(id) || o.orderNumber === String(id)
-      );
-      if (!order || isDemoOrder(order)) throw new Error("Order not found", { cause: err });
-      return order;
+      console.warn("[Supabase] getOrderById note:", err.message);
     }
+
+    const cached = getOrdersStorage();
+    const found = cached.find((o) => o.id === cleanId || o.orderNumber === cleanId);
+    if (found) return found;
+
+    throw new Error(`Order not found: ${cleanId}`);
   },
 
+  /**
+   * Retrieves all orders for a specific customer email
+   */
   getOrdersByCustomer: async (customerEmail) => {
     if (!customerEmail) return [];
     const targetEmail = String(customerEmail).trim().toLowerCase();
-    const all = await orderService.getOrders();
-    return all.filter((o) => {
-      const email = String(
-        o.customerEmail || o.customer_email || o.shippingAddress?.email || ""
-      )
-        .trim()
-        .toLowerCase();
-      return email === targetEmail;
-    });
+
+    try {
+      await ensureAdminSession();
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .ilike("customer_email", targetEmail)
+        .order("created_at", { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        return data.map(normalizeOrder);
+      }
+    } catch (err) {
+      console.warn("[Supabase] getOrdersByCustomer note:", err.message);
+    }
+
+    const cached = getOrdersStorage();
+    return cached.filter((o) => (o.customerEmail || "").toLowerCase() === targetEmail);
   },
 
   /**
-   * Creates a real order, immediately persisting to client cache & syncing to backend.
+   * Creates a new customer order and its order_items directly in Supabase
    */
   createOrder: async (orderData) => {
-    // 1. Normalize order data immediately
-    const normalized = normalizeOrder({
-      ...orderData,
-      id: orderData.id || `ord-${Date.now()}`,
-      orderNumber:
-        orderData.orderNumber ||
-        orderData.order_number ||
-        `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      createdAt: orderData.createdAt || new Date().toISOString(),
-      date: orderData.date || new Date().toISOString().split("T")[0],
-      orderStatus: orderData.orderStatus || orderData.status || "Processing",
-      paymentStatus:
-        orderData.paymentStatus ||
-        (orderData.paymentMethod === "QR Payment" || orderData.paymentMethod === "Bakong KHQR"
-          ? "Paid"
-          : "Pending"),
-    });
-
-    // 2. Persist locally first so UI and Admin DataTable have it instantly (0ms delay)
-    const localOrders = getLocalMergedOrders();
-    const updatedLocal = [normalized, ...localOrders.filter((o) => o.orderNumber !== normalized.orderNumber)];
-    saveOrdersStorage(updatedLocal);
-    syncToAuthStore(normalized);
-
-    // Notify any open components in the application
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("atelier_order_updated", { detail: normalized }));
-    }
-
-    // 3. Attempt syncing with backend DRF API
     try {
-      const response = await api.post("/orders/", {
-        orderNumber: normalized.orderNumber,
-        customerName: normalized.customerName,
-        customerEmail: normalized.customerEmail,
-        customerPhone: normalized.customerPhone,
-        shippingAddress: normalized.shippingAddress,
-        items: normalized.items.map((it) => ({
-          id: it.id,
-          productId: it.productId || it.id,
-          name: it.name,
-          productName: it.productName || it.name,
-          price: it.price,
-          quantity: it.quantity,
-          image: it.image,
-          size: it.size,
-          color: it.color,
-        })),
-        subtotal: normalized.subtotal,
-        shippingFee: normalized.shippingFee,
-        tax: normalized.tax,
-        total: normalized.total,
-        paymentMethod: normalized.paymentMethod,
-        paymentStatus: normalized.paymentStatus,
-        orderStatus: normalized.orderStatus,
-        notes: normalized.notes,
-      });
+      await ensureAdminSession();
 
-      if (response?.data) {
-        const syncedOrder = normalizeOrder(response.data);
-        const finalList = updatedLocal.map((o) =>
-          o.orderNumber === normalized.orderNumber ? { ...o, ...syncedOrder } : o
-        );
-        saveOrdersStorage(finalList);
-        return syncedOrder;
+      const orderNumber =
+        orderData.order_number ||
+        orderData.orderNumber ||
+        `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const shippingAddressObj =
+        typeof orderData.shipping_address === "object"
+          ? orderData.shipping_address
+          : typeof orderData.shippingAddress === "object"
+          ? orderData.shippingAddress
+          : { street: String(orderData.shippingAddress || "Phnom Penh") };
+
+      const total = Number(orderData.total || 0);
+      const subtotal = Number(orderData.subtotal ?? total);
+      const shippingFee = Number(orderData.shipping_fee ?? orderData.shippingFee ?? 0);
+      const tax = Number(orderData.tax || 0);
+      const discount = Number(orderData.discount || 0);
+
+      const orderRow = {
+        order_number: orderNumber,
+        customer_id: orderData.customerId || orderData.customer_id || null,
+        customer_name: orderData.customerName || orderData.customer_name || "Patron Client",
+        customer_email: orderData.customerEmail || orderData.customer_email || "patron@atelier.com",
+        customer_phone: orderData.customerPhone || orderData.customer_phone || "+855 23 888 999",
+        shipping_address: shippingAddressObj,
+        subtotal,
+        shipping_fee: shippingFee,
+        tax,
+        discount,
+        total,
+        currency: orderData.currency || "USD",
+        payment_method: orderData.paymentMethod || orderData.payment_method || "Bakong KHQR",
+        payment_status: orderData.paymentStatus || orderData.payment_status || "Paid",
+        order_status: orderData.orderStatus || orderData.order_status || "Processing",
+        notes: orderData.notes || "",
+      };
+
+      const { data: newOrder, error: orderErr } = await supabase
+        .from("orders")
+        .insert([orderRow])
+        .select()
+        .single();
+
+      if (orderErr) throw orderErr;
+
+      // Insert line items
+      const rawItems = orderData.items || orderData.order_items || [];
+      if (Array.isArray(rawItems) && rawItems.length > 0) {
+        const itemRows = rawItems.map((item) => ({
+          order_id: newOrder.id,
+          product_id:
+            item.productId && item.productId.includes("-")
+              ? item.productId
+              : item.product_id && item.product_id.includes("-")
+              ? item.product_id
+              : null,
+          product_name: item.productName || item.product_name || item.name || "Haute Couture Piece",
+          price: Number(item.price || 0),
+          quantity: Number(item.quantity || 1),
+          image: item.image || (Array.isArray(item.images) && item.images[0]) || "/uploads/8a82fc7bb76c.jpg",
+          size: item.size || item.selected_size || item.selectedSize || "M",
+          color:
+            item.color ||
+            (typeof item.selected_color === "string"
+              ? item.selected_color
+              : item.selectedColor?.name || "Obsidian Black"),
+        }));
+
+        const { error: itemsErr } = await supabase.from("order_items").insert(itemRows);
+        if (itemsErr) console.warn("[Supabase] order_items insert note:", itemsErr.message);
       }
-    } catch (err) {
-      console.warn("Backend API offline or error during order sync (saved locally):", err.message);
-    }
 
-    return normalized;
+      // Fetch freshly composed order with items
+      const { data: fullOrder } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .eq("id", newOrder.id)
+        .single();
+
+      const normalized = normalizeOrder(fullOrder || newOrder);
+      const current = getOrdersStorage();
+      saveOrdersStorage([normalized, ...current]);
+      window.dispatchEvent(new Event("atelier_order_updated"));
+      return normalized;
+    } catch (err) {
+      console.error("Supabase createOrder failed:", err);
+      throw err;
+    }
   },
 
   /**
-   * Updates an order's status and syncs both locally and with backend.
+   * Updates an order status (Admin)
    */
   updateOrderStatus: async (id, newStatus) => {
-    // 1. Update local storage
-    const orders = getLocalMergedOrders();
-    const index = orders.findIndex(
-      (o) => String(o.id) === String(id) || o.orderNumber === String(id)
-    );
-
-    let updatedOrder = null;
-    if (index !== -1) {
-      orders[index].orderStatus = newStatus;
-      orders[index].order_status = newStatus;
-      orders[index].status = newStatus;
-      if (newStatus === "Delivered") {
-        orders[index].paymentStatus = "Paid";
-        orders[index].payment_status = "Paid";
-      }
-      updatedOrder = orders[index];
-      saveOrdersStorage(orders);
-
-      // Also update in atelier_auth_v2 if present
-      try {
-        const authStored = localStorage.getItem(AUTH_STORAGE_KEY);
-        if (authStored) {
-          const parsed = JSON.parse(authStored);
-          if (parsed?.state?.orders) {
-            parsed.state.orders = parsed.state.orders.map((o) =>
-              String(o.id) === String(id) || o.orderNumber === String(id)
-                ? { ...o, status: newStatus, orderStatus: newStatus }
-                : o
-            );
-            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
-          }
-        }
-      } catch (e) {
-        console.warn("Error updating status in atelier_auth_v2:", e);
-      }
-
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("atelier_order_updated", { detail: updatedOrder }));
-      }
-    }
-
-    // 2. Sync to Django DRF backend if reachable
     try {
-      const response = await api.patch(`/orders/${id}/`, {
-        orderStatus: newStatus,
-        order_status: newStatus,
-        status: newStatus,
-      });
-      if (typeof window !== "undefined" && String(newStatus).toLowerCase() === "cancelled") {
-        window.dispatchEvent(new Event("atelier_products_updated"));
-      }
-      if (response?.data) {
-        return normalizeOrder(response.data);
-      }
+      await ensureAdminSession();
+      const cleanId = String(id).trim();
+
+      const { data, error } = await supabase
+        .from("orders")
+        .update({ order_status: newStatus })
+        .eq("id", cleanId)
+        .select("*, order_items(*)")
+        .single();
+
+      if (error) throw error;
+      const normalized = normalizeOrder(data);
+
+      const current = getOrdersStorage();
+      const updated = current.map((o) => (o.id === cleanId ? normalized : o));
+      saveOrdersStorage(updated);
+      window.dispatchEvent(new Event("atelier_order_updated"));
+      return normalized;
     } catch (err) {
-      console.warn("Backend API offline for status patch, updated locally:", err.message);
+      console.error("Supabase updateOrderStatus failed:", err);
+      throw err;
     }
-
-    if (!updatedOrder) throw new Error("Order not found");
-    return updatedOrder;
   },
 
   /**
-   * Deletes an order permanently from local cache and backend.
+   * Updates an order's full fields (Admin)
    */
-  deleteOrder: async (targetId) => {
-    const orders = getLocalMergedOrders();
-    const remaining = orders.filter(
-      (o) => String(o.id) !== String(targetId) && o.orderNumber !== String(targetId)
-    );
-    saveOrdersStorage(remaining);
-
+  updateOrder: async (id, updatedFields) => {
     try {
-      const authStored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (authStored) {
-        const parsed = JSON.parse(authStored);
-        if (parsed?.state?.orders) {
-          parsed.state.orders = parsed.state.orders.filter(
-            (o) => String(o.id) !== String(targetId) && o.orderNumber !== String(targetId)
-          );
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
-        }
-      }
-    } catch (e) {
-      console.warn("Error deleting order from auth store:", e);
-    }
+      await ensureAdminSession();
+      const cleanId = String(id).trim();
 
-    try {
-      await api.delete(`/orders/${targetId}/`);
-    } catch (e) {
-      console.warn("Backend delete note:", e.message);
-    }
+      const patch = {};
+      if (updatedFields.orderStatus !== undefined) patch.order_status = updatedFields.orderStatus;
+      if (updatedFields.order_status !== undefined) patch.order_status = updatedFields.order_status;
+      if (updatedFields.paymentStatus !== undefined) patch.payment_status = updatedFields.paymentStatus;
+      if (updatedFields.payment_status !== undefined) patch.payment_status = updatedFields.payment_status;
+      if (updatedFields.notes !== undefined) patch.notes = updatedFields.notes;
 
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("atelier_order_updated"));
-    }
+      const { data, error } = await supabase
+        .from("orders")
+        .update(patch)
+        .eq("id", cleanId)
+        .select("*, order_items(*)")
+        .single();
 
-    return remaining;
+      if (error) throw error;
+      const normalized = normalizeOrder(data);
+
+      const current = getOrdersStorage();
+      const updated = current.map((o) => (o.id === cleanId ? normalized : o));
+      saveOrdersStorage(updated);
+      window.dispatchEvent(new Event("atelier_order_updated"));
+      return normalized;
+    } catch (err) {
+      console.error("Supabase updateOrder failed:", err);
+      throw err;
+    }
   },
 
   /**
-   * Force purges all remaining demo orders from the user's browser.
+   * Deletes an order and its order_items (Admin)
    */
-  purgeDemoOrders: () => {
-    const list = getLocalMergedOrders();
-    const realOrders = list.filter((o) => !isDemoOrder(o));
-    saveOrdersStorage(realOrders);
-
+  deleteOrder: async (id) => {
     try {
-      const authStored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (authStored) {
-        const parsed = JSON.parse(authStored);
-        if (parsed?.state?.orders) {
-          parsed.state.orders = parsed.state.orders.filter((o) => !isDemoOrder(o));
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
-        }
-      }
-    } catch (e) {
-      console.warn("Purge demo orders note:", e);
-    }
+      await ensureAdminSession();
+      const cleanId = String(id).trim();
 
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("atelier_order_updated"));
-    }
+      await supabase.from("order_items").delete().eq("order_id", cleanId);
+      const { error } = await supabase.from("orders").delete().eq("id", cleanId);
+      if (error) throw error;
 
-    return realOrders;
-  },
-
-  /**
-   * Triggers explicit MongoDB synchronization for orders and payments.
-   */
-  syncMongoDB: async () => {
-    try {
-      const response = await api.post("/sync/mongodb/");
-      return response.data;
-    } catch (e) {
-      console.warn("MongoDB sync endpoint note:", e.message);
-      return null;
+      const current = getOrdersStorage();
+      const filtered = current.filter((o) => o.id !== cleanId);
+      saveOrdersStorage(filtered);
+      window.dispatchEvent(new Event("atelier_order_updated"));
+      return true;
+    } catch (err) {
+      console.error("Supabase deleteOrder failed:", err);
+      throw err;
     }
   },
 };

@@ -15,6 +15,8 @@ import {
   Copy,
 } from "lucide-react";
 import api from "../../services/api";
+import { supabase } from "../../services/supabase";
+import { ensureAdminSession } from "../../services/productService";
 import DataTable from "../../components/admin/DataTable";
 import Modal from "../../components/common/Modal";
 import Input from "../../components/common/Input";
@@ -93,19 +95,26 @@ export function ManageCoupons() {
   const loadCoupons = async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
     try {
-      const res = await api.get("/coupons/?all=true");
-      if (Array.isArray(res.data) && res.data.length > 0) {
+      await ensureAdminSession();
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
         setCoupons(
-          res.data.map((c, idx) => ({
+          data.map((c) => ({
             ...c,
-            id: c.code || `coupon-${idx}`,
+            type: c.discount_type || c.type || "percentage",
+            value: Number(c.discount_value ?? c.value ?? 10),
+            min_spend: Number(c.min_order_value ?? c.min_spend ?? 0),
           }))
         );
+        if (isManualRefresh) {
+          showNotification("Promo coupons synchronized from Supabase!");
+        }
       } else {
         setCoupons(FALLBACK_COUPONS.map((c) => ({ ...c, id: c.code })));
-      }
-      if (isManualRefresh) {
-        showNotification("Promo coupons synchronized from MongoDB!");
       }
     } catch {
       setCoupons(FALLBACK_COUPONS.map((c) => ({ ...c, id: c.code })));
@@ -140,9 +149,9 @@ export function ManageCoupons() {
     setFormData({
       code: coupon.code,
       description: coupon.description || "",
-      type: coupon.type || "percentage",
-      value: String(coupon.value ?? 10),
-      min_spend: String(coupon.min_spend ?? 0),
+      type: coupon.discount_type || coupon.type || "percentage",
+      value: String(coupon.discount_value ?? coupon.value ?? 10),
+      min_spend: String(coupon.min_order_value ?? coupon.min_spend ?? 0),
       is_active: coupon.is_active !== false,
     });
     setErrors({});
@@ -157,10 +166,14 @@ export function ManageCoupons() {
   const handleToggleActive = async (coupon) => {
     const nextState = !coupon.is_active;
     try {
-      await api.patch(`/coupons/${coupon.code}/`, { is_active: nextState });
-      showNotification(
-        `Promo code "${coupon.code}" ${nextState ? "activated" : "deactivated"}!`
-      );
+      await ensureAdminSession();
+      const { error } = await supabase
+        .from("coupons")
+        .update({ is_active: nextState })
+        .eq("id", coupon.id);
+
+      if (error) throw error;
+      showNotification(`Promo code "${coupon.code}" ${nextState ? "activated" : "deactivated"}!`);
       loadCoupons();
     } catch {
       setCoupons((prev) =>
@@ -180,26 +193,32 @@ export function ManageCoupons() {
 
     setSaving(true);
     try {
+      await ensureAdminSession();
       const payload = {
         code: cleanCode,
         description:
           formData.description.trim() ||
           `${formData.value}${formData.type === "percentage" ? "%" : "$"} Off Voucher`,
-        type: formData.type,
-        value: Number(formData.value) || 0,
-        min_spend: Number(formData.min_spend) || 0,
+        discount_type: formData.type,
+        discount_value: Number(formData.value) || 0,
+        min_order_value: Number(formData.min_spend) || 0,
         is_active: Boolean(formData.is_active),
       };
-      await api.post("/coupons/", payload);
-      showNotification(
-        isEditing
-          ? `Promo code "${cleanCode}" updated in MongoDB!`
-          : `Promo code "${cleanCode}" created in MongoDB!`
-      );
+
+      if (isEditing && selectedCoupon?.id) {
+        const { error } = await supabase.from("coupons").update(payload).eq("id", selectedCoupon.id);
+        if (error) throw error;
+        showNotification(`Promo code "${cleanCode}" updated in Supabase!`);
+      } else {
+        const { error } = await supabase.from("coupons").insert([payload]);
+        if (error) throw error;
+        showNotification(`Promo code "${cleanCode}" created in Supabase!`);
+      }
+
       setIsModalOpen(false);
       loadCoupons();
     } catch (err) {
-      alert("Error saving coupon: " + (err?.response?.data?.error || err.message));
+      alert("Error saving coupon: " + (err?.message || "Operation failed"));
     } finally {
       setSaving(false);
     }
@@ -209,7 +228,12 @@ export function ManageCoupons() {
     if (!selectedCoupon) return;
     setSaving(true);
     try {
-      await api.delete(`/coupons/${selectedCoupon.code}/`);
+      await ensureAdminSession();
+      if (selectedCoupon.id && selectedCoupon.id.includes("-")) {
+        await supabase.from("coupons").delete().eq("id", selectedCoupon.id);
+      } else {
+        await supabase.from("coupons").delete().eq("code", selectedCoupon.code);
+      }
       showNotification(`Promo code "${selectedCoupon.code}" deleted.`);
       setIsDeleteModalOpen(false);
       loadCoupons();

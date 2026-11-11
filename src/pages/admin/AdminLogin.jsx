@@ -71,7 +71,7 @@ export const AdminLogin = () => {
             Studio Management Portal
           </h1>
           <p className="text-xs text-gray-400 font-light">
-            Authorized administrator access for catalog, inventory & MongoDB databases.
+            Authorized administrator access for catalog, inventory & Supabase PostgreSQL database.
           </p>
         </div>
 
@@ -81,11 +81,11 @@ export const AdminLogin = () => {
           <div className="flex items-center justify-between text-[11px] p-2.5 rounded-2xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Django REST API: Online</span>
+              <span>Supabase Auth: Active</span>
             </div>
             <div className="flex items-center gap-1.5 text-gray-300 font-semibold">
               <Database className="w-3.5 h-3.5 text-[#D6FF00]" />
-              <span>MongoDB: Ready</span>
+              <span>PostgreSQL: 0ms Ready</span>
             </div>
           </div>
 

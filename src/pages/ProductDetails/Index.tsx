@@ -22,7 +22,8 @@ import { useUIStore } from "../../store/useUIStore";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ProductCard } from "../../components/product/ProductCard";
-import { productService } from "../../services/productService";
+import { productService, ensureAdminSession } from "../../services/productService";
+import { supabase } from "../../services/supabase";
 import { Product } from "../../types";
 import api from "../../services/api";
 
@@ -224,10 +225,29 @@ export const ProductDetails: React.FC = () => {
     const fetchReviews = async () => {
       setLoadingReviews(true);
       try {
-        const res = await api.get(`/products/${product.id}/reviews/`);
-        setReviewsList(Array.isArray(res.data) ? res.data : []);
+        const { data, error } = await supabase
+          .from("reviews")
+          .select("*")
+          .eq("product_id", product.id)
+          .order("created_at", { ascending: false });
+
+        if (!error && Array.isArray(data)) {
+          setReviewsList(
+            data.map((r) => ({
+              id: r.id,
+              authorName: r.author_name,
+              authorEmail: r.author_email,
+              rating: r.rating,
+              comment: r.comment,
+              title: r.title,
+              createdAt: r.created_at,
+            }))
+          );
+        } else {
+          setReviewsList([]);
+        }
       } catch (err) {
-        console.warn("Could not fetch product reviews from backend:", err);
+        console.warn("[Supabase] Could not fetch reviews:", err);
         setReviewsList([]);
       } finally {
         setLoadingReviews(false);
@@ -240,37 +260,54 @@ export const ProductDetails: React.FC = () => {
     e.preventDefault();
     if (!newReviewAuthor.trim() || !newReviewComment.trim()) return;
 
-    const payload = {
-      authorName: newReviewAuthor.trim(),
-      authorEmail: user?.email || "",
-      authorAvatar: user?.avatar || "",
-      productName: product.name,
-      rating: newReviewRating,
-      comment: newReviewComment.trim(),
-      title: "Verified Patron Review",
-      recommended: newReviewRating >= 4,
-    };
-
     try {
-      const res = await api.post(`/products/${product.id}/reviews/`, payload);
-      if (res.data) {
-        setReviewsList((prev) => [res.data, ...prev]);
+      const session = await ensureAdminSession();
+      const { data: rev, error } = await supabase
+        .from("reviews")
+        .insert([
+          {
+            product_id: product.id,
+            user_id: session?.user?.id || user?.id,
+            author_name: newReviewAuthor.trim(),
+            author_email: user?.email || "patron@atelier.com",
+            rating: newReviewRating,
+            comment: newReviewComment.trim(),
+            title: "Verified Patron Review",
+            status: "Approved",
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (rev) {
+        setReviewsList((prev) => [
+          {
+            id: rev.id,
+            authorName: rev.author_name,
+            authorEmail: rev.author_email,
+            rating: rev.rating,
+            comment: rev.comment,
+            title: rev.title,
+            createdAt: rev.created_at,
+          },
+          ...prev,
+        ]);
       }
       setNewReviewComment("");
       setReviewSubmitted(true);
-      showToast("Thank you! Your verified review has been saved to MongoDB.", "success");
+      showToast("Thank you! Your verified review has been published.", "success");
       window.dispatchEvent(new Event("atelier_products_updated"));
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Review submit error:", err);
-      showToast("Could not post review right now. Please try again.", "error");
+      showToast(err?.message || "Could not post review right now.", "error");
     }
   };
 
   const handleDeleteReview = async (reviewId: string) => {
     try {
-      if (product) {
-        await api.delete(`/products/${product.id}/reviews/?reviewId=${encodeURIComponent(reviewId)}`);
-      }
+      await ensureAdminSession();
+      await supabase.from("reviews").delete().eq("id", reviewId);
       setReviewsList((prev) => prev.filter((r) => String(r.id) !== String(reviewId)));
       showToast("Review removed.", "info");
       window.dispatchEvent(new Event("atelier_products_updated"));

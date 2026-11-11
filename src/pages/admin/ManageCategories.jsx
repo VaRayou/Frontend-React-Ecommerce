@@ -203,7 +203,7 @@ export function ManageCategories() {
         const num = String((idx ?? 0) + 1).padStart(2, "0");
         return (
           <span
-            title={`MongoDB ObjectId: ${item.id}`}
+            title={`Supabase ID: ${item.id}`}
             className="font-mono text-[11px] font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-md"
           >
             #CAT-{num}

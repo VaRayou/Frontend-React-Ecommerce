@@ -410,10 +410,10 @@ export function ManageProducts() {
       if (isEditing && selectedProduct) {
         const prodId = selectedProduct.id || selectedProduct._id;
         await productService.updateProduct(prodId, payload);
-        showNotification(`Product "${payload.name}" updated successfully!`);
+        showNotification(`Product "${payload.name}" updated successfully in Supabase!`);
       } else {
         await productService.createProduct(payload);
-        showNotification(`New product "${payload.name}" added to MongoDB!`);
+        showNotification(`New product "${payload.name}" published to Supabase!`);
       }
       setIsAddEditModalOpen(false);
       await loadData();

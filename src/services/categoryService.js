@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { ensureAdminSession } from "./productService";
 
 const CATEGORIES_STORAGE_KEY = "atelier_categories_v3";
 let _memoryCategories = null;
@@ -83,6 +84,7 @@ export const categoryService = {
   // Create new category directly in Supabase (Admin)
   createCategory: async (categoryData) => {
     try {
+      await ensureAdminSession();
       const name = String(categoryData.name || "").trim();
       const slug = (categoryData.slug || name).toLowerCase().replace(/\s+/g, "-");
 
@@ -115,6 +117,7 @@ export const categoryService = {
   // Update category directly in Supabase (Admin)
   updateCategory: async (id, updatedFields) => {
     try {
+      await ensureAdminSession();
       const cleanId = String(id).trim();
       const patch = {};
       if (updatedFields.name !== undefined) {
@@ -150,6 +153,7 @@ export const categoryService = {
   // Delete category directly from Supabase (Admin)
   deleteCategory: async (id) => {
     try {
+      await ensureAdminSession();
       const cleanId = String(id).trim();
       const { error } = await supabase.from("categories").delete().eq("id", cleanId);
       if (error) throw error;

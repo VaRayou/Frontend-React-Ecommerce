@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { User, Order } from "../types";
-import api from "../services/api";
+import { supabase } from "../services/supabase";
 
 interface AuthState {
   user: User | null;
@@ -38,101 +38,91 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (email, password = "password123") => {
+        const cleanEmail = email.trim().toLowerCase();
         try {
-          const res = await api.post("/auth/login/", { email, password });
-          if (res.data && res.data.user) {
-            const u = res.data.user;
-            if (res.data.token) {
-              localStorage.setItem("eshopper_token", res.data.token);
-            }
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password,
+          });
+
+          if (!error && data?.user) {
+            const u = data.user;
             const loggedUser: User = {
               id: String(u.id),
-              name: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.username || email.split("@")[0],
-              email: u.email || email,
-              role: u.role || (u.isAdmin ? "admin" : "customer"),
-              isAdmin: Boolean(u.isAdmin || u.role === "admin"),
-              phone: u.phone || "+855 23 888 999",
-              avatar: u.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+              name: u.user_metadata?.full_name || cleanEmail.split("@")[0].toUpperCase(),
+              email: u.email || cleanEmail,
+              role: u.user_metadata?.role || "customer",
+              isAdmin: Boolean(u.user_metadata?.role === "super_admin" || u.user_metadata?.role === "admin"),
+              phone: u.user_metadata?.phone || "+855 23 888 999",
+              avatar:
+                u.user_metadata?.avatar_url ||
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
               address: {
-                street: u.address || "Preah Norodom Blvd",
-                city: u.city || "Phnom Penh",
-                country: u.country || "Cambodia",
+                street: "Preah Norodom Blvd",
+                city: "Phnom Penh",
+                country: "Cambodia",
                 postalCode: "12000",
               },
             };
             set({ user: loggedUser, isAuthenticated: true });
             return { success: true, message: "Welcome back to Atelier Studio." };
           }
+          if (error) {
+            return { success: false, message: error.message };
+          }
         } catch (err: any) {
-          const status = err?.response?.status;
-          const errMsg = err?.response?.data?.error;
-          // Demo account fallback ifcamille@atelier.com is used
-          if (email.toLowerCase() === "camille@atelier.com" && password === "password123") {
-            set({ user: DEMO_USER, isAuthenticated: true });
-            return { success: true, message: "Welcome back, Camille!" };
-          }
-          if (status === 400 || status === 401 || status === 403 || status === 429) {
-            return { success: false, message: errMsg || "Invalid email or password." };
-          }
-          console.warn("Backend auth unavailable, using offline patron session:", errMsg || err.message);
+          console.warn("[Supabase] login notice:", err.message);
         }
 
-        // Seamless fallback session for offline or demo mode
-        const fallbackUser: User = {
-          id: `usr-${Date.now().toString(36)}`,
-          name: email.split("@")[0].replace(".", " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-          email,
-          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-          address: {
-            street: "Preah Norodom Blvd",
-            city: "Phnom Penh",
-            country: "Cambodia",
-            postalCode: "12000",
-          },
-        };
-        set({ user: fallbackUser, isAuthenticated: true });
-        return { success: true, message: "Signed in successfully." };
+        // Demo account fallback if camille@atelier.com is used
+        if (cleanEmail === "camille@atelier.com") {
+          set({ user: DEMO_USER, isAuthenticated: true });
+          return { success: true, message: "Welcome back, Camille!" };
+        }
+
+        return { success: false, message: "Invalid email or password." };
       },
 
       register: async (name, email, password = "password123", phone = "") => {
+        const cleanEmail = email.trim().toLowerCase();
         try {
-          const res = await api.post("/auth/register/", { name, email, password, phone });
-          if (res.data && res.data.user) {
-            const u = res.data.user;
-            if (res.data.token) {
-              localStorage.setItem("eshopper_token", res.data.token);
-            }
+          const { data, error } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                full_name: name,
+                phone: phone || "+855 23 888 999",
+                role: "customer",
+              },
+            },
+          });
+
+          if (!error && data?.user) {
+            const u = data.user;
             const newUser: User = {
               id: String(u.id),
-              name: `${u.first_name || ""} ${u.last_name || ""}`.trim() || name,
-              email: u.email || email,
+              name: name || cleanEmail.split("@")[0],
+              email: u.email || cleanEmail,
               phone: phone || "+855 23 888 999",
               avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
             };
             set({ user: newUser, isAuthenticated: true });
             return { success: true, message: "Patron account created successfully!" };
           }
-        } catch (err: any) {
-          const errMsg = err?.response?.data?.error;
-          if (errMsg) {
-            return { success: false, message: errMsg };
+          if (error) {
+            return { success: false, message: error.message };
           }
-          console.warn("Backend register unavailable, creating local session:", err.message);
+        } catch (err: any) {
+          console.warn("[Supabase] register note:", err.message);
         }
 
-        const localUser: User = {
-          id: `usr-${Date.now().toString(36)}`,
-          name,
-          email,
-          phone,
-          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-        };
-        set({ user: localUser, isAuthenticated: true });
-        return { success: true, message: "Welcome to Atelier Studio!" };
+        return { success: false, message: "Unable to register account. Please try again." };
       },
 
       logout: () => {
         try {
+          supabase.auth.signOut();
           localStorage.removeItem("eshopper_token");
         } catch {}
         set({ user: null, isAuthenticated: false });

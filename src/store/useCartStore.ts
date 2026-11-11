@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CartItem, Product } from "../types";
+import { supabase } from "../services/supabase";
 import api from "../services/api";
 
 interface CartState {
@@ -251,34 +252,49 @@ export const useCartStore = create<CartState>()(
         const subtotal = get().getSubtotal();
         const shipping = get().getShipping();
 
-        // 1. Validate against backend API
+        // 1. Direct Supabase Query (0ms Cold Start)
         try {
-          const res = await api.post("/coupons/validate/", {
-            code: cleanCode,
-            subtotal,
-            shipping,
-          });
+          const { data: coupon, error } = await supabase
+            .from("coupons")
+            .select("*")
+            .ilike("code", cleanCode)
+            .eq("is_active", true)
+            .maybeSingle();
 
-          if (res.data && res.data.valid) {
+          if (!error && coupon) {
+            if (coupon.min_order_value && subtotal < Number(coupon.min_order_value)) {
+              const msg = `Minimum spend of $${coupon.min_order_value} required.`;
+              set({ promoError: msg });
+              return { success: false, message: msg };
+            }
+
+            let disc = 0;
+            const type = coupon.discount_type || coupon.type || "percentage";
+            const val = Number(coupon.discount_value ?? coupon.value ?? 0);
+
+            if (type === "percentage") {
+              disc = Number(((subtotal * val) / 100).toFixed(2));
+            } else if (type === "fixed") {
+              disc = Math.min(subtotal, val);
+            } else if (type === "shipping") {
+              disc = shipping;
+            }
+
             set({
               promoCode: cleanCode,
-              discountAmount: Number(res.data.discount || 0),
-              discountPercent: res.data.type === "percentage" ? Number(res.data.value || 0) : 0,
-              discountType: res.data.type || "fixed",
-              promoDescription: res.data.description || "",
+              discountAmount: disc,
+              discountPercent: type === "percentage" ? val : 0,
+              discountType: type,
+              promoDescription: coupon.description || `Coupon ${cleanCode}`,
               promoError: null,
             });
             return {
               success: true,
-              message: res.data.message || `Coupon ${cleanCode} applied!`,
+              message: `Promo code ${cleanCode} applied!`,
             };
           }
         } catch (err: any) {
-          const errMsg = err?.response?.data?.error;
-          if (errMsg) {
-            set({ promoError: errMsg });
-            return { success: false, message: errMsg };
-          }
+          console.warn("[Supabase] coupon check error:", err.message);
         }
 
         // 2. Offline fallback validation
