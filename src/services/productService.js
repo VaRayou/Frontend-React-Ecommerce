@@ -1,5 +1,6 @@
 import api from "./api";
 import { PRODUCTS } from "../data/products";
+import { supabase } from "./supabase";
 
 const PRODUCTS_STORAGE_KEY = "atelier_products_v2";
 
@@ -160,6 +161,55 @@ export const productService = {
       if (maxPrice !== undefined && maxPrice !== "") params.maxPrice = maxPrice;
       if (sortBy) params.sortBy = sortBy;
 
+      // 1. Direct High-Speed Supabase Query (0ms Cold Start)
+      if (supabase) {
+        try {
+          let query = supabase
+            .from("products")
+            .select("*, categories:category_id (id, name, slug)")
+            .eq("status", "Active");
+
+          if (category && category.toLowerCase() !== "all") {
+            query = query.ilike("categories.slug", `%${category.toLowerCase()}%`);
+          }
+          if (search && search.trim() !== "") {
+            query = query.ilike("name", `%${search.trim()}%`);
+          }
+          if (minPrice !== undefined && minPrice !== "") query = query.gte("price", Number(minPrice));
+          if (maxPrice !== undefined && maxPrice !== "") query = query.lte("price", Number(maxPrice));
+
+          if (sortBy === "price-asc") query = query.order("price", { ascending: true });
+          else if (sortBy === "price-desc") query = query.order("price", { ascending: false });
+          else if (sortBy === "newest") query = query.order("created_at", { ascending: false });
+          else query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
+
+          const { data, error } = await query;
+          if (!error && Array.isArray(data) && data.length > 0) {
+            const formatted = data.map((p) =>
+              formatProductForDisplay({
+                ...p,
+                id: String(p.id),
+                category: p.categories?.name || p.category || "Collection",
+                originalPrice: p.original_price,
+                stockCount: p.stock,
+                inStock: p.stock > 0,
+                isFeatured: p.is_featured,
+                isRecommended: p.is_recommended,
+                isNewArrival: p.is_latest,
+                reviewsCount: p.reviews_count,
+              })
+            );
+            if (Object.keys(params).length === 0 && formatted.length > 0) {
+              saveProductsStorage(formatted);
+            }
+            return formatted;
+          }
+        } catch (supabaseErr) {
+          console.warn("[Supabase] Products query note:", supabaseErr.message);
+        }
+      }
+
+      // 2. Secondary API Query Fallback
       const response = await api.get("/products/", { params });
       if (Array.isArray(response.data)) {
         const clean = response.data.filter((p) => !isDemoProduct(p));

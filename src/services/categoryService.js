@@ -1,5 +1,6 @@
 import api from "./api";
 import { initialCategories } from "../data/demoCategories.js";
+import { supabase } from "./supabase";
 
 const CATEGORIES_STORAGE_KEY = "atelier_categories_v2";
 let _memoryCategories = null;
@@ -42,6 +43,25 @@ export const categoryService = {
   // Get all categories
   getCategories: async () => {
     try {
+      // 1. Direct Supabase Query (0ms Cold Start)
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from("categories")
+            .select("*")
+            .eq("status", "Active")
+            .order("display_order", { ascending: true });
+
+          if (!error && Array.isArray(data) && data.length > 0) {
+            saveCategoriesStorage(data);
+            return data;
+          }
+        } catch (supabaseErr) {
+          console.warn("[Supabase] Categories query note:", supabaseErr.message);
+        }
+      }
+
+      // 2. Secondary API Query Fallback
       const response = await api.get("/categories/");
       if (Array.isArray(response.data) && response.data.length > 0) {
         saveCategoriesStorage(response.data);
