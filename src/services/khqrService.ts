@@ -359,7 +359,27 @@ export const khqrService = {
 
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=380x380&margin=1&data=${encodeURIComponent(qrString)}`;
-    const deeplink = `bakong://pay?qr=${encodeURIComponent(qrString)}`;
+    
+    // Request authentic NBC Bakong official shortlink deeplink
+    let deeplink = `bakong://pay?qr=${encodeURIComponent(qrString)}`;
+    try {
+      const dlRes = await fetch(`${BAKONG_API_URL.replace(/\/$/, "")}/v1/generate_deeplink_by_qr`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${BAKONG_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ qr: qrString }),
+      });
+      if (dlRes.ok) {
+        const dlJson = await dlRes.json();
+        if (dlJson?.data?.shortLink) {
+          deeplink = dlJson.data.shortLink;
+        }
+      }
+    } catch (e) {
+      console.warn("[NBC Deeplink note]", e);
+    }
 
     // Persist payment record into Supabase `payments` table
     try {
