@@ -502,6 +502,7 @@ export const khqrService = {
     }
 
     // Check if marked paid in Supabase payments table
+    // (Only if status is confirmed PAID and transaction_id was issued by NBC Bakong)
     try {
       const { data: dbPayment } = await supabase
         .from("payments")
@@ -509,11 +510,15 @@ export const khqrService = {
         .eq("md5_hash", md5Str)
         .maybeSingle();
 
-      if (dbPayment?.status === "PAID") {
+      if (
+        dbPayment?.status === "PAID" &&
+        dbPayment.transaction_id &&
+        !dbPayment.transaction_id.startsWith("BAKONG-") // Never auto-complete from simulated demo transaction IDs
+      ) {
         const res: KhqrStatusResponse = {
           status: "PAID",
           is_paid: true,
-          transaction_id: dbPayment.transaction_id || `BAKONG-${Date.now()}`,
+          transaction_id: dbPayment.transaction_id,
           paid_at: dbPayment.paid_at,
         };
         checkStatusCache[md5Str] = { timestamp: now, result: res };

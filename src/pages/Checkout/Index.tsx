@@ -115,7 +115,7 @@ export const Checkout: React.FC = () => {
       city: user?.address?.city || "Phnom Penh",
       country: user?.address?.country || "Cambodia",
       postalCode: user?.address?.postalCode || "12000",
-      paymentMethod: "Bank Transfer",
+      paymentMethod: "QR Payment",
       orderNotes: "",
     },
   });
