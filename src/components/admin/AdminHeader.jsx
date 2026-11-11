@@ -154,7 +154,7 @@ export function AdminHeader({ onToggleMobile, onToggleCollapse, isCollapsed }) {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-gray-200/90 shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="fixed inset-x-3 top-16 sm:static sm:inset-auto sm:absolute sm:right-0 sm:mt-2 w-auto sm:w-96 bg-white rounded-2xl border border-gray-200/90 shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               <div className="p-3.5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <span className="text-xs uppercase font-extrabold text-black tracking-wider">
                   Studio Activity &amp; KHQR Alerts

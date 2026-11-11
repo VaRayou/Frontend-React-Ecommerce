@@ -178,36 +178,36 @@ function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
       {/* Page Header */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#111111] border border-[#D6FF00]/40 flex items-center justify-center shadow-md shrink-0">
-            <span className="w-3 h-3 rounded-full bg-[#D6FF00] animate-pulse" />
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 sm:gap-4 shadow-xs">
+        <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#111111] border border-[#D6FF00]/40 flex items-center justify-center shadow-md shrink-0">
+            <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#D6FF00] animate-pulse" />
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight truncate">
               Studio Controller Dashboard
             </h1>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-gray-500 mt-0.5 truncate">
               <span className="font-bold text-gray-900">ATELIER STUDIO</span>
               <span>/</span>
-              <span>Controller Overview</span>
+              <span className="truncate">Controller Overview</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 self-stretch sm:self-auto">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 w-full sm:w-auto">
           <Link
             to="/admin/products"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider shadow-md cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-[11px] sm:text-xs uppercase tracking-wider shadow-md cursor-pointer text-center"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
             <span>Add Product</span>
           </Link>
           <Link
             to="/"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition-all font-bold text-xs uppercase tracking-wider shadow-2xs"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition-all font-bold text-[11px] sm:text-xs uppercase tracking-wider shadow-2xs text-center"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             <span>Customer Store</span>
@@ -216,183 +216,183 @@ function Dashboard() {
       </div>
 
       {/* Database & Controller Health Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-[#111111] via-[#16181d] to-[#111111] text-white p-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-white/10 shadow-md">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-[#D6FF00]/15 text-[#D6FF00] flex items-center justify-center shrink-0 border border-[#D6FF00]/25">
-            <Database className="w-5 h-5" />
+      <div className="rounded-2xl bg-gradient-to-r from-[#111111] via-[#16181d] to-[#111111] text-white p-3.5 sm:p-5 sm:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5 md:gap-4 border border-white/10 shadow-md">
+        <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#D6FF00]/15 text-[#D6FF00] flex items-center justify-center shrink-0 border border-[#D6FF00]/25">
+            <Database className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-bold">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-bold flex-wrap">
               <span>MongoDB Database Engine Active</span>
-              <span className="px-2 py-0.5 rounded-full bg-[#D6FF00] text-black text-[10px] font-black uppercase tracking-wider">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[#D6FF00] text-black text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
                 SYNCED
               </span>
             </div>
-            <p className="text-[11px] text-gray-400 mt-0.5">
-              Collection: <strong className="text-white">django_lab.products</strong> • Port:{" "}
-              <strong className="text-white">27017</strong> • Django REST Framework 6.1
+            <p className="text-[10px] sm:text-[11px] text-gray-400 mt-0.5 truncate">
+              Collection: <strong className="text-white">django_lab.products</strong> • Atlas &amp; Render Cloud
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-6 text-xs self-end sm:self-auto">
-          <div className="text-right">
-            <span className="block text-[10px] uppercase tracking-wider text-gray-400">
+        <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-6 text-xs w-full md:w-auto pt-2.5 md:pt-0 border-t border-white/10 md:border-0">
+          <div>
+            <span className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400">
               Backend State
             </span>
-            <strong className="text-emerald-400 font-bold">
-              ● Online (127.0.0.1:8000)
+            <strong className="text-emerald-400 font-bold text-[11px] sm:text-xs">
+              ● Live / Cloud Synced
             </strong>
           </div>
           <div className="text-right">
-            <span className="block text-[10px] uppercase tracking-wider text-gray-400">
+            <span className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400">
               Frontend Runtime
             </span>
-            <strong className="text-[#D6FF00] font-bold">
+            <strong className="text-[#D6FF00] font-bold text-[11px] sm:text-xs">
               ● Vite React 19 Active
             </strong>
           </div>
         </div>
       </div>
 
-      {/* 5 KPI Statistics Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* 5 KPI Statistics Cards Grid (2 Cols on Phones, 5 Cols on Desktop) */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
         <Link
           to="/admin/products"
-          className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
+          className="bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 flex items-center justify-between gap-2 sm:gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
         >
           <div className="min-w-0">
-            <div className="text-2xl font-black text-gray-950 tracking-tight">
+            <div className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
               {stats.products}
             </div>
-            <div className="text-xs font-semibold text-gray-500 mt-0.5">
+            <div className="text-[11px] sm:text-xs font-semibold text-gray-500 mt-0.5 truncate">
               Catalog Products
             </div>
-            <span className="block text-[11px] font-bold text-emerald-600 mt-1.5">
-              MongoDB Database Active
+            <span className="block text-[10px] sm:text-[11px] font-bold text-emerald-600 mt-1 truncate">
+              MongoDB Active
             </span>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-[#111111] text-[#D6FF00] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Layers className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#111111] text-[#D6FF00] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </Link>
 
         <Link
           to="/admin/categories"
-          className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
+          className="bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 flex items-center justify-between gap-2 sm:gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
         >
           <div className="min-w-0">
-            <div className="text-2xl font-black text-gray-950 tracking-tight">
+            <div className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
               {stats.categories}
             </div>
-            <div className="text-xs font-semibold text-gray-500 mt-0.5">
-              Active Categories
+            <div className="text-[11px] sm:text-xs font-semibold text-gray-500 mt-0.5 truncate">
+              Categories
             </div>
-            <span className="block text-[11px] font-medium text-gray-400 mt-1.5 truncate">
-              Men, Women, Bags, Shoes
+            <span className="block text-[10px] sm:text-[11px] font-medium text-gray-400 mt-1 truncate">
+              Men, Women, Shoes
             </span>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-gray-100 text-gray-900 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <FolderTree className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gray-100 text-gray-900 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <FolderTree className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </Link>
 
         <Link
           to="/admin/orders"
-          className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
+          className="bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 flex items-center justify-between gap-2 sm:gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
         >
           <div className="min-w-0">
-            <div className="text-2xl font-black text-gray-950 tracking-tight">
+            <div className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
               {stats.orders}
             </div>
-            <div className="text-xs font-semibold text-gray-500 mt-0.5">
+            <div className="text-[11px] sm:text-xs font-semibold text-gray-500 mt-0.5 truncate">
               Orders Received
             </div>
-            <span className="block text-[11px] font-bold text-amber-600 mt-1.5">
+            <span className="block text-[10px] sm:text-[11px] font-bold text-amber-600 mt-1 truncate">
               {stats.pendingOrders} Processing
             </span>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-gray-100 text-gray-900 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <ShoppingCart className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gray-100 text-gray-900 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </Link>
 
         <Link
           to="/admin/users"
-          className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
+          className="bg-white rounded-2xl border border-gray-200/80 p-3.5 sm:p-5 flex items-center justify-between gap-2 sm:gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
         >
           <div className="min-w-0">
-            <div className="text-2xl font-black text-gray-950 tracking-tight">
+            <div className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
               {stats.users}
             </div>
-            <div className="text-xs font-semibold text-gray-500 mt-0.5">
+            <div className="text-[11px] sm:text-xs font-semibold text-gray-500 mt-0.5 truncate">
               Registered Patrons
             </div>
-            <span className="block text-[11px] font-bold text-emerald-600 mt-1.5">
-              +{stats.users} verified accounts
+            <span className="block text-[10px] sm:text-[11px] font-bold text-emerald-600 mt-1 truncate">
+              +{stats.users} active accounts
             </span>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-gray-100 text-gray-900 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Users className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gray-100 text-gray-900 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </Link>
 
+        {/* Gross Revenue Card (Prominent on Phone with 2-Column Span) */}
         <Link
           to="/admin/payments"
-          className="bg-white rounded-2xl border border-gray-200/80 p-5 flex items-center justify-between gap-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group"
+          className="col-span-2 sm:col-span-2 lg:col-span-1 bg-[#111111] text-white rounded-2xl border border-black p-4 sm:p-5 flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-all group"
         >
           <div className="min-w-0">
-            <div className="text-2xl font-black text-gray-950 tracking-tight truncate">
+            <div className="text-2xl sm:text-2xl font-black text-[#D6FF00] tracking-tight truncate">
               ${Number(stats.revenue || 0).toFixed(2)}
             </div>
-            <div className="text-xs font-semibold text-gray-500 mt-0.5">
+            <div className="text-[11px] sm:text-xs font-semibold text-gray-300 mt-0.5">
               Gross Revenue
             </div>
-            <span className="block text-[11px] font-bold text-emerald-600 mt-1.5">
+            <span className="block text-[10px] sm:text-[11px] font-bold text-[#D6FF00]/90 mt-1 sm:mt-1.5">
               +24.6% vs last week
             </span>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
             <DollarSign className="w-5 h-5 stroke-[2.5]" />
           </div>
         </Link>
       </div>
 
       {/* Row 1: Commercial Revenue Performance Chart (8 Cols) & Top Catalog Pieces (4 Cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* Commercial Revenue Performance Chart */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#111111] text-[#D6FF00] flex items-center justify-center">
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3.5 mb-3 sm:mb-4">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-[#111111] text-[#D6FF00] flex items-center justify-center shrink-0">
                 <TrendingUp className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-extrabold text-gray-900">
+              <div className="min-w-0">
+                <h3 className="text-sm sm:text-base font-extrabold text-gray-900 truncate">
                   Commercial Revenue Performance
                 </h3>
-                <p className="text-[11px] text-gray-400">
+                <p className="text-[10px] sm:text-[11px] text-gray-400 truncate">
                   Monthly settled volume + live MongoDB order ledger
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">
-              Atelier Paris Vault
+            <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 bg-gray-100 px-2 sm:px-2.5 py-1 rounded-lg shrink-0 ml-2">
+              Atelier Vault
             </span>
           </div>
 
-          {/* Bar Chart Container with Explicit Pixel Height for Bars */}
-          <div className="pt-4 pb-2 px-2 sm:px-6">
-            <div className="grid grid-cols-6 gap-3 sm:gap-6 items-end">
-              {revenueBars.map((bar, idx) => (
+          {/* Bar Chart Container */}
+          <div className="pt-2 sm:pt-4 pb-1 sm:pb-2 px-0 sm:px-4">
+            <div className="grid grid-cols-6 gap-1.5 sm:gap-4 lg:gap-6 items-end">
+              {revenueBars.map((bar) => (
                 <div
                   key={bar.month}
-                  className="flex flex-col items-center group"
+                  className="flex flex-col items-center group min-w-0"
                 >
                   <span
-                    className={`text-[11px] mb-2 font-mono font-bold transition-colors ${
+                    className={`text-[9px] sm:text-[11px] mb-1.5 sm:mb-2 font-mono font-bold truncate text-center w-full block transition-colors ${
                       bar.active
-                        ? "text-gray-950"
+                        ? "text-gray-950 font-black"
                         : "text-gray-400 group-hover:text-gray-800"
                     }`}
                   >
@@ -400,12 +400,12 @@ function Dashboard() {
                   </span>
 
                   {/* Fixed-height track so percentage height works reliably */}
-                  <div className="w-full h-40 bg-gray-50 rounded-xl flex items-end p-1 border border-gray-100">
+                  <div className="w-full h-32 sm:h-40 bg-gray-50 rounded-lg sm:rounded-xl flex items-end p-0.5 sm:p-1 border border-gray-100">
                     <div
                       style={{ height: `${bar.pct}%` }}
-                      className={`w-full rounded-lg transition-all duration-500 ${
+                      className={`w-full rounded-md sm:rounded-lg transition-all duration-500 ${
                         bar.active
-                          ? "bg-[#111111] border-t-4 border-[#D6FF00] shadow-md"
+                          ? "bg-[#111111] border-t-2 sm:border-t-4 border-[#D6FF00] shadow-md"
                           : "bg-slate-200 group-hover:bg-slate-300"
                       }`}
                       title={`${bar.month}: ${bar.value}`}
@@ -413,7 +413,7 @@ function Dashboard() {
                   </div>
 
                   <span
-                    className={`text-xs mt-2.5 font-bold ${
+                    className={`text-[10px] sm:text-xs mt-1.5 sm:mt-2.5 font-bold ${
                       bar.active ? "text-gray-950" : "text-gray-500"
                     }`}
                   >
@@ -426,8 +426,8 @@ function Dashboard() {
         </div>
 
         {/* Top Catalog Pieces */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 shadow-xs flex flex-col">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-3">
+        <div className="lg:col-span-4 bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs flex flex-col">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3.5 mb-2 sm:mb-3">
             <h3 className="text-sm sm:text-base font-extrabold text-gray-900">
               Top Catalog Pieces
             </h3>
@@ -444,13 +444,13 @@ function Dashboard() {
             {topProducts.map((p) => (
               <div
                 key={p.id}
-                className="py-3 flex items-center justify-between gap-3"
+                className="py-2.5 sm:py-3 flex items-center justify-between gap-3"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   <img
                     src={p.images?.[0] || p.image || DEFAULT_PRODUCT_IMG}
                     alt={p.name}
-                    className="w-11 h-11 rounded-xl object-cover border border-gray-200 bg-gray-50 shrink-0"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border border-gray-200 bg-gray-50 shrink-0"
                     onError={(e) => {
                       e.target.src = DEFAULT_PRODUCT_IMG;
                     }}
@@ -459,7 +459,7 @@ function Dashboard() {
                     <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                       {p.name}
                     </div>
-                    <span className="text-[11px] text-gray-400 font-medium">
+                    <span className="text-[10px] sm:text-[11px] text-gray-400 font-medium">
                       Stock: {p.stock ?? p.quantity ?? 10} units
                     </span>
                   </div>
@@ -474,37 +474,37 @@ function Dashboard() {
       </div>
 
       {/* Row 2: Payment Channels & Inventory Velocity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Payment Channels Breakdown */}
-        <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 shadow-xs">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#111111] text-[#D6FF00] flex items-center justify-center">
+        <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3.5 mb-3 sm:mb-4">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-[#111111] text-[#D6FF00] flex items-center justify-center shrink-0">
                 <QrCode className="w-4 h-4" />
               </div>
-              <h3 className="text-sm sm:text-base font-extrabold text-gray-900">
+              <h3 className="text-sm sm:text-base font-extrabold text-gray-900 truncate">
                 Payment Channels &amp; Settlement
               </h3>
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">
-              NBC Bakong KHQR Standard
+            <span className="px-2 sm:px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] sm:text-[11px] font-bold shrink-0 ml-2">
+              NBC Bakong Standard
             </span>
           </div>
 
           <div className="flex items-center justify-between mb-3 text-xs">
             <div>
-              <span className="block text-[11px] text-gray-400 font-medium">
+              <span className="block text-[10px] sm:text-[11px] text-gray-400 font-medium">
                 Dynamic Bakong KHQR
               </span>
-              <strong className="text-base font-black text-gray-950">
+              <strong className="text-sm sm:text-base font-black text-gray-950">
                 {khqrPercent}% Volume
               </strong>
             </div>
             <div className="text-right">
-              <span className="block text-[11px] text-gray-400 font-medium">
+              <span className="block text-[10px] sm:text-[11px] text-gray-400 font-medium">
                 Cash on Delivery
               </span>
-              <strong className="text-base font-black text-gray-600">
+              <strong className="text-sm sm:text-base font-black text-gray-600">
                 {codPercent}% Volume
               </strong>
             </div>
@@ -524,23 +524,23 @@ function Dashboard() {
             />
           </div>
 
-          <div className="mt-4 flex items-center justify-between text-[11px] text-gray-400 font-medium">
+          <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[10px] sm:text-[11px] text-gray-400 font-medium border-t border-gray-50 pt-2.5">
             <span>Dual USD ($) &amp; KHR (៛) Clearing</span>
-            <span>Indexed at 1 USD = 4,100 KHR</span>
+            <span>1 USD = 4,100 KHR</span>
           </div>
         </div>
 
         {/* Low Stock Radar Alert */}
-        <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 shadow-xs">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
-            <h3 className="text-sm sm:text-base font-extrabold text-gray-900">
-              Inventory Velocity &amp; Stock Radar
+        <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3.5 mb-3 sm:mb-4">
+            <h3 className="text-sm sm:text-base font-extrabold text-gray-900 truncate">
+              Inventory Radar
             </h3>
             <Link
               to="/admin/products"
-              className="text-xs font-bold text-gray-900 hover:underline"
+              className="text-xs font-bold text-gray-900 hover:underline shrink-0 ml-2"
             >
-              Restock Products &rarr;
+              Restock &rarr;
             </Link>
           </div>
 
@@ -605,26 +605,100 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Patron Orders Table */}
+      {/* Recent Patron Orders Section (Responsive Dual View) */}
       <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
-        <div className="p-5 sm:px-6 border-b border-gray-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm sm:text-base font-extrabold text-gray-900">
+        <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-base font-extrabold text-gray-900 truncate">
               Recent Patron Orders
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Latest customer transactions recorded in MongoDB
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+              Latest transactions recorded in MongoDB
             </p>
           </div>
           <Link
             to="/admin/orders"
-            className="text-xs font-bold text-gray-900 hover:underline"
+            className="text-xs font-bold text-gray-900 hover:underline shrink-0 ml-2"
           >
-            Manage All Orders &rarr;
+            All Orders &rarr;
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* 1. Mobile Card List (< md screens) */}
+        <div className="block md:hidden divide-y divide-gray-100">
+          {recentOrders.length > 0 ? (
+            recentOrders.map((ord) => (
+              <div key={ord.id} className="p-3.5 hover:bg-gray-50/70 transition-colors space-y-2.5">
+                {/* Top Row: Order # & Status */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono font-black text-gray-950 text-xs tracking-tight">
+                    {ord.orderNumber}
+                  </span>
+                  <div>{getStatusBadge(ord.orderStatus)}</div>
+                </div>
+
+                {/* Middle Row: Patron info & Date */}
+                <div className="flex items-center justify-between text-xs">
+                  <div className="min-w-0 flex-1 pr-2">
+                    <div className="font-bold text-gray-900 truncate">
+                      {ord.customerName || "Patron"}
+                    </div>
+                    <div className="text-[10px] text-gray-400 truncate">
+                      {ord.customerEmail || "Guest checkout"}
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-gray-500 font-medium whitespace-nowrap text-right">
+                    {ord.date}
+                  </div>
+                </div>
+
+                {/* Bottom Row: Total, Payment Status, and POS Quick Actions */}
+                <div className="pt-2 border-t border-gray-100/80 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-sm text-gray-950">
+                      ${Number(ord.total || 0).toFixed(2)}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        ord.paymentStatus === "Paid"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {ord.paymentStatus || "Pending"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPosReceiptOrder(ord)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 text-[10px] font-extrabold cursor-pointer transition-all active:scale-95"
+                      title="Print POS Thermal Receipt"
+                    >
+                      <Receipt className="w-3 h-3" />
+                      <span>POS</span>
+                    </button>
+                    <Link
+                      to="/admin/orders"
+                      className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-8 text-center text-xs text-gray-400">
+              No recent patron orders found.
+            </div>
+          )}
+        </div>
+
+        {/* 2. Full Table View (>= md screens) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs sm:text-sm text-gray-700 border-collapse">
             <thead>
               <tr className="bg-gray-50/80 border-b border-gray-200 text-[11px] uppercase tracking-wider font-bold text-gray-500">

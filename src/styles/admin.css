@@ -377,6 +377,9 @@
   flex: 1;
   margin-left: var(--admin-sidebar-width);
   min-height: 100vh;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1003,6 +1006,12 @@
 
   .admin-page-container {
     padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-page-container {
+    padding: 12px 12px 28px !important;
   }
 }
 
