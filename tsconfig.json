@@ -18,7 +18,8 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": false,
-    "allowJs": true
+    "allowJs": true,
+    "types": ["vite/client"]
   },
   "include": ["src"]
 }

@@ -2,14 +2,16 @@ import api from "./api";
 import { supabase } from "./supabase";
 import { ensureAdminSession } from "./productService";
 
+const env = (import.meta as any).env || {};
+
 const BAKONG_API_TOKEN =
-  import.meta.env.VITE_BAKONG_API_TOKEN ||
+  env.VITE_BAKONG_API_TOKEN ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiYTQ2Yjk3YTMzOTYyNDg4ZiJ9LCJpYXQiOjE3OTQxMzA5OTEsImV4cCI6MTgwMTkwNjk5MX0.WcswF46ufm9d7UqPtN48LcoKc0AzCjb0rLN4Zir2lIw";
 
-const BAKONG_API_URL = import.meta.env.VITE_BAKONG_API_URL || "https://api-bakong.nbc.gov.kh";
-const BAKONG_ACCOUNT_ID = import.meta.env.VITE_BAKONG_ACCOUNT_ID || "rayou_va@bkrt";
-const BAKONG_MERCHANT_NAME = import.meta.env.VITE_BAKONG_MERCHANT_NAME || "Rayou Va";
-const BAKONG_PHONE = import.meta.env.VITE_BAKONG_PHONE || "0968350317";
+const BAKONG_API_URL = env.VITE_BAKONG_API_URL || "https://api-bakong.nbc.gov.kh";
+const BAKONG_ACCOUNT_ID = env.VITE_BAKONG_ACCOUNT_ID || "rayou_va@bkrt";
+const BAKONG_MERCHANT_NAME = env.VITE_BAKONG_MERCHANT_NAME || "Rayou Va";
+const BAKONG_PHONE = env.VITE_BAKONG_PHONE || "0968350317";
 
 export interface KhqrCreatePayload {
   amount: number;
