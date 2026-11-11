@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, ArrowUpRight } from "lucide-react";
-import { CATEGORIES } from "../../data/categories";
 import { categoryService } from "../../services/categoryService";
 
 export const Categories: React.FC = () => {
   const [categoriesList, setCategoriesList] = useState<any[]>(() => {
     const cached = (categoryService as any).getCachedCategories?.();
-    return Array.isArray(cached) && cached.length > 0 ? cached : CATEGORIES;
+    return Array.isArray(cached) ? cached : [];
   });
 
   useEffect(() => {
@@ -21,11 +20,10 @@ export const Categories: React.FC = () => {
               id: String(c.id || c._id || idx),
               name: c.name || "Collection",
               slug: c.slug || String(c.name || "").toLowerCase().replace(/\s+/g, "-"),
-              description: c.description || `Architectural ${c.name} collection crafted in Paris and Milan.`,
+              description: c.description || `Architectural ${c.name} collection`,
               image:
                 c.image ||
-                CATEGORIES[idx % CATEGORIES.length]?.image ||
-                "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80",
+                "/uploads/bed6e30a33b2.jpg",
               itemCount: c.itemCount ?? c.count ?? 0,
             }))
           );

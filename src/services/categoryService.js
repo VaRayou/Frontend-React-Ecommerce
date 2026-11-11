@@ -1,9 +1,24 @@
-import api from "./api";
-import { initialCategories } from "../data/demoCategories.js";
 import { supabase } from "./supabase";
 
-const CATEGORIES_STORAGE_KEY = "atelier_categories_v2";
+const CATEGORIES_STORAGE_KEY = "atelier_categories_v3";
 let _memoryCategories = null;
+
+// Purge old mock categories on initialization
+try {
+  localStorage.removeItem("atelier_categories_v2");
+  const stored = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    const valid = Array.isArray(parsed)
+      ? parsed.filter((c) => c && typeof c.id === "string" && c.id.includes("-"))
+      : [];
+    if (valid.length !== parsed?.length) {
+      localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(valid));
+    }
+  }
+} catch {
+  // quiet
+}
 
 const getCategoriesStorage = () => {
   if (_memoryCategories && _memoryCategories.length > 0) {
@@ -11,17 +26,20 @@ const getCategoriesStorage = () => {
   }
   const stored = localStorage.getItem(CATEGORIES_STORAGE_KEY);
   if (!stored) {
-    return initialCategories;
+    return [];
   }
   try {
     const parsed = JSON.parse(stored);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      _memoryCategories = parsed;
-      return parsed;
+    const valid = Array.isArray(parsed)
+      ? parsed.filter((c) => c && typeof c.id === "string" && c.id.includes("-"))
+      : [];
+    if (valid.length > 0) {
+      _memoryCategories = valid;
+      return valid;
     }
-    return initialCategories;
+    return [];
   } catch {
-    return initialCategories;
+    return [];
   }
 };
 
@@ -30,103 +48,118 @@ const saveCategoriesStorage = (categories) => {
   try {
     localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
   } catch {
-    // ignore storage quota errors
+    // ignore
   }
 };
 
 export const categoryService = {
-  // Synchronously returns cached categories for 0ms instant rendering
+  // Synchronously returns cached Supabase categories
   getCachedCategories: () => {
     return getCategoriesStorage();
   },
 
-  // Get all categories
+  // Get all categories directly from Supabase
   getCategories: async () => {
     try {
-      // 1. Direct Supabase Query (0ms Cold Start)
-      if (supabase) {
-        try {
-          const { data, error } = await supabase
-            .from("categories")
-            .select("*")
-            .eq("status", "Active")
-            .order("display_order", { ascending: true });
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("status", "Active")
+        .order("display_order", { ascending: true });
 
-          if (!error && Array.isArray(data) && data.length > 0) {
-            saveCategoriesStorage(data);
-            return data;
-          }
-        } catch (supabaseErr) {
-          console.warn("[Supabase] Categories query note:", supabaseErr.message);
-        }
+      if (error) {
+        console.warn("[Supabase] getCategories note:", error.message);
+      } else if (Array.isArray(data) && data.length > 0) {
+        saveCategoriesStorage(data);
+        return data;
       }
-
-      // 2. Secondary API Query Fallback
-      const response = await api.get("/categories/");
-      if (Array.isArray(response.data) && response.data.length > 0) {
-        saveCategoriesStorage(response.data);
-      }
-      return response.data;
+      return getCategoriesStorage();
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
+      console.warn("[Supabase] getCategories exception:", err.message);
       return getCategoriesStorage();
     }
   },
 
-  // Create new category (Admin)
+  // Create new category directly in Supabase (Admin)
   createCategory: async (categoryData) => {
     try {
-      const response = await api.post("/categories/", categoryData);
-      return response.data;
+      const name = String(categoryData.name || "").trim();
+      const slug = (categoryData.slug || name).toLowerCase().replace(/\s+/g, "-");
+
+      const { data, error } = await supabase
+        .from("categories")
+        .insert([
+          {
+            name,
+            slug,
+            description: categoryData.description || `Collection ${name}`,
+            image: categoryData.image || "/uploads/bed6e30a33b2.jpg",
+            status: categoryData.status || "Active",
+            display_order: Number(categoryData.display_order || categoryData.displayOrder || 0),
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const current = getCategoriesStorage();
+      saveCategoriesStorage([...current, data]);
+      return data;
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getCategoriesStorage();
-      const newCategory = {
-        id: Date.now(),
-        name: categoryData.name,
-        slug: categoryData.name.toLowerCase().replace(/\s+/g, "-"),
-        description: categoryData.description || "",
-        image: categoryData.image || "/user/images/home/product1.jpg",
-        itemCount: 0,
-        status: categoryData.status || "Active",
-      };
-      list.push(newCategory);
-      saveCategoriesStorage(list);
-      return newCategory;
+      console.error("Supabase createCategory failed:", err);
+      throw err;
     }
   },
 
-  // Update category (Admin)
+  // Update category directly in Supabase (Admin)
   updateCategory: async (id, updatedFields) => {
     try {
-      const response = await api.put(`/categories/${id}/`, updatedFields);
-      return response.data;
-    } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getCategoriesStorage();
-      const index = list.findIndex((c) => String(c.id) === String(id));
-      if (index === -1) throw new Error("Category not found");
-
-      list[index] = { ...list[index], ...updatedFields };
-      if (updatedFields.name) {
-        list[index].slug = updatedFields.name.toLowerCase().replace(/\s+/g, "-");
+      const cleanId = String(id).trim();
+      const patch = {};
+      if (updatedFields.name !== undefined) {
+        patch.name = updatedFields.name;
+        if (!updatedFields.slug) {
+          patch.slug = updatedFields.name.toLowerCase().trim().replace(/\s+/g, "-");
+        }
       }
-      saveCategoriesStorage(list);
-      return list[index];
+      if (updatedFields.slug !== undefined) patch.slug = updatedFields.slug;
+      if (updatedFields.description !== undefined) patch.description = updatedFields.description;
+      if (updatedFields.image !== undefined) patch.image = updatedFields.image;
+      if (updatedFields.status !== undefined) patch.status = updatedFields.status;
+      if (updatedFields.display_order !== undefined) patch.display_order = Number(updatedFields.display_order);
+
+      const { data, error } = await supabase
+        .from("categories")
+        .update(patch)
+        .eq("id", cleanId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const current = getCategoriesStorage();
+      saveCategoriesStorage(current.map((c) => (c.id === cleanId ? data : c)));
+      return data;
+    } catch (err) {
+      console.error("Supabase updateCategory failed:", err);
+      throw err;
     }
   },
 
-  // Delete category (Admin)
+  // Delete category directly from Supabase (Admin)
   deleteCategory: async (id) => {
     try {
-      await api.delete(`/categories/${id}/`);
+      const cleanId = String(id).trim();
+      const { error } = await supabase.from("categories").delete().eq("id", cleanId);
+      if (error) throw error;
+
+      const current = getCategoriesStorage();
+      saveCategoriesStorage(current.filter((c) => c.id !== cleanId));
       return true;
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getCategoriesStorage();
-      const filtered = list.filter((c) => String(c.id) !== String(id));
-      saveCategoriesStorage(filtered);
-      return true;
+      console.error("Supabase deleteCategory failed:", err);
+      throw err;
     }
   },
 };

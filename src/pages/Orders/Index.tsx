@@ -13,7 +13,7 @@ import {
 import { useAuthStore } from "../../store/useAuthStore";
 import { useCartStore } from "../../store/useCartStore";
 import { useUIStore } from "../../store/useUIStore";
-import { PRODUCTS } from "../../data/products";
+import { productService } from "../../services/productService";
 import { orderService } from "../../services/orderService";
 import { InvoiceModal } from "../../components/common/InvoiceModal";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
@@ -69,7 +69,24 @@ export const Orders: React.FC = () => {
   }
 
   const handleReorder = (item: any) => {
-    const prod = PRODUCTS.find((p) => p.id === (item.productId || item.id)) || PRODUCTS[0];
+    const cached = (productService as any).getCachedProducts?.() || [];
+    const prod =
+      cached.find((p: any) => String(p.id) === String(item.productId || item.id)) || {
+        id: String(item.productId || item.id || Date.now()),
+        name: item.productName || item.name || "Fashion Piece",
+        price: Number(item.price || 0),
+        images: [item.image || "/uploads/8a82fc7bb76c.jpg"],
+        category: "Collection",
+        rating: 5,
+        reviewsCount: 0,
+        colors: [{ name: "Standard", hex: "#111111" }],
+        sizes: ["M"],
+        description: "",
+        details: [],
+        material: "",
+        inStock: true,
+        stockCount: 10,
+      };
     addToCart(prod, item.quantity || 1, item.size || "M");
     showToast(`Added "${item.productName || item.name}" to your bag`, "success", item.image);
     openCartDrawer();
@@ -78,14 +95,24 @@ export const Orders: React.FC = () => {
   const handleBuyOrderAgain = (order: any) => {
     const items = Array.isArray(order.items) ? order.items : [];
     if (items.length === 0) return;
+    const cached = (productService as any).getCachedProducts?.() || [];
     items.forEach((item: any) => {
       const prod =
-        PRODUCTS.find((p) => p.id === (item.productId || item.id)) || {
-          ...PRODUCTS[0],
+        cached.find((p: any) => String(p.id) === String(item.productId || item.id)) || {
           id: String(item.productId || item.id || Date.now()),
           name: item.productName || item.name || "Fashion Piece",
           price: Number(item.price || 0),
-          images: [item.image || PRODUCTS[0].images[0]],
+          images: [item.image || "/uploads/8a82fc7bb76c.jpg"],
+          category: "Collection",
+          rating: 5,
+          reviewsCount: 0,
+          colors: [{ name: "Standard", hex: "#111111" }],
+          sizes: ["M"],
+          description: "",
+          details: [],
+          material: "",
+          inStock: true,
+          stockCount: 10,
         };
       addToCart(prod, item.quantity || 1, item.size || "M");
     });

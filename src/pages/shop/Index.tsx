@@ -2,8 +2,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Filter, X, SlidersHorizontal, ArrowUpDown, RotateCcw, Check, Search, Sparkles } from "lucide-react";
-import { PRODUCTS } from "../../data/products";
-import { CATEGORIES } from "../../data/categories";
 import { ProductGrid } from "../../components/product/ProductGrid";
 import { productService } from "../../services/productService";
 import { categoryService } from "../../services/categoryService";
@@ -50,11 +48,11 @@ export const Shop: React.FC = () => {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [productsList, setProductsList] = useState<Product[]>(() => {
     const cached = (productService as any).getCachedProducts?.();
-    return Array.isArray(cached) && cached.length > 0 ? cached : PRODUCTS;
+    return Array.isArray(cached) ? cached : [];
   });
   const [liveCategories, setLiveCategories] = useState<any[]>(() => {
     const cached = (categoryService as any).getCachedCategories?.();
-    return Array.isArray(cached) && cached.length > 0 ? cached : CATEGORIES;
+    return Array.isArray(cached) ? cached : [];
   });
   const { formatPrice } = useCurrencyStore();
 

@@ -16,8 +16,6 @@ import {
   Globe,
   Eye,
 } from "lucide-react";
-import { PRODUCTS } from "../../data/products";
-import { CATEGORIES } from "../../data/categories";
 import { ProductGrid } from "../../components/product/ProductGrid";
 import { productService } from "../../services/productService";
 import { categoryService } from "../../services/categoryService";
@@ -88,11 +86,11 @@ export const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("All");
   const [productsList, setProductsList] = useState<Product[]>(() => {
     const cached = (productService as any).getCachedProducts?.();
-    return Array.isArray(cached) && cached.length > 0 ? cached : PRODUCTS;
+    return Array.isArray(cached) ? cached : [];
   });
   const [categoriesList, setCategoriesList] = useState<any[]>(() => {
     const cached = (categoryService as any).getCachedCategories?.();
-    return Array.isArray(cached) && cached.length > 0 ? cached : CATEGORIES;
+    return Array.isArray(cached) ? cached : [];
   });
   const [realReviews, setRealReviews] = useState<any[]>([]);
   const [heroIndex, setHeroIndex] = useState<number>(0);
@@ -126,14 +124,13 @@ export const Home: React.FC = () => {
               description: c.description || `Architectural ${c.name} collection`,
               image:
                 c.image ||
-                CATEGORIES[idx % CATEGORIES.length]?.image ||
-                "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80",
+                "/uploads/bed6e30a33b2.jpg",
               itemCount: c.itemCount ?? c.count ?? 0,
             }))
           );
         }
       } catch {
-        // Fallback to cached PRODUCTS / CATEGORIES
+        // quiet
       }
     };
     fetchHomeCatalog();

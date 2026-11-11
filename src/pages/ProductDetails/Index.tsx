@@ -15,7 +15,6 @@ import {
   ArrowRight,
   Share2,
 } from "lucide-react";
-import { PRODUCTS } from "../../data/products";
 import { REVIEWS } from "../../data/reviews";
 import { useCartStore } from "../../store/useCartStore";
 import { useWishlistStore } from "../../store/useWishlistStore";
@@ -33,24 +32,24 @@ export const ProductDetails: React.FC = () => {
   const location = useLocation();
   const { user, isAuthenticated } = useAuthStore();
 
-  const [currentProduct, setCurrentProduct] = useState<Product>(() => {
-    const cached = (productService as any).getCachedProducts?.() || PRODUCTS;
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(() => {
+    const cached = (productService as any).getCachedProducts?.() || [];
     return (
       cached.find((p: any) => String(p.id) === String(id) || String(p._id) === String(id)) ||
-      PRODUCTS.find((p) => String(p.id) === String(id)) ||
-      cached[0] ||
-      PRODUCTS[0]
+      null
     );
   });
+  const [loading, setLoading] = useState<boolean>(!currentProduct);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>(() => {
     const cached = (productService as any).getCachedProducts?.();
-    return Array.isArray(cached) && cached.length > 0 ? cached : PRODUCTS;
+    return Array.isArray(cached) ? cached : [];
   });
 
   useEffect(() => {
     if (!id) return;
     const fetchItem = async () => {
       try {
+        setLoading(true);
         const [item, allItems] = await Promise.all([
           productService.getProductById(id),
           productService.getProducts(),
@@ -60,8 +59,9 @@ export const ProductDetails: React.FC = () => {
           setCatalogProducts(allItems as Product[]);
         }
       } catch (e) {
-        const fallback = PRODUCTS.find((p) => String(p.id) === String(id)) || PRODUCTS[0];
-        setCurrentProduct(fallback);
+        console.warn("Product fetch note:", e);
+      } finally {
+        setLoading(false);
       }
     };
     fetchItem();
@@ -79,22 +79,24 @@ export const ProductDetails: React.FC = () => {
 
   const product = currentProduct;
   const rawStock =
-    product.stock !== undefined
+    product?.stock !== undefined
       ? Number(product.stock)
-      : product.quantity !== undefined
+      : product?.quantity !== undefined
       ? Number(product.quantity)
-      : product.stockCount !== undefined
+      : product?.stockCount !== undefined
       ? Number(product.stockCount)
       : 10;
   const isStatusOut =
-    String(product.status || "").trim().toLowerCase() === "out of stock" ||
-    product.inStock === false;
+    String(product?.status || "").trim().toLowerCase() === "out of stock" ||
+    product?.inStock === false;
   const stockCount = isStatusOut || isNaN(rawStock) ? 0 : Math.max(0, rawStock);
   const isOutOfStock = stockCount <= 0;
 
-  const relatedProducts = catalogProducts
-    .filter((p) => String(p.id) !== String(product.id) && p.category === product.category)
-    .slice(0, 4);
+  const relatedProducts = product
+    ? catalogProducts
+        .filter((p) => String(p.id) !== String(product.id) && p.category === product.category)
+        .slice(0, 4)
+    : [];
 
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
 
@@ -266,7 +268,9 @@ export const ProductDetails: React.FC = () => {
 
   const handleDeleteReview = async (reviewId: string) => {
     try {
-      await api.delete(`/products/${product.id}/reviews/?reviewId=${encodeURIComponent(reviewId)}`);
+      if (product) {
+        await api.delete(`/products/${product.id}/reviews/?reviewId=${encodeURIComponent(reviewId)}`);
+      }
       setReviewsList((prev) => prev.filter((r) => String(r.id) !== String(reviewId)));
       showToast("Review removed.", "info");
       window.dispatchEvent(new Event("atelier_products_updated"));
@@ -274,6 +278,31 @@ export const ProductDetails: React.FC = () => {
       console.warn("Failed to delete review:", err);
     }
   };
+
+  if (loading && !product) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="w-10 h-10 border-2 border-black border-t-[#D6FF00] rounded-full animate-spin" />
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Loading piece from Supabase...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-28 text-center space-y-5">
+        <h2 className="text-2xl font-black uppercase tracking-tight text-black">Piece Not Found</h2>
+        <p className="text-sm text-gray-500">The requested piece could not be found in our Supabase catalog.</p>
+        <Link
+          to="/shop"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full text-xs font-bold uppercase tracking-widest hover:text-[#D6FF00] transition-colors"
+        >
+          <span>Return to Catalog</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">

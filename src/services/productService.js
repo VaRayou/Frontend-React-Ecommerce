@@ -1,51 +1,29 @@
-import api from "./api";
-import { PRODUCTS } from "../data/products";
 import { supabase } from "./supabase";
 
-const PRODUCTS_STORAGE_KEY = "atelier_products_v2";
+const PRODUCTS_STORAGE_KEY = "atelier_products_v3";
 
-// Legacy demo product names to purge
-const DEMO_PRODUCT_NAMES = [
-  "easy polo",
-  "akira",
-  "classic summer blazer",
-  "floral summer dress",
-  "urban denim jacket",
-  "casual slim fit shirt",
-  "athletic performance shorts",
-  "colorblock dress",
-  "leather shoulder bag",
-  "running sneakers",
-  "cotton graphic hoodie",
-  "silk scarf",
-  "table vase",
-];
-
-const isDemoProduct = (p) => {
-  if (!p) return false;
-  const name = (p.name || "").toLowerCase();
-  const idNum = Number(p.id);
-  if (!isNaN(idNum) && idNum >= 1 && idNum <= 12 && (!p.images || p.image?.includes("/user/images/"))) {
-    return true;
-  }
-  return DEMO_PRODUCT_NAMES.some((dn) => name === dn || name.includes(dn));
-};
-
-// Purge legacy storage caches on initialization
+// Clean up any legacy mock caches on initialization
 try {
   localStorage.removeItem("eshopper_products");
+  localStorage.removeItem("atelier_products_v2");
   const stored = localStorage.getItem(PRODUCTS_STORAGE_KEY);
   if (stored) {
     const parsed = JSON.parse(stored);
-    const cleaned = parsed.filter((p) => !isDemoProduct(p));
-    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(cleaned));
+    // Keep ONLY real Supabase products with valid UUID format
+    const valid = Array.isArray(parsed)
+      ? parsed.filter((p) => p && typeof p.id === "string" && p.id.includes("-"))
+      : [];
+    if (valid.length !== parsed?.length) {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(valid));
+    }
   }
-} catch (e) {
+} catch {
   // quiet
 }
 
 export const formatProductForDisplay = (p) => {
-  const defaultLuxuryImg = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80";
+  if (!p) return null;
+  const defaultLuxuryImg = "/uploads/8a82fc7bb76c.jpg";
   const mainImg = p.image || (Array.isArray(p.images) && p.images[0]) || defaultLuxuryImg;
 
   const rawStock =
@@ -59,15 +37,25 @@ export const formatProductForDisplay = (p) => {
 
   const isStatusOut =
     String(p.status || "").trim().toLowerCase() === "out of stock" ||
-    p.inStock === false;
+    p.inStock === false ||
+    rawStock <= 0;
 
   const finalStock = isStatusOut || isNaN(rawStock) ? 0 : Math.max(0, rawStock);
   const finalStatus = finalStock <= 0 ? "Out of Stock" : (p.status || "Active");
+  const categoryName = p.categories?.name || p.category || "Collection";
 
   return {
     ...p,
     id: String(p.id || p._id),
-    _id: String(p._id || p.id),
+    _id: String(p.id || p._id),
+    name: p.name || "Untitled Piece",
+    subtitle: p.subtitle || "",
+    category: categoryName,
+    categoryId: p.category_id || p.categories?.id,
+    brand: p.brand || "ATELIER",
+    price: Number(p.price || 0),
+    originalPrice: Number(p.original_price ?? p.originalPrice ?? p.price ?? 0),
+    discount: p.discount || "",
     image: mainImg,
     images: Array.isArray(p.images) && p.images.length > 0 ? p.images : [mainImg],
     colors:
@@ -86,9 +74,17 @@ export const formatProductForDisplay = (p) => {
     stockCount: finalStock,
     inStock: finalStock > 0,
     status: finalStatus,
-    rating: p.rating !== undefined ? Number(p.rating) : 0,
-    reviewsCount: p.reviewsCount !== undefined ? Number(p.reviewsCount) : 0,
-    details: Array.isArray(p.details) ? p.details : ["Premium Italian craftsmanship", "Fine virgin wool and silk blend"],
+    rating: p.rating !== undefined ? Number(p.rating) : 5.0,
+    reviewsCount: p.reviews_count !== undefined ? Number(p.reviews_count) : (p.reviewsCount !== undefined ? Number(p.reviewsCount) : 0),
+    description: p.description || "Exclusive piece crafted with modern tailoring.",
+    details:
+      Array.isArray(p.details) && p.details.length > 0
+        ? p.details
+        : ["Premium craftsmanship", "Refined tactile finish", "Bespoke tailoring"],
+    material: p.material || "Virgin Wool & Silk Blend",
+    isFeatured: Boolean(p.is_featured ?? p.isFeatured ?? true),
+    isRecommended: Boolean(p.is_recommended ?? p.isRecommended ?? true),
+    isNewArrival: Boolean(p.is_latest ?? p.isNewArrival ?? true),
   };
 };
 
@@ -100,19 +96,20 @@ const getProductsStorage = () => {
   }
   const stored = localStorage.getItem(PRODUCTS_STORAGE_KEY);
   if (!stored) {
-    const cleanList = PRODUCTS.filter((p) => !isDemoProduct(p)).map(formatProductForDisplay);
-    return cleanList;
+    return [];
   }
   try {
     const list = JSON.parse(stored);
-    const cleaned = Array.isArray(list) ? list.filter((p) => !isDemoProduct(p)).map(formatProductForDisplay) : [];
-    if (cleaned.length > 0) {
-      _memoryProducts = cleaned;
-      return cleaned;
+    const valid = Array.isArray(list)
+      ? list.filter((p) => p && typeof p.id === "string" && p.id.includes("-")).map(formatProductForDisplay)
+      : [];
+    if (valid.length > 0) {
+      _memoryProducts = valid;
+      return valid;
     }
-    return PRODUCTS.filter((p) => !isDemoProduct(p)).map(formatProductForDisplay);
+    return [];
   } catch {
-    return PRODUCTS.filter((p) => !isDemoProduct(p)).map(formatProductForDisplay);
+    return [];
   }
 };
 
@@ -126,263 +123,257 @@ const saveProductsStorage = (products) => {
 };
 
 export const productService = {
-  // Synchronously returns the latest cached MongoDB products for 0ms instant first-frame rendering
+  // Synchronously returns the latest cached Supabase products for instant 0ms first-frame
   getCachedProducts: () => {
     return getProductsStorage();
   },
 
-  // Upload product image from computer
+  // Upload product image
   uploadImage: async (file) => {
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const res = await api.post("/upload/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      return res.data.image_url;
-    } catch (err) {
-      console.warn("Backend upload failed, using DataURL fallback:", err.message);
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      // 1. Try Supabase Storage bucket 'products'
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+      const filePath = `uploads/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("products")
+        .upload(filePath, file, { cacheControl: "3600", upsert: true });
+
+      if (!error && data?.path) {
+        const { data: urlData } = supabase.storage.from("products").getPublicUrl(data.path);
+        if (urlData?.publicUrl) return urlData.publicUrl;
+      }
+    } catch (e) {
+      console.warn("Supabase bucket upload note:", e.message);
     }
+
+    // 2. DataURL fallback
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   },
 
-  // Get all products with optional filters
+  // Get all products directly from Supabase
   getProducts: async ({ category, search, minPrice, maxPrice, sortBy } = {}) => {
     try {
-      const params = {};
-      if (category && category.toLowerCase() !== "all") params.category = category;
-      if (search && search.trim() !== "") params.search = search.trim();
-      if (minPrice !== undefined && minPrice !== "") params.minPrice = minPrice;
-      if (maxPrice !== undefined && maxPrice !== "") params.maxPrice = maxPrice;
-      if (sortBy) params.sortBy = sortBy;
+      const hasCategoryFilter = Boolean(category && category.toLowerCase() !== "all");
 
-      // 1. Direct High-Speed Supabase Query (0ms Cold Start)
-      if (supabase) {
-        try {
-          let query = supabase
-            .from("products")
-            .select("*, categories:category_id (id, name, slug)")
-            .eq("status", "Active");
+      // Build Supabase Query
+      let query = hasCategoryFilter
+        ? supabase.from("products").select("*, categories:category_id!inner(id, name, slug)").eq("status", "Active")
+        : supabase.from("products").select("*, categories:category_id(id, name, slug)").eq("status", "Active");
 
-          if (category && category.toLowerCase() !== "all") {
-            query = query.ilike("categories.slug", `%${category.toLowerCase()}%`);
-          }
-          if (search && search.trim() !== "") {
-            query = query.ilike("name", `%${search.trim()}%`);
-          }
-          if (minPrice !== undefined && minPrice !== "") query = query.gte("price", Number(minPrice));
-          if (maxPrice !== undefined && maxPrice !== "") query = query.lte("price", Number(maxPrice));
-
-          if (sortBy === "price-asc") query = query.order("price", { ascending: true });
-          else if (sortBy === "price-desc") query = query.order("price", { ascending: false });
-          else if (sortBy === "newest") query = query.order("created_at", { ascending: false });
-          else query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
-
-          const { data, error } = await query;
-          if (!error && Array.isArray(data) && data.length > 0) {
-            const formatted = data.map((p) =>
-              formatProductForDisplay({
-                ...p,
-                id: String(p.id),
-                category: p.categories?.name || p.category || "Collection",
-                originalPrice: p.original_price,
-                stockCount: p.stock,
-                inStock: p.stock > 0,
-                isFeatured: p.is_featured,
-                isRecommended: p.is_recommended,
-                isNewArrival: p.is_latest,
-                reviewsCount: p.reviews_count,
-              })
-            );
-            if (Object.keys(params).length === 0 && formatted.length > 0) {
-              saveProductsStorage(formatted);
-            }
-            return formatted;
-          }
-        } catch (supabaseErr) {
-          console.warn("[Supabase] Products query note:", supabaseErr.message);
-        }
+      if (hasCategoryFilter) {
+        query = query.ilike("categories.name", `%${category.trim()}%`);
       }
 
-      // 2. Secondary API Query Fallback
-      const response = await api.get("/products/", { params });
-      if (Array.isArray(response.data)) {
-        const clean = response.data.filter((p) => !isDemoProduct(p));
-        const formatted = clean.map(formatProductForDisplay);
-        if (Object.keys(params).length === 0 && formatted.length > 0) {
+      if (search && search.trim() !== "") {
+        query = query.ilike("name", `%${search.trim()}%`);
+      }
+
+      if (minPrice !== undefined && minPrice !== "") {
+        query = query.gte("price", Number(minPrice));
+      }
+
+      if (maxPrice !== undefined && maxPrice !== "") {
+        query = query.lte("price", Number(maxPrice));
+      }
+
+      if (sortBy === "price-asc") {
+        query = query.order("price", { ascending: true });
+      } else if (sortBy === "price-desc") {
+        query = query.order("price", { ascending: false });
+      } else if (sortBy === "newest") {
+        query = query.order("created_at", { ascending: false });
+      } else {
+        query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.warn("[Supabase] Products query error:", error.message);
+      } else if (Array.isArray(data)) {
+        const formatted = data.map(formatProductForDisplay);
+        if (!category && !search && !minPrice && !maxPrice && formatted.length > 0) {
           saveProductsStorage(formatted);
         }
         return formatted;
       }
-      return [];
+      return getProductsStorage();
     } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      let list = [...getProductsStorage().filter((p) => !isDemoProduct(p)).map(formatProductForDisplay)];
-
-      if (category && category.toLowerCase() !== "all") {
-        list = list.filter(
-          (p) => p.category.toLowerCase() === category.toLowerCase()
-        );
-      }
-
-      if (search && search.trim() !== "") {
-        const q = search.trim().toLowerCase();
-        list = list.filter(
-          (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.description.toLowerCase().includes(q) ||
-            p.category.toLowerCase().includes(q) ||
-            (p.brand && p.brand.toLowerCase().includes(q))
-        );
-      }
-
-      if (minPrice !== undefined && minPrice !== "") {
-        list = list.filter((p) => p.price >= Number(minPrice));
-      }
-
-      if (maxPrice !== undefined && maxPrice !== "") {
-        list = list.filter((p) => p.price <= Number(maxPrice));
-      }
-
-      if (sortBy === "price-asc") {
-        list.sort((a, b) => a.price - b.price);
-      } else if (sortBy === "price-desc") {
-        list.sort((a, b) => b.price - a.price);
-      } else if (sortBy === "name-asc") {
-        list.sort((a, b) => a.name.localeCompare(b.name));
-      } else if (sortBy === "name-desc") {
-        list.sort((a, b) => b.name.localeCompare(a.name));
-      }
-
-      return list;
+      console.warn("[Supabase] getProducts exception:", err.message);
+      return getProductsStorage();
     }
   },
 
-  // Get single product details
+  // Get single product details directly from Supabase
   getProductById: async (id) => {
+    if (!id) return null;
+    const cleanId = String(id).trim();
+
     try {
-      const response = await api.get(`/products/${id}/`);
-      return formatProductForDisplay(response.data);
-    } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getProductsStorage();
-      const product = list.find(
-        (p) => String(p.id) === String(id) || String(p._id) === String(id)
-      );
-      if (!product) {
-        // Fallback to static PRODUCTS
-        const fallback = PRODUCTS.find((p) => String(p.id) === String(id));
-        if (fallback) return formatProductForDisplay(fallback);
-        throw new Error("Product not found");
+      const { data, error } = await supabase
+        .from("products")
+        .select("*, categories:category_id(id, name, slug)")
+        .eq("id", cleanId)
+        .maybeSingle();
+
+      if (!error && data) {
+        return formatProductForDisplay(data);
       }
-      return formatProductForDisplay(product);
+    } catch (err) {
+      console.warn("[Supabase] getProductById note:", err.message);
     }
+
+    // Check cached real products
+    const cached = getProductsStorage();
+    const found = cached.find((p) => String(p.id) === cleanId || String(p._id) === cleanId);
+    if (found) return found;
+
+    throw new Error(`Product not found: ${cleanId}`);
   },
 
-  // Create new product (Admin)
+  // Create new product directly into Supabase (Admin)
   createProduct: async (productData) => {
     try {
-      const response = await api.post("/products/", productData);
-      const formatted = formatProductForDisplay(response.data);
-      window.dispatchEvent(new Event("atelier_products_updated"));
-      return formatted;
-    } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getProductsStorage();
-      const rawStock = productData.stock !== undefined ? Number(productData.stock) : 1;
-      const isOut = String(productData.status || "").toLowerCase() === "out of stock" || rawStock <= 0;
-      const finalStock = isOut ? 0 : Math.max(0, rawStock);
-      const newProduct = {
-        id: `prod-${Date.now()}`,
-        name: productData.name,
-        price: Number(productData.price) || 0,
-        originalPrice: Number(productData.originalPrice) || Number(productData.price) || 0,
-        discount: productData.discount || "",
-        category: productData.category || "Women",
-        brand: productData.brand || "Atelier",
-        stock: finalStock,
-        quantity: finalStock,
-        status: finalStock <= 0 ? "Out of Stock" : (productData.status || "Active"),
-        rating: 5.0,
-        reviewsCount: 0,
-        image: productData.image || "/user/images/home/product1.jpg",
-        images: [
-          productData.image || "/user/images/home/product1.jpg",
-        ],
-        description: productData.description || "No description provided.",
-        isFeatured: Boolean(productData.isFeatured),
-        isRecommended: Boolean(productData.isRecommended),
-        isNewArrival: true,
-      };
-
-      list.unshift(newProduct);
-      saveProductsStorage(list);
-      window.dispatchEvent(new Event("atelier_products_updated"));
-      return formatProductForDisplay(newProduct);
-    }
-  },
-
-  // Update product (Admin)
-  updateProduct: async (id, updatedFields) => {
-    try {
-      const response = await api.put(`/products/${id}/`, updatedFields);
-      const formatted = formatProductForDisplay(response.data);
-      window.dispatchEvent(new Event("atelier_products_updated"));
-      return formatted;
-    } catch (err) {
-      console.warn("Backend API offline or failed, using local storage:", err.message);
-      const list = getProductsStorage();
-      const index = list.findIndex(
-        (p) => String(p.id) === String(id) || String(p._id) === String(id)
-      );
-      if (index === -1) {
-        throw new Error("Product to update was not found");
+      let categoryId = productData.categoryId || productData.category_id;
+      if (!categoryId && productData.category) {
+        const { data: cat } = await supabase
+          .from("categories")
+          .select("id")
+          .ilike("name", productData.category.trim())
+          .maybeSingle();
+        if (cat) categoryId = cat.id;
       }
 
-      const rawStock = updatedFields.stock !== undefined ? Number(updatedFields.stock) : Number(list[index].stock ?? 0);
-      const isStatusOut = String(updatedFields.status || "").toLowerCase() === "out of stock";
-      const finalStock = isStatusOut ? 0 : Math.max(0, rawStock);
-      const finalStatus = finalStock <= 0 ? "Out of Stock" : (updatedFields.status || "Active");
+      const rawStock = Number(productData.stock ?? productData.quantity ?? 10);
+      const isOut = String(productData.status || "").toLowerCase() === "out of stock" || rawStock <= 0;
+      const finalStock = isOut ? 0 : Math.max(0, rawStock);
 
-      const updated = {
-        ...list[index],
-        ...updatedFields,
-        price: Number(updatedFields.price !== undefined ? updatedFields.price : list[index].price),
-        originalPrice: Number(updatedFields.originalPrice !== undefined ? updatedFields.originalPrice : list[index].originalPrice),
+      const payload = {
+        name: productData.name,
+        subtitle: productData.subtitle || "",
+        category_id: categoryId || null,
+        brand: productData.brand || "ATELIER",
+        price: Number(productData.price) || 0,
+        original_price: Number(productData.originalPrice) || Number(productData.price) || 0,
+        discount: productData.discount || "",
         stock: finalStock,
-        quantity: finalStock,
-        status: finalStatus,
+        status: finalStock <= 0 ? "Out of Stock" : (productData.status || "Active"),
+        image: productData.image || "/uploads/8a82fc7bb76c.jpg",
+        images:
+          Array.isArray(productData.images) && productData.images.length > 0
+            ? productData.images
+            : [productData.image || "/uploads/8a82fc7bb76c.jpg"],
+        description: productData.description || "Exclusive piece crafted with modern tailoring.",
+        details:
+          Array.isArray(productData.details) && productData.details.length > 0
+            ? productData.details
+            : ["Premium craftsmanship", "Refined tactile finish"],
+        material: productData.material || "Virgin Wool & Silk Blend",
+        is_featured: Boolean(productData.isFeatured ?? true),
+        is_recommended: Boolean(productData.isRecommended ?? true),
+        is_latest: true,
       };
 
-      list[index] = updated;
-      saveProductsStorage(list);
+      const { data, error } = await supabase
+        .from("products")
+        .insert([payload])
+        .select("*, categories:category_id (id, name, slug)")
+        .single();
+
+      if (error) throw error;
+      const formatted = formatProductForDisplay(data);
+
+      const current = getProductsStorage();
+      saveProductsStorage([formatted, ...current]);
       window.dispatchEvent(new Event("atelier_products_updated"));
-      return formatProductForDisplay(updated);
+      return formatted;
+    } catch (err) {
+      console.error("Supabase createProduct failed:", err);
+      throw err;
     }
   },
 
-  // Delete product (Admin)
-  deleteProduct: async (id) => {
-    const cleanId = String(id).trim();
+  // Update product directly in Supabase (Admin)
+  updateProduct: async (id, updatedFields) => {
     try {
-      await api.delete(`/products/${cleanId}/`);
+      const cleanId = String(id).trim();
+      let categoryId = updatedFields.categoryId || updatedFields.category_id;
+      if (!categoryId && updatedFields.category) {
+        const { data: cat } = await supabase
+          .from("categories")
+          .select("id")
+          .ilike("name", updatedFields.category.trim())
+          .maybeSingle();
+        if (cat) categoryId = cat.id;
+      }
+
+      const patch = {};
+      if (updatedFields.name !== undefined) patch.name = updatedFields.name;
+      if (updatedFields.subtitle !== undefined) patch.subtitle = updatedFields.subtitle;
+      if (categoryId !== undefined) patch.category_id = categoryId;
+      if (updatedFields.brand !== undefined) patch.brand = updatedFields.brand;
+      if (updatedFields.price !== undefined) patch.price = Number(updatedFields.price);
+      if (updatedFields.originalPrice !== undefined) patch.original_price = Number(updatedFields.originalPrice);
+      if (updatedFields.discount !== undefined) patch.discount = updatedFields.discount;
+
+      if (updatedFields.stock !== undefined) {
+        const s = Number(updatedFields.stock);
+        patch.stock = s;
+        patch.status = s <= 0 ? "Out of Stock" : (updatedFields.status || "Active");
+      } else if (updatedFields.status !== undefined) {
+        patch.status = updatedFields.status;
+      }
+
+      if (updatedFields.image !== undefined) patch.image = updatedFields.image;
+      if (updatedFields.images !== undefined) patch.images = updatedFields.images;
+      if (updatedFields.description !== undefined) patch.description = updatedFields.description;
+      if (updatedFields.details !== undefined) patch.details = updatedFields.details;
+      if (updatedFields.material !== undefined) patch.material = updatedFields.material;
+      if (updatedFields.isFeatured !== undefined) patch.is_featured = Boolean(updatedFields.isFeatured);
+      if (updatedFields.isRecommended !== undefined) patch.is_recommended = Boolean(updatedFields.isRecommended);
+
+      const { data, error } = await supabase
+        .from("products")
+        .update(patch)
+        .eq("id", cleanId)
+        .select("*, categories:category_id (id, name, slug)")
+        .single();
+
+      if (error) throw error;
+      const formatted = formatProductForDisplay(data);
+
+      const current = getProductsStorage();
+      const updatedList = current.map((p) => (p.id === cleanId ? formatted : p));
+      saveProductsStorage(updatedList);
+      window.dispatchEvent(new Event("atelier_products_updated"));
+      return formatted;
     } catch (err) {
-      console.warn("Backend API offline or delete failed:", err.message);
+      console.error("Supabase updateProduct failed:", err);
+      throw err;
     }
+  },
+
+  // Delete product directly from Supabase (Admin)
+  deleteProduct: async (id) => {
     try {
-      const list = getProductsStorage();
-      const filtered = list.filter(
-        (p) => String(p.id) !== cleanId && String(p._id) !== cleanId
-      );
-      saveProductsStorage(filtered);
-    } catch {
-      // ignore
+      const cleanId = String(id).trim();
+      const { error } = await supabase.from("products").delete().eq("id", cleanId);
+      if (error) throw error;
+
+      const current = getProductsStorage();
+      const next = current.filter((p) => p.id !== cleanId);
+      saveProductsStorage(next);
+      window.dispatchEvent(new Event("atelier_products_updated"));
+      return true;
+    } catch (err) {
+      console.error("Supabase deleteProduct failed:", err);
+      throw err;
     }
-    return true;
   },
 };
