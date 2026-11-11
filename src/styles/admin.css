@@ -1005,13 +1005,18 @@
   }
 
   .admin-page-container {
-    padding: 16px;
+    padding: 16px 16px 24px;
+  }
+
+  .admin-footer {
+    padding: 14px 16px 76px;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 640px) {
   .admin-page-container {
-    padding: 12px 12px 28px !important;
+    padding: 12px 12px 24px !important;
   }
 }
 

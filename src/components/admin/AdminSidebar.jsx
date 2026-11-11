@@ -128,15 +128,17 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
     }))
     .filter((sec) => sec.items.length > 0);
 
+  const isCollapsed = collapsed && !mobileOpen;
+
   return (
-    <aside className={`admin-sidebar ${collapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}>
+    <aside className={`admin-sidebar ${isCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}>
       {/* Sidebar Header / Brand */}
       <div className="admin-sidebar-header">
         <Link to="/admin/dashboard" className="sidebar-brand-link" onClick={onCloseMobile}>
           <div className="sidebar-brand-icon">
             <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-xs" />
           </div>
-          {!collapsed && (
+          {!isCollapsed && (
             <div className="sidebar-brand-text">
               <span className="brand-main tracking-tight font-black">ATELIER</span>
               <span className="brand-sub font-mono font-bold tracking-widest text-[#D6FF00]">
@@ -168,7 +170,7 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
       </div>
 
       {/* Controller User Quick Info */}
-      {!collapsed && (
+      {!isCollapsed && (
         <div className="sidebar-user-card" style={{ background: "rgba(255, 255, 255, 0.04)", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: 12, margin: "12px 14px", padding: "10px 12px" }}>
           <div className="sidebar-user-avatar-wrap">
             <img
@@ -195,7 +197,7 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
         <nav className="sidebar-nav">
           {menuSections.map((sec, secIdx) => (
             <div key={secIdx} className="sidebar-section">
-              {!collapsed && <div className="sidebar-section-title">{sec.header}</div>}
+              {!isCollapsed && <div className="sidebar-section-title">{sec.header}</div>}
               <ul className="sidebar-menu-list">
                 {sec.items.map((item, itemIdx) => {
                   const IconComponent = item.icon;
@@ -205,13 +207,13 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
                         to={item.path}
                         className={({ isActive }) => `sidebar-menu-link ${isActive ? "active" : ""}`}
                         onClick={onCloseMobile}
-                        title={collapsed ? item.title : undefined}
+                        title={isCollapsed ? item.title : undefined}
                       >
                         <span className="sidebar-icon">
                           <IconComponent className="w-4 h-4" />
                         </span>
-                        {!collapsed && <span className="sidebar-link-text">{item.title}</span>}
-                        {!collapsed && item.badge && (
+                        {!isCollapsed && <span className="sidebar-link-text">{item.title}</span>}
+                        {!isCollapsed && item.badge && (
                           <span className="sidebar-link-badge">
                             {item.badge}
                           </span>
@@ -226,19 +228,19 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
 
           {/* Customer Storefront Shortcut */}
           <div className="sidebar-section">
-            {!collapsed && <div className="sidebar-section-title">STORE SHORTCUT</div>}
+            {!isCollapsed && <div className="sidebar-section-title">STORE SHORTCUT</div>}
             <ul className="sidebar-menu-list">
               <li className="sidebar-menu-item">
                 <Link
                   to="/"
                   className="sidebar-menu-link store-shortcut-link"
                   onClick={onCloseMobile}
-                  title={collapsed ? "Open Customer Storefront" : undefined}
+                  title={isCollapsed ? "Open Customer Storefront" : undefined}
                 >
                   <span className="sidebar-icon">
                     <Store className="w-4 h-4" />
                   </span>
-                  {!collapsed && <span className="sidebar-link-text">Customer Store</span>}
+                  {!isCollapsed && <span className="sidebar-link-text">Customer Store</span>}
                 </Link>
               </li>
             </ul>
@@ -252,10 +254,10 @@ export function AdminSidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseM
           type="button"
           className="sidebar-logout-btn"
           onClick={handleLogout}
-          title={collapsed ? "Logout Controller" : undefined}
+          title={isCollapsed ? "Logout Controller" : undefined}
         >
           <LogOut className="w-4 h-4" />
-          {!collapsed && <span>Sign Out Controller</span>}
+          {!isCollapsed && <span>Sign Out Controller</span>}
         </button>
       </div>
     </aside>

@@ -351,21 +351,21 @@ export function ManageOrders() {
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xs">
         <div>
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-500 mb-1 flex-wrap">
             <Link to="/admin/dashboard" className="hover:text-black font-semibold">
               Admin
             </Link>
             <span>/</span>
             <span className="text-gray-800 font-bold">Commerce</span>
             <span>•</span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              MongoDB Online (django_lab)
+              MongoDB Online
             </span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight">
             Customer Orders Management
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -374,56 +374,58 @@ export function ManageOrders() {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-          <button
-            type="button"
-            onClick={() => setIsPosCounterOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#D6FF00] hover:bg-[#c5ec00] text-black font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
-            title="Launch In-Store POS Counter Terminal"
-          >
-            <Receipt className="w-3.5 h-3.5" />
-            <span>New POS Sale</span>
-          </button>
+        <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 flex-wrap">
+          <div className="grid grid-cols-2 sm:flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsPosCounterOpen(true)}
+              className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-xl bg-[#D6FF00] hover:bg-[#c5ec00] text-black font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+              title="Launch In-Store POS Counter Terminal"
+            >
+              <Receipt className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">New POS Sale</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSyncMongo}
-            disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
-            title="Force Synchronize with MongoDB"
-          >
-            <Database className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Sync MongoDB</span>
-          </button>
+            <button
+              type="button"
+              onClick={handleSyncMongo}
+              disabled={isRefreshing}
+              className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer disabled:opacity-50"
+              title="Force Synchronize with MongoDB"
+            >
+              <Database className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="truncate">Sync MongoDB</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => loadOrders(true)}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
-            title="Refresh Orders"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#D6FF00]" : ""}`} />
-            <span>{isRefreshing ? "Syncing..." : "Sync Orders"}</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => loadOrders(true)}
+              disabled={isRefreshing}
+              className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer disabled:opacity-50"
+              title="Refresh Orders"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isRefreshing ? "animate-spin text-[#D6FF00]" : ""}`} />
+              <span className="truncate">{isRefreshing ? "Syncing..." : "Sync Orders"}</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
-            title="Download CSV spreadsheet report"
-          >
-            <Download className="w-3.5 h-3.5 text-[#D6FF00]" />
-            <span>Export CSV</span>
-          </button>
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-[11px] sm:text-xs transition-colors cursor-pointer shadow-xs"
+              title="Download CSV spreadsheet report"
+            >
+              <Download className="w-3.5 h-3.5 text-[#D6FF00] shrink-0" />
+              <span className="truncate">Export CSV</span>
+            </button>
+          </div>
 
           {/* Filter dropdown */}
-          <div className="flex items-center gap-2.5 bg-gray-50 px-3.5 py-2 rounded-xl border border-gray-200">
-            <span className="text-xs font-bold text-gray-600">Filter Status:</span>
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 bg-gray-50 px-3.5 py-2.5 sm:py-2 rounded-xl border border-gray-200">
+            <span className="text-xs font-bold text-gray-600 shrink-0">Filter Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs font-bold bg-transparent text-gray-900 focus:outline-hidden cursor-pointer"
+              className="text-xs font-bold bg-transparent text-gray-900 focus:outline-hidden cursor-pointer flex-1 sm:flex-initial text-right sm:text-left"
             >
               <option value="all">All Orders ({orders.length})</option>
               <option value="pending">Pending</option>
@@ -436,35 +438,47 @@ export function ManageOrders() {
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">Total Volume</span>
-            <span className="text-xl font-black text-gray-950 mt-1 block">{orders.length} Orders</span>
+      {/* Metrics Row (3 compact cards side-by-side on mobile & desktop) */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="p-3 sm:p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider block truncate">
+              Total
+            </span>
+            <span className="text-base sm:text-xl font-black text-gray-950 mt-0.5 sm:mt-1 block truncate">
+              {orders.length} <span className="hidden sm:inline">Orders</span>
+            </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center font-bold">
-            <Package className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">In Progress</span>
-            <span className="text-xl font-black text-amber-600 mt-1 block">{pendingProcessingCount} Orders</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-            <Clock className="w-5 h-5" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center font-bold shrink-0">
+            <Package className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">Gross Revenue</span>
-            <span className="text-xl font-black text-emerald-600 mt-1 block">${totalRevenue.toFixed(2)}</span>
+        <div className="p-3 sm:p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider block truncate">
+              Active
+            </span>
+            <span className="text-base sm:text-xl font-black text-amber-600 mt-0.5 sm:mt-1 block truncate">
+              {pendingProcessingCount} <span className="hidden sm:inline">Orders</span>
+            </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-            <DollarSign className="w-5 h-5" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold shrink-0">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+        </div>
+
+        <div className="p-3 sm:p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider block truncate">
+              Revenue
+            </span>
+            <span className="text-base sm:text-xl font-black text-emerald-600 mt-0.5 sm:mt-1 block truncate">
+              ${totalRevenue.toFixed(0)}
+            </span>
+          </div>
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0">
+            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
       </div>
@@ -475,6 +489,114 @@ export function ManageOrders() {
         searchKey="customerName"
         searchPlaceholder="Search by customer name or email..."
         itemsPerPage={7}
+        renderMobileCard={(item) => {
+          const orderNum =
+            item.orderNumber || `#${String(item.id || item._id).slice(-8).toUpperCase()}`;
+          const orderDate =
+            item.date || (item.createdAt ? item.createdAt.split("T")[0] : "Today");
+
+          return (
+            <div className="space-y-3">
+              {/* Top Row: Order Number + Date + Total */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-mono text-xs font-black text-gray-900 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200">
+                    {orderNum}
+                  </span>
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    {orderDate}
+                  </span>
+                </div>
+                <strong className="text-base font-black text-gray-950 shrink-0">
+                  ${Number(item.total || 0).toFixed(2)}
+                </strong>
+              </div>
+
+              {/* Middle Row: Patron + Payment Badge */}
+              <div className="flex items-center justify-between gap-2 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
+                <div className="min-w-0">
+                  <div className="font-bold text-gray-900 text-xs truncate">
+                    {item.customerName || item.shippingAddress?.fullName || "Patron Client"}
+                  </div>
+                  <div className="text-[11px] text-gray-500 truncate">
+                    {item.customerEmail || "patron@atelier.com"}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                      item.paymentStatus === "Paid"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
+                    {item.paymentStatus || "Authorized"}
+                  </span>
+                  <span className="block text-[10px] text-gray-500 mt-0.5 font-medium">
+                    {item.paymentMethod || "Bakong KHQR"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Order Status Selector Row */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  Order Status
+                </span>
+                <select
+                  value={item.orderStatus || item.status || "Pending"}
+                  onChange={(e) => handleStatusChange(item.id || item.orderNumber, e.target.value)}
+                  className="px-3 py-1.5 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:border-black focus:outline-hidden cursor-pointer"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Action Buttons Bar */}
+              <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setPosReceiptOrder(item)}
+                  className="py-2 px-2 rounded-xl bg-neutral-900 hover:bg-black text-[#D6FF00] font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Receipt className="w-3.5 h-3.5" />
+                  <span>POS</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedOrder(item);
+                    setIsViewModalOpen(true);
+                  }}
+                  className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-neutral-900 hover:text-[#D6FF00] text-gray-700 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>View</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceOrder(item)}
+                  className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-neutral-900 hover:text-[#D6FF00] text-gray-700 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Invoice</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteOrder(item.id || item.orderNumber)}
+                  className="py-2 px-2 rounded-xl bg-red-50 hover:bg-rose-600 text-rose-600 hover:text-white font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          );
+        }}
         renderActions={(item) => (
           <div className="flex items-center justify-end gap-1.5">
             <button

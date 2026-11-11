@@ -620,7 +620,7 @@ export function ManageProducts() {
       )}
 
       {/* Page Title & Add New Product CTA */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
             <Link to="/admin/dashboard" className="hover:text-black font-semibold">
@@ -629,7 +629,7 @@ export function ManageProducts() {
             <span>/</span>
             <span className="text-gray-800 font-bold">Catalog</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight">
             Product Catalog Management
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -637,30 +637,30 @@ export function ManageProducts() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-100 hover:bg-neutral-900 hover:text-[#D6FF00] text-gray-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer border border-gray-200 shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-gray-100 hover:bg-neutral-900 hover:text-[#D6FF00] text-gray-800 transition-all font-bold text-[11px] sm:text-xs uppercase tracking-wider cursor-pointer border border-gray-200 shrink-0"
             title="Download Catalog CSV spreadsheet"
           >
-            <Download className="w-4 h-4 text-black" />
-            <span>Export Catalog CSV</span>
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black shrink-0" />
+            <span className="truncate">Export CSV</span>
           </button>
 
           <button
             type="button"
             onClick={handleOpenAdd}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-[11px] sm:text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Add New Product</span>
+            <Plus className="w-4 h-4 stroke-[3] shrink-0" />
+            <span className="truncate">Add Product</span>
           </button>
         </div>
       </div>
 
       {/* Quick Inventory Status Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
         {[
           {
             id: "all",
@@ -685,7 +685,7 @@ export function ManageProducts() {
           },
           {
             id: "out",
-            label: "Out of Stock (0)",
+            label: "Out of Stock",
             count: products.filter(
               (p) =>
                 Number(p.stock ?? p.quantity ?? 0) <= 0 ||
@@ -698,15 +698,15 @@ export function ManageProducts() {
             key={tab.id}
             type="button"
             onClick={() => setStockFilter(tab.id)}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+            className={`inline-flex items-center justify-between sm:justify-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
               stockFilter === tab.id
                 ? "bg-[#111111] text-white border-[#111111] shadow-sm"
                 : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
             }`}
           >
-            <span>{tab.label}</span>
+            <span className="truncate">{tab.label}</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
                 stockFilter === tab.id ? "bg-[#D6FF00] text-black" : tab.badge
               }`}
             >
@@ -730,6 +730,129 @@ export function ManageProducts() {
         searchKey="name"
         searchPlaceholder="Search product by title, category, or brand..."
         itemsPerPage={7}
+        renderMobileCard={(item) => {
+          const qty =
+            item.stock !== undefined
+              ? Number(item.stock)
+              : item.quantity !== undefined
+              ? Number(item.quantity)
+              : 0;
+          const prodId = item.id || item._id;
+          const isBusy = restockingId === prodId;
+          const hasDisc =
+            item.originalPrice && Number(item.originalPrice) > Number(item.price);
+
+          return (
+            <div className="space-y-3">
+              {/* Top Row: Thumbnail + Title + Price */}
+              <div className="flex items-start gap-3">
+                <img
+                  src={item.image || DEFAULT_IMAGE}
+                  alt={item.name}
+                  className="w-16 h-16 rounded-xl object-cover border border-gray-200 bg-gray-50 shrink-0"
+                  onError={(e) => {
+                    e.target.src = DEFAULT_IMAGE;
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                      #{String(prodId).slice(-6).toUpperCase()}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        item.status === "Active" && qty > 0
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {qty <= 0 ? "Out of Stock" : item.status || "Active"}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-sm truncate mt-1">
+                    {item.name}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500">
+                    <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-bold text-[10px] uppercase">
+                      {item.category || "Collection"}
+                    </span>
+                    <span>•</span>
+                    <span className="truncate">{item.brand || "ATELIER"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Middle Row: Price & Quick Stock Controls */}
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-gray-400 block">
+                    Retail Price
+                  </span>
+                  <div className="flex items-baseline gap-1.5">
+                    <strong className="text-base font-black text-gray-950">
+                      ${Number(item.price || 0).toFixed(2)}
+                    </strong>
+                    {hasDisc && (
+                      <span className="text-xs text-gray-400 line-through">
+                        ${item.originalPrice}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
+                      qty <= 0
+                        ? "bg-red-50 text-red-700 border-red-200"
+                        : qty <= 5
+                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    }`}
+                  >
+                    {qty} in stock
+                  </span>
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => handleQuickRestock(item, 5)}
+                    className="px-2.5 py-1 rounded-lg bg-neutral-900 text-[#D6FF00] text-[11px] font-black uppercase cursor-pointer active:scale-95 disabled:opacity-50"
+                  >
+                    {isBusy ? "..." : "+5"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Action Bar */}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => handleOpenView(item)}
+                  className="py-2 px-3 rounded-xl bg-gray-100 hover:bg-neutral-900 hover:text-[#D6FF00] text-gray-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Inspect</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(item)}
+                  className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDelete(item)}
+                  className="py-2 px-3 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          );
+        }}
         renderActions={(item) => (
           <div className="flex items-center justify-end gap-1.5">
             <button

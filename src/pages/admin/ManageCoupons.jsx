@@ -365,7 +365,7 @@ export function ManageCoupons() {
       )}
 
       {/* Page Header */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
             <Link to="/admin/dashboard" className="hover:text-black font-semibold">
@@ -374,7 +374,7 @@ export function ManageCoupons() {
             <span>/</span>
             <span className="text-gray-800 font-bold">Promo Coupons</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight">
             Manage Coupons &amp; Vouchers
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -386,24 +386,24 @@ export function ManageCoupons() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-stretch sm:self-auto">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => loadCoupons(true)}
             disabled={refreshing}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition-all font-bold text-xs cursor-pointer shrink-0 shadow-2xs"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition-all font-bold text-[11px] sm:text-xs cursor-pointer shrink-0 shadow-2xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
+            <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${refreshing ? "animate-spin" : ""}`} />
+            <span className="truncate">Refresh</span>
           </button>
 
           <button
             type="button"
             onClick={handleOpenAdd}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-[11px] sm:text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Create Promo Code</span>
+            <Plus className="w-4 h-4 stroke-[3] shrink-0" />
+            <span className="truncate">Create Code</span>
           </button>
         </div>
       </div>
@@ -415,6 +415,114 @@ export function ManageCoupons() {
         searchKey="code"
         searchPlaceholder="Search coupon code or description..."
         itemsPerPage={8}
+        renderMobileCard={(row) => {
+          const active = row.is_active !== false;
+          return (
+            <div className="space-y-3">
+              {/* Top Row: Voucher Code + Copy + Active Toggle */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-[#111111] text-[#D6FF00] flex items-center justify-center shrink-0">
+                    <Tag className="w-4 h-4" />
+                  </div>
+                  <span className="font-mono font-extrabold text-xs text-gray-900 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200 tracking-wider">
+                    {row.code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCode(row.code)}
+                    className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                    title="Copy promo code"
+                  >
+                    {copiedCode === row.code ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleToggleActive(row)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer shrink-0 ${
+                    active
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      active ? "bg-emerald-600" : "bg-red-600"
+                    }`}
+                  />
+                  <span>{active ? "Active" : "Inactive"}</span>
+                </button>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs font-medium text-gray-700 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
+                {row.description || "Promotional discount voucher"}
+              </p>
+
+              {/* Discount & Minimum Spend */}
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">
+                    Discount Value
+                  </span>
+                  {row.type === "percentage" ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-700">
+                      <Percent className="w-3 h-3" />
+                      <span>{row.value}% OFF</span>
+                    </span>
+                  ) : row.type === "shipping" ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700">
+                      <Truck className="w-3 h-3" />
+                      <span>FREE SHIPPING</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                      <DollarSign className="w-3 h-3" />
+                      <span>${Number(row.value || 0).toFixed(2)} OFF</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">
+                    Min. Spend
+                  </span>
+                  <span className="text-xs font-bold text-gray-800 bg-gray-100 px-2.5 py-0.5 rounded-lg">
+                    {Number(row.min_spend || 0) > 0
+                      ? `$${Number(row.min_spend).toFixed(2)}`
+                      : "No Minimum"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Bar */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(row)}
+                  className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Code</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDelete(row)}
+                  className="py-2 px-3 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          );
+        }}
         renderActions={(row) => (
           <div className="flex items-center justify-end gap-1.5">
             <button

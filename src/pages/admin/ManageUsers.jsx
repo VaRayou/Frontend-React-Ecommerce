@@ -213,7 +213,7 @@ export function ManageUsers() {
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
             <Link to="/admin/dashboard" className="hover:text-black font-semibold">
@@ -222,7 +222,7 @@ export function ManageUsers() {
             <span>/</span>
             <span className="text-gray-800 font-bold">Patrons</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight">
             Patron &amp; Administrator Accounts
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -233,7 +233,7 @@ export function ManageUsers() {
         <button
           type="button"
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>Add New Account</span>
@@ -246,6 +246,90 @@ export function ManageUsers() {
         searchKey="name"
         searchPlaceholder="Search patrons by name or email..."
         itemsPerPage={8}
+        renderMobileCard={(item) => (
+          <div className="space-y-3">
+            {/* Top Row: Avatar + Name/Email + Role Badge */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-full bg-neutral-900 text-[#D6FF00] font-black flex items-center justify-center text-sm shrink-0 shadow-2xs">
+                  {item.name ? item.name.charAt(0).toUpperCase() : "U"}
+                </div>
+                <div className="min-w-0">
+                  <strong className="block text-gray-900 text-sm font-bold truncate">
+                    {item.name}
+                  </strong>
+                  <span className="text-[11px] text-gray-500 block truncate">
+                    {item.email}
+                  </span>
+                </div>
+              </div>
+
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0 ${
+                  item.role === "admin"
+                    ? "bg-neutral-900 text-[#D6FF00] border border-neutral-900"
+                    : "bg-gray-100 text-gray-700 border border-gray-200"
+                }`}
+              >
+                {item.role === "admin" ? "Studio Admin" : "VIP Patron"}
+              </span>
+            </div>
+
+            {/* Middle Info Grid */}
+            <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-gray-50/80 border border-gray-100 text-xs">
+              <div>
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                  Phone
+                </span>
+                <span className="font-mono text-[11px] text-gray-700 truncate block">
+                  {item.phone || "—"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                  Status
+                </span>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                    item.status === "Active"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {item.status || "Active"}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                  Joined
+                </span>
+                <span className="text-[11px] text-gray-600 font-medium">
+                  {item.registeredDate || "2026"}
+                </span>
+              </div>
+            </div>
+
+            {/* Bottom Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => handleOpenEdit(item)}
+                className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Edit Account</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOpenDelete(item)}
+                className="py-2 px-3 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remove</span>
+              </button>
+            </div>
+          </div>
+        )}
         renderActions={(item) => (
           <div className="flex items-center justify-end gap-1.5">
             <button

@@ -26,6 +26,7 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
   const [customerPhone, setCustomerPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash"); // "cash" | "khqr"
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mobileTab, setMobileTab] = useState("catalog"); // "catalog" | "ticket"
 
   // KHQR modal state for in-store QR scan
   const [khqrData, setKhqrData] = useState(null);
@@ -201,41 +202,73 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-xs overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/75 backdrop-blur-xs overflow-y-auto"
         onClick={onClose}
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-3xl border border-gray-200 shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]"
+          className="bg-white rounded-t-3xl sm:rounded-3xl border border-gray-200 shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[90vh]"
         >
           {/* Header */}
-          <div className="bg-neutral-950 text-white px-6 py-4 flex items-center justify-between border-b border-neutral-800">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center font-black">
-                <Receipt className="w-5 h-5" />
+          <div className="bg-neutral-950 text-white px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between border-b border-neutral-800 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center font-black shrink-0">
+                <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-black tracking-tight text-white">
+              <div className="min-w-0">
+                <h2 className="text-sm sm:text-lg font-black tracking-tight text-white truncate">
                   ATELIER POS COUNTER TERMINAL
                 </h2>
-                <span className="text-[11px] text-neutral-400 font-mono">
-                  Instant In-Store Checkout • Auto Stock Deduction & Thermal Receipt
+                <span className="text-[10px] sm:text-[11px] text-neutral-400 font-mono block truncate">
+                  Instant In-Store Checkout • Auto Stock &amp; Thermal Receipt
                 </span>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center cursor-pointer"
+              className="w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center cursor-pointer shrink-0 ml-2"
             >
               <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Mobile Tab Switcher (< lg screens) */}
+          <div className="lg:hidden grid grid-cols-2 gap-1 p-2 bg-neutral-900 border-b border-neutral-800 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileTab("catalog")}
+              className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                mobileTab === "catalog"
+                  ? "bg-[#D6FF00] text-black font-black shadow-xs"
+                  : "text-neutral-300 hover:text-white"
+              }`}
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Catalog Items</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("ticket")}
+              className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                mobileTab === "ticket"
+                  ? "bg-[#D6FF00] text-black font-black shadow-xs"
+                  : "text-neutral-300 hover:text-white"
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Counter Ticket ({cart.reduce((s, i) => s + i.quantity, 0)})</span>
             </button>
           </div>
 
           {/* Body Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
             {/* Left: Catalog Picker */}
-            <div className="lg:col-span-7 p-4 sm:p-5 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col overflow-hidden bg-gray-50/50">
+            <div
+              className={`${
+                mobileTab === "catalog" ? "flex" : "hidden lg:flex"
+              } lg:col-span-7 p-3.5 sm:p-5 border-b lg:border-b-0 lg:border-r border-gray-200 flex-col overflow-hidden bg-gray-50/50`}
+            >
               <div className="relative mb-3">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -247,7 +280,7 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
                 />
               </div>
 
-              <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[48vh] lg:max-h-[58vh]">
+              <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[55vh] lg:max-h-[58vh]">
                 {loadingProducts ? (
                   <div className="col-span-full py-12 flex items-center justify-center gap-2 text-xs text-gray-500">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -261,6 +294,7 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
                   filteredProducts.map((prod) => {
                     const stock = Number(prod.stock ?? prod.quantity ?? 10);
                     const outOfStock = stock <= 0;
+                    const inCartItem = cart.find((it) => String(it.id) === String(prod.id));
                     return (
                       <button
                         key={prod.id}
@@ -270,6 +304,8 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
                         className={`text-left p-2.5 rounded-2xl border transition-all flex flex-col justify-between ${
                           outOfStock
                             ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
+                            : inCartItem
+                            ? "bg-white border-black ring-2 ring-[#D6FF00]/60 shadow-sm cursor-pointer active:scale-[0.98]"
                             : "bg-white border-gray-200/90 hover:border-black hover:shadow-md cursor-pointer active:scale-[0.98]"
                         }`}
                       >
@@ -292,6 +328,11 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
                             >
                               {outOfStock ? "Sold Out" : `${stock} in stock`}
                             </span>
+                            {inCartItem && (
+                              <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-[#D6FF00] text-black text-[9px] font-black uppercase shadow-xs">
+                                {inCartItem.quantity} in ticket
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs font-bold text-gray-900 line-clamp-1">
                             {prod.name}
@@ -313,10 +354,35 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
                   })
                 )}
               </div>
+
+              {/* Mobile Quick Bar to jump to Ticket when items are added */}
+              {cart.length > 0 && (
+                <div className="lg:hidden mt-3 pt-2.5 border-t border-gray-200 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-gray-500 block">
+                      {cart.reduce((s, i) => s + i.quantity, 0)} Items Selected
+                    </span>
+                    <strong className="text-sm font-black text-gray-950">
+                      ${total.toFixed(2)} USD
+                    </strong>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileTab("ticket")}
+                    className="px-4 py-2.5 rounded-xl bg-black text-[#D6FF00] font-black text-xs uppercase tracking-wider cursor-pointer"
+                  >
+                    Review &amp; Pay &rarr;
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Right: Counter Ticket & Payment */}
-            <div className="lg:col-span-5 p-4 sm:p-5 flex flex-col justify-between bg-white overflow-y-auto">
+            <div
+              className={`${
+                mobileTab === "ticket" ? "flex" : "hidden lg:flex"
+              } lg:col-span-5 p-4 sm:p-5 flex-col justify-between bg-white overflow-y-auto`}
+            >
               <div className="space-y-4">
                 {/* Patron Details */}
                 <div className="grid grid-cols-2 gap-2">

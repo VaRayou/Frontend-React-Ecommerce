@@ -22,21 +22,23 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 640
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl border border-gray-200 shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-t-3xl sm:rounded-3xl border border-gray-200 shadow-2xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-          <div className="font-bold text-gray-900 text-base sm:text-lg">{title}</div>
+        <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-gray-100 flex items-center justify-between gap-3 bg-white shrink-0">
+          <div className="font-bold text-gray-900 text-sm sm:text-lg min-w-0 flex-1">
+            {title}
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
             title="Close dialog (Esc)"
           >
             <X className="w-5 h-5" />
@@ -44,13 +46,13 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 640
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-130px)] space-y-4">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(92vh-125px)] sm:max-h-[calc(90vh-130px)] space-y-4">
           {children}
         </div>
 
         {/* Modal Footer */}
         {footer && (
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/60 flex items-center justify-end gap-3 shrink-0">
+          <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-t border-gray-100 bg-gray-50/70 flex flex-wrap items-center justify-end gap-2 sm:gap-3 shrink-0">
             {footer}
           </div>
         )}

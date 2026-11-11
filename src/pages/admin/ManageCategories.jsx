@@ -280,7 +280,7 @@ export function ManageCategories() {
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
             <Link to="/admin/dashboard" className="hover:text-black font-semibold">
@@ -289,7 +289,7 @@ export function ManageCategories() {
             <span>/</span>
             <span className="text-gray-800 font-bold">Categories</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight">
             Product Categories
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -300,7 +300,7 @@ export function ManageCategories() {
         <button
           type="button"
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>Add New Category</span>
@@ -313,6 +313,73 @@ export function ManageCategories() {
         searchKey="name"
         searchPlaceholder="Search categories..."
         itemsPerPage={8}
+        renderMobileCard={(item, idx) => (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <img
+                  src={item.image || DEFAULT_CATEGORY_IMAGE}
+                  alt={item.name}
+                  className="w-12 h-12 rounded-xl object-cover border border-gray-200 bg-gray-50 shrink-0"
+                  onError={(e) => {
+                    e.target.src = DEFAULT_CATEGORY_IMAGE;
+                  }}
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                      #CAT-{String((idx ?? 0) + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        item.status === "Active"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {item.status || "Active"}
+                    </span>
+                  </div>
+                  <strong className="block text-gray-900 text-sm font-bold truncate mt-0.5">
+                    {item.name}
+                  </strong>
+                  <span className="text-[11px] text-gray-400 font-mono block truncate">
+                    /{item.slug || item.name.toLowerCase()}
+                  </span>
+                </div>
+              </div>
+
+              <span className="text-xs font-bold text-gray-800 bg-gray-100 px-2.5 py-1 rounded-full shrink-0">
+                {item.itemCount || 0} items
+              </span>
+            </div>
+
+            {item.description && (
+              <p className="text-xs text-gray-500 line-clamp-2 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
+                {item.description}
+              </p>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => handleOpenEdit(item)}
+                className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Edit Category</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOpenDelete(item)}
+                className="py-2 px-3 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        )}
         renderActions={(item) => (
           <div className="flex items-center justify-end gap-1.5">
             <button

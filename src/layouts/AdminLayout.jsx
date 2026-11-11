@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, Navigate, useLocation, Link } from "react-router-dom";
-import { ShieldAlert, ArrowLeft } from "lucide-react";
+import { Outlet, Navigate, useLocation, Link, NavLink } from "react-router-dom";
+import {
+  ShieldAlert,
+  ArrowLeft,
+  LayoutDashboard,
+  Layers,
+  ShoppingCart,
+  QrCode,
+  Menu,
+} from "lucide-react";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminHeader from "../components/admin/AdminHeader";
 import { useAdminAuthStore } from "../store/useAdminAuthStore";
@@ -164,6 +172,76 @@ function AdminLayout() {
             </span>
           </div>
         </footer>
+
+        {/* Mobile Bottom Quick-Navigation Bar (< lg screens) */}
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111111] border-t border-white/10 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+          <NavLink
+            to="/admin/dashboard"
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all ${
+                isActive ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+              }`
+            }
+          >
+            <LayoutDashboard className="w-4 h-4 mb-0.5" />
+            <span>Overview</span>
+          </NavLink>
+
+          <NavLink
+            to="/admin/products"
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all ${
+                isActive ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+              }`
+            }
+          >
+            <Layers className="w-4 h-4 mb-0.5" />
+            <span>Products</span>
+          </NavLink>
+
+          {allowedPaths.includes("/admin/orders") && (
+            <NavLink
+              to="/admin/orders"
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all ${
+                  isActive ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+                }`
+              }
+            >
+              <ShoppingCart className="w-4 h-4 mb-0.5" />
+              <span>Orders</span>
+            </NavLink>
+          )}
+
+          {allowedPaths.includes("/admin/payments") && (
+            <NavLink
+              to="/admin/payments"
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all ${
+                  isActive ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+                }`
+              }
+            >
+              <QrCode className="w-4 h-4 mb-0.5" />
+              <span>KHQR</span>
+            </NavLink>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+              mobileOpen ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <Menu className="w-4 h-4 mb-0.5" />
+            <span>More</span>
+          </button>
+        </nav>
       </div>
     </div>
   );

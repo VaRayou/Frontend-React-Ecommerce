@@ -184,7 +184,7 @@ export function Settings() {
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
             <Link to="/admin/dashboard" className="hover:text-black font-semibold">
@@ -193,7 +193,7 @@ export function Settings() {
             <span>/</span>
             <span className="text-gray-800 font-bold">Configuration</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight">
             System, POS Receipt Branding &amp; Promo Settings
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -207,17 +207,17 @@ export function Settings() {
             storedBranding.updateStoreSettings(storeSettings);
             setIsReceiptPreviewOpen(true);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs shrink-0"
         >
           <Receipt className="w-4 h-4" />
           <span>Preview POS Receipt</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* Left Column: Store Information & Shipping */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-xs space-y-5">
+        <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs space-y-5">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
               <div className="w-9 h-9 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
                 <Store className="w-4 h-4" />
@@ -310,7 +310,7 @@ export function Settings() {
                         orderNotification: e.target.checked,
                       })
                     }
-                    className="w-4 h-4 rounded-sm text-black accent-black"
+                    className="w-4 h-4 rounded-sm text-black accent-black shrink-0"
                   />
                   <span>
                     Dispatch real-time Telegram &amp; email alert on new customer order
@@ -326,7 +326,7 @@ export function Settings() {
                         stockAlertNotification: e.target.checked,
                       })
                     }
-                    className="w-4 h-4 rounded-sm text-black accent-black"
+                    className="w-4 h-4 rounded-sm text-black accent-black shrink-0"
                   />
                   <span>Low stock warning when runway items fall below 5 units</span>
                 </label>
@@ -335,7 +335,7 @@ export function Settings() {
               <div className="pt-2 flex flex-wrap items-center gap-2.5">
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Boutique Branding</span>
@@ -345,7 +345,7 @@ export function Settings() {
           </div>
 
           {/* Shipping & Delivery Configuration Card */}
-          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-xs space-y-5">
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs space-y-5">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
               <div className="w-9 h-9 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
                 <Truck className="w-4 h-4" />
@@ -407,7 +407,7 @@ export function Settings() {
                         enableFreeShipping: e.target.checked,
                       })
                     }
-                    className="w-4 h-4 rounded-sm text-black accent-black"
+                    className="w-4 h-4 rounded-sm text-black accent-black shrink-0"
                   />
                   <span>
                     Automatically apply FREE shipping when order reaches the milestone amount
@@ -415,7 +415,7 @@ export function Settings() {
                 </label>
               </div>
 
-              <div className="pt-2 flex items-center justify-between">
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <span className="text-xs text-gray-500">
                   Current policy:{" "}
                   <strong className="text-black">
@@ -426,7 +426,7 @@ export function Settings() {
                 </span>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
                 >
                   <Save className="w-4 h-4" />
                   <span>Update Shipping Rates</span>
@@ -437,9 +437,9 @@ export function Settings() {
         </div>
 
         {/* Right Column: Coupons Manager, Controller Profile & Security */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-4 sm:space-y-6">
           {/* Promotional Coupons Manager Card */}
-          <div className="bg-white rounded-2xl border border-gray-200/80 p-6 shadow-xs space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs space-y-4">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
               <div className="w-9 h-9 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
                 <Ticket className="w-4 h-4" />

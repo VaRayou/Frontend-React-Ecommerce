@@ -8,7 +8,8 @@ const BAKONG_API_TOKEN =
   env.VITE_BAKONG_API_TOKEN ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiYTQ2Yjk3YTMzOTYyNDg4ZiJ9LCJpYXQiOjE3OTQxMzA5OTEsImV4cCI6MTgwMTkwNjk5MX0.WcswF46ufm9d7UqPtN48LcoKc0AzCjb0rLN4Zir2lIw";
 
-const BAKONG_API_URL = env.VITE_BAKONG_API_URL || "https://api-bakong.nbc.gov.kh";
+const BAKONG_API_URL =
+  env.VITE_BAKONG_API_URL || "https://api-bakong.nbc.gov.kh";
 const BAKONG_ACCOUNT_ID = env.VITE_BAKONG_ACCOUNT_ID || "rayou_va@bkrt";
 const BAKONG_MERCHANT_NAME = env.VITE_BAKONG_MERCHANT_NAME || "Rayou Va";
 const BAKONG_PHONE = env.VITE_BAKONG_PHONE || "0968350317";
@@ -85,24 +86,64 @@ export function calculateMd5(string: string): string {
       return lResult ^ lX8 ^ lY8;
     }
   }
-  function F(x: number, y: number, z: number) { return (x & y) | (~x & z); }
-  function G(x: number, y: number, z: number) { return (x & z) | (y & ~z); }
-  function H(x: number, y: number, z: number) { return x ^ y ^ z; }
-  function I(x: number, y: number, z: number) { return y ^ (x | ~z); }
+  function F(x: number, y: number, z: number) {
+    return (x & y) | (~x & z);
+  }
+  function G(x: number, y: number, z: number) {
+    return (x & z) | (y & ~z);
+  }
+  function H(x: number, y: number, z: number) {
+    return x ^ y ^ z;
+  }
+  function I(x: number, y: number, z: number) {
+    return y ^ (x | ~z);
+  }
 
-  function FF(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
+  function FF(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    ac: number,
+  ) {
     a = addUnsigned(a, addUnsigned(addUnsigned(F(b, c, d), x), ac));
     return addUnsigned(rotateLeft(a, s), b);
   }
-  function GG(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
+  function GG(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    ac: number,
+  ) {
     a = addUnsigned(a, addUnsigned(addUnsigned(G(b, c, d), x), ac));
     return addUnsigned(rotateLeft(a, s), b);
   }
-  function HH(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
+  function HH(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    ac: number,
+  ) {
     a = addUnsigned(a, addUnsigned(addUnsigned(H(b, c, d), x), ac));
     return addUnsigned(rotateLeft(a, s), b);
   }
-  function II(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
+  function II(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    ac: number,
+  ) {
     a = addUnsigned(a, addUnsigned(addUnsigned(I(b, c, d), x), ac));
     return addUnsigned(rotateLeft(a, s), b);
   }
@@ -111,7 +152,8 @@ export function calculateMd5(string: string): string {
     let lWordCount;
     const lMessageLength = str.length;
     const lNumberOfWords_temp1 = lMessageLength + 8;
-    const lNumberOfWords_temp2 = (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64;
+    const lNumberOfWords_temp2 =
+      (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64;
     const lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16;
     const lWordArray = Array(lNumberOfWords - 1).fill(0);
     let lBytePosition = 0;
@@ -119,7 +161,8 @@ export function calculateMd5(string: string): string {
     while (lByteCount < lMessageLength) {
       lWordCount = (lByteCount - (lByteCount % 4)) / 4;
       lBytePosition = (lByteCount % 4) * 8;
-      lWordArray[lWordCount] = lWordArray[lWordCount] | (str.charCodeAt(lByteCount) << lBytePosition);
+      lWordArray[lWordCount] =
+        lWordArray[lWordCount] | (str.charCodeAt(lByteCount) << lBytePosition);
       lByteCount++;
     }
     lWordCount = (lByteCount - (lByteCount % 4)) / 4;
@@ -135,15 +178,24 @@ export function calculateMd5(string: string): string {
     for (let lCount = 0; lCount <= 3; lCount++) {
       const lByte = (lValue >>> (lCount * 8)) & 255;
       const WordToHexValue_temp = "0" + lByte.toString(16);
-      WordToHexValue += WordToHexValue_temp.substr(WordToHexValue_temp.length - 2, 2);
+      WordToHexValue += WordToHexValue_temp.substr(
+        WordToHexValue_temp.length - 2,
+        2,
+      );
     }
     return WordToHexValue;
   }
 
   const x = convertToWordArray(string);
-  let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476;
+  let a = 0x67452301,
+    b = 0xefcdab89,
+    c = 0x98badcfe,
+    d = 0x10325476;
   for (let k = 0; k < x.length; k += 16) {
-    const AA = a, BB = b, CC = c, DD = d;
+    const AA = a,
+      BB = b,
+      CC = c,
+      DD = d;
     a = FF(a, b, c, d, x[k + 0], 7, 0xd76aa478);
     d = FF(d, a, b, c, x[k + 1], 12, 0xe8c7b756);
     c = FF(c, d, a, b, x[k + 2], 17, 0x242070db);
@@ -217,7 +269,12 @@ export function calculateMd5(string: string): string {
     c = addUnsigned(c, CC);
     d = addUnsigned(d, DD);
   }
-  return (wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d)).toLowerCase();
+  return (
+    wordToHex(a) +
+    wordToHex(b) +
+    wordToHex(c) +
+    wordToHex(d)
+  ).toLowerCase();
 }
 
 // ---------------------------------------------------------------------------
@@ -225,14 +282,14 @@ export function calculateMd5(string: string): string {
 // ---------------------------------------------------------------------------
 
 function crc16Ccitt(data: string): string {
-  let crc = 0xFFFF;
+  let crc = 0xffff;
   for (let i = 0; i < data.length; i++) {
     crc ^= data.charCodeAt(i) << 8;
     for (let j = 0; j < 8; j++) {
       if ((crc & 0x8000) !== 0) {
-        crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+        crc = ((crc << 1) ^ 0x1021) & 0xffff;
       } else {
-        crc = (crc << 1) & 0xFFFF;
+        crc = (crc << 1) & 0xffff;
       }
     }
   }
@@ -240,7 +297,10 @@ function crc16Ccitt(data: string): string {
 }
 
 function emvTlv(tag: string, value: string): string {
-  const lenStr = String(new TextEncoder().encode(value).length).padStart(2, "0");
+  const lenStr = String(new TextEncoder().encode(value).length).padStart(
+    2,
+    "0",
+  );
   return `${tag}${lenStr}${value}`;
 }
 
@@ -252,7 +312,7 @@ export function generateDynamicKhqrString(
   merchantName: string = BAKONG_MERCHANT_NAME,
   merchantCity: string = "Phnom Penh",
   phone: string = BAKONG_PHONE,
-  expirationMinutes: number = 10
+  expirationMinutes: number = 10,
 ): { qr: string; md5: string } {
   const isKhr = currency.toUpperCase() === "KHR";
   const numAmount = isKhr ? Math.round(amount) : Number(amount);
@@ -299,15 +359,21 @@ export function generateDynamicKhqrString(
 }
 
 // Short-term throttling cache to protect the developer token quota (100 req/day)
-const checkStatusCache: Record<string, { timestamp: number; result: KhqrStatusResponse }> = {};
+const checkStatusCache: Record<
+  string,
+  { timestamp: number; result: KhqrStatusResponse }
+> = {};
 
 export const khqrService = {
   /**
    * Generates authentic dynamic EMVCo KHQR code, computes real MD5, and persists record
    */
-  createPayment: async (payload: KhqrCreatePayload): Promise<KhqrCreateResponse> => {
+  createPayment: async (
+    payload: KhqrCreatePayload,
+  ): Promise<KhqrCreateResponse> => {
     const orderNum =
-      payload.orderNumber || `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      payload.orderNumber ||
+      `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const generated = generateDynamicKhqrString(
       payload.amount,
@@ -317,7 +383,7 @@ export const khqrService = {
       BAKONG_MERCHANT_NAME,
       "Phnom Penh",
       payload.customerPhone || BAKONG_PHONE,
-      10
+      10,
     );
 
     const qrString = generated.qr;
@@ -325,18 +391,21 @@ export const khqrService = {
 
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=380x380&margin=1&data=${encodeURIComponent(qrString)}`;
-    
+
     // Request authentic NBC Bakong official shortlink deeplink
     let deeplink = `bakong://pay?qr=${encodeURIComponent(qrString)}`;
     try {
-      const dlRes = await fetch(`${BAKONG_API_URL.replace(/\/$/, "")}/v1/generate_deeplink_by_qr`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${BAKONG_API_TOKEN}`,
-          "Content-Type": "application/json",
+      const dlRes = await fetch(
+        `${BAKONG_API_URL.replace(/\/$/, "")}/v1/generate_deeplink_by_qr`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${BAKONG_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ qr: qrString }),
         },
-        body: JSON.stringify({ qr: qrString }),
-      });
+      );
       if (dlRes.ok) {
         const dlJson = await dlRes.json();
         if (dlJson?.data?.shortLink) {
@@ -399,7 +468,9 @@ export const khqrService = {
   /**
    * Real-time verification with the official National Bank of Cambodia (NBC) Bakong Open API
    */
-  checkStatus: async (paymentIdOrMd5: number | string): Promise<KhqrStatusResponse> => {
+  checkStatus: async (
+    paymentIdOrMd5: number | string,
+  ): Promise<KhqrStatusResponse> => {
     const md5Str = String(paymentIdOrMd5).trim();
     const now = Date.now();
 
@@ -411,14 +482,17 @@ export const khqrService = {
 
     // 2. Query official NBC Bakong Open API directly
     try {
-      const response = await fetch(`${BAKONG_API_URL.replace(/\/$/, "")}/v1/check_transaction_by_md5`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${BAKONG_API_TOKEN}`,
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${BAKONG_API_URL.replace(/\/$/, "")}/v1/check_transaction_by_md5`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${BAKONG_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ md5: md5Str }),
         },
-        body: JSON.stringify({ md5: md5Str }),
-      });
+      );
 
       if (response.ok) {
         const resJson = await response.json();
@@ -437,7 +511,11 @@ export const khqrService = {
             await ensureAdminSession();
             await supabase
               .from("payments")
-              .update({ status: "PAID", transaction_id: txnId, paid_at: new Date().toISOString() })
+              .update({
+                status: "PAID",
+                transaction_id: txnId,
+                paid_at: new Date().toISOString(),
+              })
               .eq("md5_hash", md5Str);
           } catch {}
 
@@ -452,12 +530,18 @@ export const khqrService = {
         }
 
         // Daily developer quota limit (100 req/day)
-        if (resJson.errorCode === 17 || resJson.errorCode === 18 || resJson.errorCode === 19) {
+        if (
+          resJson.errorCode === 17 ||
+          resJson.errorCode === 18 ||
+          resJson.errorCode === 19
+        ) {
           const quotaResult: KhqrStatusResponse = {
             status: "PENDING",
             is_paid: false,
             rate_limit_exceeded: true,
-            message: resJson.responseMessage || "NBC Bakong daily developer query limit reached.",
+            message:
+              resJson.responseMessage ||
+              "NBC Bakong daily developer query limit reached.",
           };
           checkStatusCache[md5Str] = { timestamp: now, result: quotaResult };
           return quotaResult;
@@ -506,8 +590,14 @@ export const khqrService = {
   verifyPayment: async (
     paymentIdOrMd5: number | string,
     transactionId?: string,
-    confirmPaid?: boolean
-  ): Promise<{ success: boolean; is_paid: boolean; message?: string; transaction_id?: string; rate_limit_exceeded?: boolean }> => {
+    confirmPaid?: boolean,
+  ): Promise<{
+    success: boolean;
+    is_paid: boolean;
+    message?: string;
+    transaction_id?: string;
+    rate_limit_exceeded?: boolean;
+  }> => {
     const md5Str = String(paymentIdOrMd5).trim();
 
     // 1. Try NBC Bakong API first if not forced
@@ -529,7 +619,11 @@ export const khqrService = {
       await ensureAdminSession();
       await supabase
         .from("payments")
-        .update({ status: "PAID", transaction_id: txn, paid_at: new Date().toISOString() })
+        .update({
+          status: "PAID",
+          transaction_id: txn,
+          paid_at: new Date().toISOString(),
+        })
         .eq("md5_hash", md5Str);
     } catch {}
 
