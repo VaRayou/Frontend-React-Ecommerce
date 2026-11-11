@@ -256,7 +256,10 @@ export function generateDynamicKhqrString(
   expirationMinutes: number = 10
 ): { qr: string; md5: string } {
   const isKhr = currency.toUpperCase() === "KHR";
-  const numAmount = isKhr ? Math.round(amount) : Number(Number(amount).toFixed(2));
+  // For USD: ALWAYS pass as string "10.00" — the bakong-khqr SDK requires decimal string
+  // to output Tag 54 as "540510.00" (not "540210" which banks reject).
+  const numAmount = isKhr ? Math.round(amount) : Number(amount);
+  const amountStr = isKhr ? String(Math.round(amount)) : Number(amount).toFixed(2);
   const nowMs = Date.now();
   const expireMs = nowMs + expirationMinutes * 60 * 1000;
   const billNum = orderNumber || `ATL-${Date.now().toString().slice(-6)}`;
@@ -268,7 +271,8 @@ export function generateDynamicKhqrString(
     if (BakongKHQR && IndividualInfo && khqrData) {
       const optionalData = {
         currency: isKhr ? khqrData.currency.khr : khqrData.currency.usd,
-        amount: numAmount,
+        // Pass as STRING with decimal (e.g. "10.00") — passing integer 10 produces Tag54="10" (no decimals), which banks reject
+        amount: amountStr,
         billNumber: billNum,
         expirationTimestamp: expireMs,
       };
