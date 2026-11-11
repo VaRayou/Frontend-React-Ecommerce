@@ -1,6 +1,7 @@
 import api from "./api";
 import { supabase } from "./supabase";
 import { ensureAdminSession } from "./productService";
+import { BakongKHQR, khqrData, IndividualInfo } from "bakong-khqr";
 
 const env = (import.meta as any).env || {};
 
@@ -251,17 +252,65 @@ export function generateDynamicKhqrString(
   accountId: string = BAKONG_ACCOUNT_ID,
   merchantName: string = BAKONG_MERCHANT_NAME,
   merchantCity: string = "Phnom Penh",
-  phone: string = BAKONG_PHONE
-): string {
-  const currencyCode = currency.toUpperCase() === "USD" ? "840" : "116";
-  const formattedAmount = currency.toUpperCase() === "KHR" ? String(Math.round(amount)) : Number(amount).toFixed(2);
-  const tag29 = emvTlv("00", accountId);
+  phone: string = BAKONG_PHONE,
+  expirationMinutes: number = 10
+): { qr: string; md5: string } {
+  const isKhr = currency.toUpperCase() === "KHR";
+  const numAmount = isKhr ? Math.round(amount) : Number(Number(amount).toFixed(2));
+  const nowMs = Date.now();
+  const expireMs = nowMs + expirationMinutes * 60 * 1000;
+  const billNum = orderNumber || `ATL-${Date.now().toString().slice(-6)}`;
+  const cleanPhone = (phone || BAKONG_PHONE || "855968350317").replace(/[^0-9]/g, "");
 
-  const sub01 = emvTlv("01", orderNumber || `ORD-${Date.now().toString().slice(-6)}`);
-  const sub02 = emvTlv("02", phone);
-  const sub03 = emvTlv("03", "Veayor Flagship");
-  const sub07 = emvTlv("07", "Web Checkout");
-  const tag62 = `${sub03}${sub02}${sub01}${sub07}`;
+  // 1. First attempt: Official NBC bakong-khqr SDK
+  try {
+    if (BakongKHQR && IndividualInfo && khqrData) {
+      const optionalData = {
+        currency: isKhr ? khqrData.currency.khr : khqrData.currency.usd,
+        amount: numAmount,
+        billNumber: billNum,
+        mobileNumber: cleanPhone,
+        storeLabel: merchantName || "Rayou Va",
+        terminalLabel: "Online POS",
+        expirationTimestamp: expireMs,
+        merchantCategoryCode: "5999",
+      };
+      const individualInfo = new IndividualInfo(
+        accountId || "rayou_va@bkrt",
+        merchantName || "Rayou Va",
+        merchantCity || "Phnom Penh",
+        optionalData
+      );
+      const khqr = new BakongKHQR();
+      const res = khqr.generateIndividual(individualInfo);
+      if (res?.data?.qr) {
+        return {
+          qr: res.data.qr,
+          md5: res.data.md5 || calculateMd5(res.data.qr),
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("[BakongKHQR SDK fallback to pure-JS generator]", err);
+  }
+
+  // 2. Pure-JS EMVCo KHQR Generator with Tag 99 Timestamps (Universal Standard)
+  const currencyCode = isKhr ? "116" : "840";
+  const formattedAmount = isKhr ? String(numAmount) : numAmount.toFixed(2);
+  const tag29 = emvTlv("00", accountId || "rayou_va@bkrt");
+
+  const sub01 = emvTlv("01", billNum.slice(0, 25));
+  const sub02 = emvTlv("02", cleanPhone.slice(0, 25));
+  const sub03 = emvTlv("03", (merchantName || "Rayou Va").slice(0, 25));
+  const sub07 = emvTlv("07", "Online POS");
+  const tag62 = `${sub01}${sub02}${sub03}${sub07}`;
+
+  // Tag 99: Mandatory Timestamp Data for Dynamic KHQR
+  // Subtag 00 (Creation Timestamp, 13 ms digits)
+  // Subtag 01 (Expiration Timestamp, 13 ms digits)
+  const sub99_00 = emvTlv("00", String(nowMs));
+  const sub99_01 = emvTlv("01", String(expireMs));
+  const tag99 = `${sub99_00}${sub99_01}`;
 
   const payload =
     emvTlv("00", "01") +
@@ -271,13 +320,18 @@ export function generateDynamicKhqrString(
     emvTlv("53", currencyCode) +
     emvTlv("54", formattedAmount) +
     emvTlv("58", "KH") +
-    emvTlv("59", merchantName.slice(0, 25)) +
-    emvTlv("60", merchantCity.slice(0, 15)) +
+    emvTlv("59", (merchantName || "Rayou Va").slice(0, 25)) +
+    emvTlv("60", (merchantCity || "Phnom Penh").slice(0, 15)) +
     emvTlv("62", tag62) +
+    emvTlv("99", tag99) +
     "6304";
 
   const crc = crc16Ccitt(payload);
-  return payload.slice(0, -4) + emvTlv("63", crc);
+  const fullQr = payload.slice(0, -4) + emvTlv("63", crc);
+  return {
+    qr: fullQr,
+    md5: calculateMd5(fullQr),
+  };
 }
 
 // Short-term throttling cache to protect the developer token quota (100 req/day)
@@ -291,18 +345,19 @@ export const khqrService = {
     const orderNum =
       payload.orderNumber || `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const qrString = generateDynamicKhqrString(
+    const generated = generateDynamicKhqrString(
       payload.amount,
       payload.currency || "USD",
       orderNum,
       BAKONG_ACCOUNT_ID,
       BAKONG_MERCHANT_NAME,
       "Phnom Penh",
-      payload.customerPhone || BAKONG_PHONE
+      payload.customerPhone || BAKONG_PHONE,
+      10
     );
 
-    // Compute authentic RFC 1321 MD5 hash for NBC Bakong clearing
-    const md5Hash = calculateMd5(qrString);
+    const qrString = generated.qr;
+    const md5Hash = generated.md5;
 
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=380x380&margin=1&data=${encodeURIComponent(qrString)}`;
