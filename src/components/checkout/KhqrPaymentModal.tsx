@@ -13,6 +13,7 @@ import {
   Check,
 } from "lucide-react";
 import { khqrService, KhqrCreateResponse } from "../../services/khqrService";
+import { QRCodeSVG } from "qrcode.react";
 
 interface KhqrPaymentModalProps {
   isOpen: boolean;
@@ -303,18 +304,38 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
               </div>
 
               {/* Dynamic QR Code Frame */}
-              <div className="relative p-2 rounded-2xl bg-white border-2 border-dashed border-gray-200 inline-block mx-auto shadow-2xs max-w-full">
-                <img
-                  src={khqrData.qr_image}
-                  alt="Bakong KHQR Dynamic Payment Code"
-                  className="max-h-[215px] max-w-[185px] mx-auto object-contain rounded-lg"
-                />
+              <div className="relative p-3 rounded-2xl bg-white border-2 border-dashed border-gray-200 inline-block mx-auto shadow-2xs max-w-full">
+                {khqrData.qr_string ? (
+                  <QRCodeSVG
+                    value={khqrData.qr_string}
+                    size={195}
+                    level="M"
+                    className="mx-auto rounded"
+                  />
+                ) : (
+                  <img
+                    src={khqrData.qr_image}
+                    alt="Bakong KHQR Dynamic Payment Code"
+                    className="max-h-[215px] max-w-[185px] mx-auto object-contain rounded-lg"
+                  />
+                )}
 
                 {/* Corner decorative anchors */}
                 <div className="absolute top-1.5 left-1.5 w-2.5 h-2.5 border-t-2 border-l-2 border-[#E1251B]" />
                 <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 border-t-2 border-r-2 border-[#E1251B]" />
                 <div className="absolute bottom-1.5 left-1.5 w-2.5 h-2.5 border-b-2 border-l-2 border-[#E1251B]" />
                 <div className="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 border-b-2 border-r-2 border-[#E1251B]" />
+              </div>
+
+              {/* Notice for testing self-transfers */}
+              <div className="p-2 rounded-xl bg-amber-50 border border-amber-200/80 text-left text-[11px] text-amber-900 space-y-0.5">
+                <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                  <Smartphone className="w-3 h-3 text-amber-700" />
+                  <span>Notice for Testing:</span>
+                </div>
+                <p className="text-[10px] text-amber-800 leading-tight">
+                  In Bakong & ABA, you <strong>cannot send money to your own account</strong>. To test: scan with a <strong>different bank/phone (e.g. ABA, Wing)</strong> or tap <strong>Verify / Confirm</strong> below.
+                </p>
               </div>
 
               {/* Real-Time Bank Verification Radar & Status */}

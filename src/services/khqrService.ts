@@ -260,7 +260,8 @@ export function generateDynamicKhqrString(
   const nowMs = Date.now();
   const expireMs = nowMs + expirationMinutes * 60 * 1000;
   const billNum = orderNumber || `ATL-${Date.now().toString().slice(-6)}`;
-  const cleanPhone = (phone || BAKONG_PHONE || "855968350317").replace(/[^0-9]/g, "");
+  const rawPhone = String(phone || BAKONG_PHONE || "855968350317").replace(/[^0-9]/g, "");
+  const cleanPhone = rawPhone.startsWith("855") ? rawPhone : `855${rawPhone.replace(/^0/, "")}`;
 
   // 1. First attempt: Official NBC bakong-khqr SDK
   try {
