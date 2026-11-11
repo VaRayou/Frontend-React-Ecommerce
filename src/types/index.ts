@@ -50,6 +50,8 @@ export interface User {
   email: string;
   avatar?: string;
   phone?: string;
+  role?: string;
+  isAdmin?: boolean;
   address?: {
     street: string;
     city: string;

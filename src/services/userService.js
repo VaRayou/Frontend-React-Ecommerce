@@ -11,7 +11,9 @@ const formatUser = (u) => ({
   avatar: u.avatar_url || u.avatar || "/admin/img/avatars/avatar-2.jpg",
   role: u.role || "customer",
   status: u.status || "Active",
-  registeredDate: u.created_at ? String(u.created_at).split("T")[0] : new Date().toISOString().split("T")[0],
+  registeredDate: u.created_at
+    ? String(u.created_at).split("T")[0]
+    : new Date().toISOString().split("T")[0],
   shippingAddress: u.shipping_address || {},
 });
 
@@ -52,16 +54,20 @@ export const userService = {
   createUser: async (userData) => {
     try {
       await ensureAdminSession();
-      const { data, error } = await supabase.from("profiles").insert([
-        {
-          full_name: userData.name,
-          email: userData.email,
-          phone: userData.phone || "",
-          role: userData.role || "customer",
-          status: userData.status || "Active",
-          avatar_url: userData.avatar || "/admin/img/avatars/avatar-2.jpg",
-        },
-      ]).select().single();
+      const { data, error } = await supabase
+        .from("profiles")
+        .insert([
+          {
+            full_name: userData.name,
+            email: userData.email,
+            phone: userData.phone || "",
+            role: userData.role || "customer",
+            status: userData.status || "Active",
+            avatar_url: userData.avatar || "/admin/img/avatars/avatar-2.jpg",
+          },
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
       return formatUser(data);
@@ -75,10 +81,12 @@ export const userService = {
     try {
       await ensureAdminSession();
       const patch = {};
-      if (updatedFields.name !== undefined) patch.full_name = updatedFields.name;
+      if (updatedFields.name !== undefined)
+        patch.full_name = updatedFields.name;
       if (updatedFields.phone !== undefined) patch.phone = updatedFields.phone;
       if (updatedFields.role !== undefined) patch.role = updatedFields.role;
-      if (updatedFields.status !== undefined) patch.status = updatedFields.status;
+      if (updatedFields.status !== undefined)
+        patch.status = updatedFields.status;
 
       const { data, error } = await supabase
         .from("profiles")
