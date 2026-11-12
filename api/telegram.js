@@ -41,7 +41,7 @@ async function getSupabaseAuthHeaders() {
           email: "controller@atelier.com",
           password: "adminpass123",
         }),
-      }
+      },
     );
     if (authRes.ok) {
       const data = await authRes.json();
@@ -56,14 +56,11 @@ async function getSupabaseAuthHeaders() {
 }
 
 async function tgApi(botToken, method, payload) {
-  const res = await fetch(
-    `https://api.telegram.org/bot${botToken}/${method}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
-  );
+  const res = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
   return res.json();
 }
 
@@ -85,11 +82,11 @@ async function buildStatsMessage(sbHeaders) {
   const payments = paymentsRes.ok ? await paymentsRes.json() : [];
 
   const activeOrders = (Array.isArray(orders) ? orders : []).filter(
-    (o) => String(o.order_status || "").toLowerCase() !== "cancelled"
+    (o) => String(o.order_status || "").toLowerCase() !== "cancelled",
   );
   const grossRevenue = activeOrders.reduce(
     (sum, o) => sum + (Number(o.total) || 0),
-    0
+    0,
   );
   const pendingOrders = activeOrders.filter((o) => {
     const s = String(o.order_status || "Pending").toLowerCase();
@@ -98,23 +95,23 @@ async function buildStatsMessage(sbHeaders) {
 
   const prodList = Array.isArray(products) ? products : [];
   const lowStockCount = prodList.filter(
-    (p) => Number(p.stock ?? 0) > 0 && Number(p.stock ?? 0) <= 5
+    (p) => Number(p.stock ?? 0) > 0 && Number(p.stock ?? 0) <= 5,
   ).length;
   const outStockCount = prodList.filter(
     (p) =>
       Number(p.stock ?? 0) <= 0 ||
-      String(p.status || "").toLowerCase() === "out of stock"
+      String(p.status || "").toLowerCase() === "out of stock",
   ).length;
 
   const paidKhqrCount = (Array.isArray(payments) ? payments : []).filter(
-    (p) => String(p.status || "").toUpperCase() === "PAID"
+    (p) => String(p.status || "").toUpperCase() === "PAID",
   ).length;
 
   const text =
     `📊 <b>ATELIER LIVE EXECUTIVE DASHBOARD</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
     `💰 <b>Gross Revenue:</b> <b>$${grossRevenue.toFixed(2)} USD</b> (៛ ${Math.round(
-      grossRevenue * 4100
+      grossRevenue * 4100,
     ).toLocaleString()} KHR)\n` +
     `🛍 <b>Total Orders:</b> <b>${orders.length}</b> (${pendingOrders} Processing)\n` +
     `✅ <b>Settled KHQR Transfers:</b> <b>${paidKhqrCount}</b>\n` +
@@ -144,7 +141,7 @@ async function buildStatsMessage(sbHeaders) {
 async function buildOrdersMessage(sbHeaders) {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc&limit=5`,
-    { headers: sbHeaders }
+    { headers: sbHeaders },
   );
   const orders = res.ok ? await res.json() : [];
   const list = Array.isArray(orders) ? orders : [];
@@ -198,7 +195,7 @@ async function buildTrackOrderMessage(sbHeaders, rawQuery) {
   const cleanQuery = String(rawQuery || "").trim();
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order=created_at.desc&limit=50`,
-    { headers: sbHeaders }
+    { headers: sbHeaders },
   );
   const orders = res.ok ? await res.json() : [];
   const list = Array.isArray(orders) ? orders : [];
@@ -270,12 +267,12 @@ async function buildTrackOrderMessage(sbHeaders, rawQuery) {
     sLower === "delivered"
       ? 5
       : sLower === "out for delivery"
-      ? 4
-      : sLower === "shipped" || sLower === "in transit"
-      ? 4
-      : sLower === "processing" || sLower === "paid"
-      ? 3
-      : 2;
+        ? 4
+        : sLower === "shipped" || sLower === "in transit"
+          ? 4
+          : sLower === "processing" || sLower === "paid"
+            ? 3
+            : 2;
 
   const timelineText = isCancelled
     ? `❌ <b>ORDER CANCELLED</b> — Dispatch halted`
@@ -298,8 +295,10 @@ async function buildTrackOrderMessage(sbHeaders, rawQuery) {
     typeof addrObj === "string"
       ? addrObj
       : addrObj && typeof addrObj === "object"
-      ? [addrObj.street, addrObj.city, addrObj.country].filter(Boolean).join(", ")
-      : "Phnom Penh, Cambodia";
+        ? [addrObj.street, addrObj.city, addrObj.country]
+            .filter(Boolean)
+            .join(", ")
+        : "Phnom Penh, Cambodia";
 
   const totalUsd = Number(match.total || 0);
   const totalKhr = Math.round(totalUsd * 4100);
@@ -313,7 +312,7 @@ async function buildTrackOrderMessage(sbHeaders, rawQuery) {
     `<b>Patron:</b> ${escapeHtml(match.customer_name || "Patron Client")}\n` +
     `<b>Destination:</b> ${escapeHtml(addressStr || "Phnom Penh, Cambodia")}\n` +
     `<b>Payment:</b> ${escapeHtml(match.payment_method || "Bakong KHQR")} (<b>${escapeHtml(
-      match.payment_status || "Paid"
+      match.payment_status || "Paid",
     )}</b>)\n` +
     `<b>Total:</b> <b>$${totalUsd.toFixed(2)} USD</b> (៛ ${totalKhr.toLocaleString()} KHR)\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -345,13 +344,13 @@ async function buildTrackOrderMessage(sbHeaders, rawQuery) {
 async function buildLowStockMessage(sbHeaders) {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/products?select=*&order=stock.asc`,
-    { headers: sbHeaders }
+    { headers: sbHeaders },
   );
   const products = res.ok ? await res.json() : [];
   const list = (Array.isArray(products) ? products : []).filter(
     (p) =>
       Number(p.stock ?? 0) <= 5 ||
-      String(p.status || "").toLowerCase() === "out of stock"
+      String(p.status || "").toLowerCase() === "out of stock",
   );
 
   if (list.length === 0) {
@@ -371,9 +370,11 @@ async function buildLowStockMessage(sbHeaders) {
   const lines = list.slice(0, 8).map((p) => {
     const s = Math.max(0, Number(p.stock ?? 0));
     const icon = s <= 0 ? "🔴" : "🟠";
-    const sku = String(p.id || "").slice(-6).toUpperCase();
+    const sku = String(p.id || "")
+      .slice(-6)
+      .toUpperCase();
     return `${icon} <b>${escapeHtml(p.name)}</b> (<code>#${sku}</code>)\n   Stock: <b>${s} left</b> • Price: $${Number(
-      p.price || 0
+      p.price || 0,
     ).toFixed(2)}`;
   });
 
@@ -419,7 +420,9 @@ export default async function handler(req, res) {
 
   const botToken = String(req.query?.token || DEFAULT_BOT_TOKEN).trim();
   const update =
-    typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    typeof req.body === "string"
+      ? JSON.parse(req.body || "{}")
+      : req.body || {};
 
   try {
     const sbHeaders = await getSupabaseAuthHeaders();
@@ -506,8 +509,8 @@ export default async function handler(req, res) {
           action === "ship"
             ? "Shipped"
             : action === "deliver"
-            ? "Delivered"
-            : "Cancelled";
+              ? "Delivered"
+              : "Cancelled";
 
         const isUuid = orderRef.includes("-") && orderRef.length > 20;
         const filterParam = isUuid
@@ -535,8 +538,8 @@ export default async function handler(req, res) {
             newStatus === "Delivered"
               ? "✅"
               : newStatus === "Shipped"
-              ? "🚚"
-              : "❌";
+                ? "🚚"
+                : "❌";
           await tgApi(botToken, "sendMessage", {
             chat_id: chatId,
             parse_mode: "HTML",
@@ -559,7 +562,7 @@ export default async function handler(req, res) {
 
         const getRes = await fetch(
           `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(prodId)}&select=*`,
-          { headers: sbHeaders }
+          { headers: sbHeaders },
         );
         const rows = getRes.ok ? await getRes.json() : [];
         const prod = Array.isArray(rows) ? rows[0] : null;
@@ -576,7 +579,7 @@ export default async function handler(req, res) {
                 stock: nextStock,
                 status: "Active",
               }),
-            }
+            },
           );
 
           await tgApi(botToken, "answerCallbackQuery", {
@@ -606,7 +609,9 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
-      await tgApi(botToken, "answerCallbackQuery", { callback_query_id: cb.id });
+      await tgApi(botToken, "answerCallbackQuery", {
+        callback_query_id: cb.id,
+      });
       return res.status(200).json({ ok: true });
     }
 
@@ -718,4 +723,3 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: false, error: err.message });
   }
 }
-

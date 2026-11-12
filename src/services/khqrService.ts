@@ -789,6 +789,83 @@ export const khqrService = {
   },
 
   /**
+   * Deletes a payment record from Supabase `payments` ledger by id, md5_hash, or order_number
+   */
+  deletePayment: async (paymentOrKey: any): Promise<boolean> => {
+    try {
+      await ensureAdminSession();
+
+      if (paymentOrKey && typeof paymentOrKey === "object") {
+        if (paymentOrKey.id) {
+          const { error } = await supabase
+            .from("payments")
+            .delete()
+            .eq("id", paymentOrKey.id);
+          if (!error) {
+            if (paymentOrKey.md5_hash) {
+              delete checkStatusCache[String(paymentOrKey.md5_hash)];
+            }
+            return true;
+          }
+        }
+        if (paymentOrKey.md5_hash) {
+          const { error } = await supabase
+            .from("payments")
+            .delete()
+            .eq("md5_hash", paymentOrKey.md5_hash);
+          delete checkStatusCache[String(paymentOrKey.md5_hash)];
+          if (!error) return true;
+        }
+        if (paymentOrKey.order_number) {
+          const { error } = await supabase
+            .from("payments")
+            .delete()
+            .eq("order_number", paymentOrKey.order_number);
+          if (!error) return true;
+        }
+      } else {
+        const cleanKey = String(paymentOrKey || "").trim();
+        if (!cleanKey) return false;
+        delete checkStatusCache[cleanKey];
+
+        const { error: errMd5 } = await supabase
+          .from("payments")
+          .delete()
+          .eq("md5_hash", cleanKey);
+        if (!errMd5) return true;
+
+        const { error: errId } = await supabase
+          .from("payments")
+          .delete()
+          .eq("id", cleanKey);
+        if (!errId) return true;
+      }
+      return true;
+    } catch (e) {
+      console.error("[Supabase] deletePayment failed:", e);
+      throw e;
+    }
+  },
+
+  /**
+   * Bulk-deletes all PENDING KHQR payment records from Supabase
+   */
+  clearPendingPayments: async (): Promise<boolean> => {
+    try {
+      await ensureAdminSession();
+      const { error } = await supabase
+        .from("payments")
+        .delete()
+        .eq("status", "PENDING");
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error("[Supabase] clearPendingPayments failed:", e);
+      throw e;
+    }
+  },
+
+  /**
    * Gateway metadata and status
    */
   getGatewayStatus: async () => {

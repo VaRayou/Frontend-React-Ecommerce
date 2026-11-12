@@ -13,8 +13,11 @@ import {
   Database,
   Search,
   Download,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import Loader from "../../components/common/Loader";
+import Modal from "../../components/common/Modal";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
 import { khqrService } from "../../services/khqrService";
 
@@ -28,6 +31,9 @@ export function ManagePayments() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [posReceiptData, setPosReceiptData] = useState(null);
+  const [paymentToDelete, setPaymentToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isClearingPending, setIsClearingPending] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showNotification = (msg) => {
@@ -91,6 +97,59 @@ export function ManagePayments() {
       showNotification("Could not verify with NBC Bakong API right now.");
     } finally {
       setVerifyingId(null);
+    }
+  };
+
+  const confirmDeletePayment = async () => {
+    if (!paymentToDelete) return;
+    setIsDeleting(true);
+    try {
+      await khqrService.deletePayment(paymentToDelete);
+      const targetId = paymentToDelete.id;
+      const targetMd5 = paymentToDelete.md5_hash;
+      const targetOrder = paymentToDelete.order_number;
+
+      setPayments((prev) =>
+        prev.filter((p) => {
+          if (targetId && p.id === targetId) return false;
+          if (targetMd5 && p.md5_hash === targetMd5) return false;
+          if (!targetId && !targetMd5 && targetOrder && p.order_number === targetOrder) {
+            return false;
+          }
+          return true;
+        })
+      );
+      showNotification(
+        `Deleted KHQR record ${targetOrder || targetMd5?.slice(0, 8) || ""} from ledger.`
+      );
+      setPaymentToDelete(null);
+    } catch {
+      showNotification("Failed to delete payment record from Supabase.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleClearPending = async () => {
+    if (!pendingPayments.length) return;
+    if (
+      !window.confirm(
+        `Remove all ${pendingPayments.length} uncompleted PENDING QR records from the ledger?`
+      )
+    ) {
+      return;
+    }
+    setIsClearingPending(true);
+    try {
+      await khqrService.clearPendingPayments();
+      setPayments((prev) =>
+        prev.filter((p) => String(p.status || "PENDING").toUpperCase() !== "PENDING")
+      );
+      showNotification(`Cleared ${pendingPayments.length} pending KHQR records.`);
+    } catch {
+      showNotification("Could not clear pending KHQR records.");
+    } finally {
+      setIsClearingPending(false);
     }
   };
 
@@ -209,11 +268,27 @@ export function ManagePayments() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+          {pendingPayments.length > 0 && (
+            <button
+              type="button"
+              disabled={isClearingPending}
+              onClick={handleClearPending}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold text-[11px] sm:text-xs transition-colors cursor-pointer disabled:opacity-50"
+              title="Delete all uncompleted PENDING QR records"
+            >
+              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {isClearingPending
+                  ? "Clearing..."
+                  : `Clear Pending (${pendingPayments.length})`}
+              </span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer shadow-2xs"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer shadow-2xs"
           >
             <Download className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">Export CSV</span>
@@ -222,7 +297,7 @@ export function ManagePayments() {
             type="button"
             onClick={() => loadPayments(true)}
             disabled={isRefreshing}
-            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer disabled:opacity-50"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isRefreshing ? "animate-spin" : ""}`} />
             <span className="truncate">{isRefreshing ? "Refreshing..." : "Refresh Ledger"}</span>
@@ -447,20 +522,24 @@ export function ManagePayments() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className={`grid ${!isPaid ? "grid-cols-2" : "grid-cols-1"} gap-2 pt-2 border-t border-gray-100`}>
+                    <div
+                      className={`grid ${
+                        !isPaid ? "grid-cols-3" : "grid-cols-2"
+                      } gap-2 pt-2 border-t border-gray-100`}
+                    >
                       {!isPaid && (
                         <button
                           type="button"
                           disabled={verifyingId === keyId}
                           onClick={() => handleVerifyPayment(pay)}
-                          className="py-2 px-3 rounded-xl bg-[#E1232E] hover:bg-[#c51b25] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          className="py-2 px-2.5 rounded-xl bg-[#E1232E] hover:bg-[#c51b25] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
                           <RefreshCw
-                            className={`w-3.5 h-3.5 ${
+                            className={`w-3.5 h-3.5 shrink-0 ${
                               verifyingId === keyId ? "animate-spin" : ""
                             }`}
                           />
-                          <span>Verify NBC API</span>
+                          <span className="truncate">Verify API</span>
                         </button>
                       )}
                       <button
@@ -485,10 +564,18 @@ export function ManagePayments() {
                             ],
                           })
                         }
-                        className="py-2 px-3 rounded-xl bg-neutral-900 hover:bg-black text-[#D6FF00] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="py-2 px-2.5 rounded-xl bg-neutral-900 hover:bg-black text-[#D6FF00] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <Receipt className="w-3.5 h-3.5" />
-                        <span>POS Receipt</span>
+                        <Receipt className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Receipt</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentToDelete(pay)}
+                        className="py-2 px-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Delete</span>
                       </button>
                     </div>
                   </div>
@@ -619,6 +706,15 @@ export function ManagePayments() {
                               <Receipt className="w-3.5 h-3.5" />
                               <span>POS</span>
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentToDelete(pay)}
+                              className="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                              title="Delete KHQR Ledger Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -630,6 +726,78 @@ export function ManagePayments() {
           </>
         )}
       </div>
+
+      {/* Confirm Delete KHQR Record Modal */}
+      <Modal
+        isOpen={Boolean(paymentToDelete)}
+        onClose={() => !isDeleting && setPaymentToDelete(null)}
+        title="Delete KHQR Ledger Record"
+        size="sm"
+      >
+        {paymentToDelete && (
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div className="text-xs text-rose-900 space-y-1">
+                <p className="font-black uppercase tracking-wide">
+                  Permanent Ledger Removal
+                </p>
+                <p className="text-rose-700">
+                  Are you sure you want to delete this Bakong KHQR payment record from Supabase?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200/80 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 font-semibold">Order Ref:</span>
+                <span className="font-mono font-black text-gray-900">
+                  {paymentToDelete.order_number || "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 font-semibold">Patron:</span>
+                <span className="font-bold text-gray-900">
+                  {paymentToDelete.customer_name || "Patron Client"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 font-semibold">Amount:</span>
+                <span className="font-black text-gray-950">
+                  ${Number(paymentToDelete.amount || 0).toFixed(2)}{" "}
+                  {paymentToDelete.currency || "USD"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 font-semibold">Status:</span>
+                <span className="font-bold uppercase text-gray-800">
+                  {paymentToDelete.status || "PENDING"}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setPaymentToDelete(null)}
+                className="py-2.5 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs uppercase tracking-wider cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDeletePayment}
+                className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeleting ? "Deleting..." : "Delete Record"}</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* POS Thermal Receipt Modal */}
       <ThermalReceiptModal

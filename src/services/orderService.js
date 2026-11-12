@@ -26,18 +26,28 @@ export const normalizeOrder = (order, idx = 0) => {
     shippingAddressStr = order.shipping_address;
   } else if (typeof order.shippingAddress === "string") {
     shippingAddressStr = order.shippingAddress;
-  } else if (order.shipping_address && typeof order.shipping_address === "object") {
+  } else if (
+    order.shipping_address &&
+    typeof order.shipping_address === "object"
+  ) {
     const sa = order.shipping_address;
     customerName = customerName || sa.fullName || sa.name;
     customerEmail = customerEmail || sa.email;
     customerPhone = customerPhone || sa.phone;
-    shippingAddressStr = [sa.street, sa.city, sa.postalCode, sa.country].filter(Boolean).join(", ");
-  } else if (order.shippingAddress && typeof order.shippingAddress === "object") {
+    shippingAddressStr = [sa.street, sa.city, sa.postalCode, sa.country]
+      .filter(Boolean)
+      .join(", ");
+  } else if (
+    order.shippingAddress &&
+    typeof order.shippingAddress === "object"
+  ) {
     const sa = order.shippingAddress;
     customerName = customerName || sa.fullName || sa.name;
     customerEmail = customerEmail || sa.email;
     customerPhone = customerPhone || sa.phone;
-    shippingAddressStr = [sa.street, sa.city, sa.postalCode, sa.country].filter(Boolean).join(", ");
+    shippingAddressStr = [sa.street, sa.city, sa.postalCode, sa.country]
+      .filter(Boolean)
+      .join(", ");
   }
 
   customerName = customerName || "Patron Client";
@@ -48,25 +58,40 @@ export const normalizeOrder = (order, idx = 0) => {
   // Date normalization
   const dateStr =
     order.date ||
-    (order.created_at ? String(order.created_at).split("T")[0] : new Date().toISOString().split("T")[0]);
-  const createdAtStr = order.created_at || order.createdAt || new Date().toISOString();
+    (order.created_at
+      ? String(order.created_at).split("T")[0]
+      : new Date().toISOString().split("T")[0]);
+  const createdAtStr =
+    order.created_at || order.createdAt || new Date().toISOString();
 
   // Statuses
-  const orderStatus = order.order_status || order.orderStatus || order.status || "Processing";
-  const paymentMethod = order.payment_method || order.paymentMethod || "Bakong KHQR";
+  const orderStatus =
+    order.order_status || order.orderStatus || order.status || "Processing";
+  const paymentMethod =
+    order.payment_method || order.paymentMethod || "Bakong KHQR";
   const paymentStatus = order.payment_status || order.paymentStatus || "Paid";
 
   // Order Items normalization
   const rawItems = order.order_items || order.items || [];
   const items = Array.isArray(rawItems)
     ? rawItems.map((item, iIdx) => {
-        const pId = String(item.product_id || item.productId || item.id || `item-${iIdx}`);
-        const pName = item.product_name || item.productName || item.name || "Haute Couture Piece";
+        const pId = String(
+          item.product_id || item.productId || item.id || `item-${iIdx}`,
+        );
+        const pName =
+          item.product_name ||
+          item.productName ||
+          item.name ||
+          "Haute Couture Piece";
         const price = Number(item.price || 0);
         const qty = Number(item.quantity || 1);
         const itemSubtotal = Number(item.subtotal || price * qty);
-        const img = item.image || (Array.isArray(item.images) && item.images[0]) || "/uploads/8a82fc7bb76c.jpg";
-        const size = item.size || item.selected_size || item.selectedSize || "M";
+        const img =
+          item.image ||
+          (Array.isArray(item.images) && item.images[0]) ||
+          "/uploads/8a82fc7bb76c.jpg";
+        const size =
+          item.size || item.selected_size || item.selectedSize || "M";
         const color =
           item.color ||
           (typeof item.selected_color === "string"
@@ -210,7 +235,9 @@ export const orderService = {
     }
 
     const cached = getOrdersStorage();
-    const found = cached.find((o) => o.id === cleanId || o.orderNumber === cleanId);
+    const found = cached.find(
+      (o) => o.id === cleanId || o.orderNumber === cleanId,
+    );
     if (found) return found;
 
     throw new Error(`Order not found: ${cleanId}`);
@@ -239,7 +266,9 @@ export const orderService = {
     }
 
     const cached = getOrdersStorage();
-    return cached.filter((o) => (o.customerEmail || "").toLowerCase() === targetEmail);
+    return cached.filter(
+      (o) => (o.customerEmail || "").toLowerCase() === targetEmail,
+    );
   },
 
   /**
@@ -258,21 +287,30 @@ export const orderService = {
         typeof orderData.shipping_address === "object"
           ? orderData.shipping_address
           : typeof orderData.shippingAddress === "object"
-          ? orderData.shippingAddress
-          : { street: String(orderData.shippingAddress || "Phnom Penh") };
+            ? orderData.shippingAddress
+            : { street: String(orderData.shippingAddress || "Phnom Penh") };
 
       const total = Number(orderData.total || 0);
       const subtotal = Number(orderData.subtotal ?? total);
-      const shippingFee = Number(orderData.shipping_fee ?? orderData.shippingFee ?? 0);
+      const shippingFee = Number(
+        orderData.shipping_fee ?? orderData.shippingFee ?? 0,
+      );
       const tax = Number(orderData.tax || 0);
       const discount = Number(orderData.discount || 0);
 
       const orderRow = {
         order_number: orderNumber,
         customer_id: orderData.customerId || orderData.customer_id || null,
-        customer_name: orderData.customerName || orderData.customer_name || "Patron Client",
-        customer_email: orderData.customerEmail || orderData.customer_email || "patron@atelier.com",
-        customer_phone: orderData.customerPhone || orderData.customer_phone || "+855 23 888 999",
+        customer_name:
+          orderData.customerName || orderData.customer_name || "Patron Client",
+        customer_email:
+          orderData.customerEmail ||
+          orderData.customer_email ||
+          "patron@atelier.com",
+        customer_phone:
+          orderData.customerPhone ||
+          orderData.customer_phone ||
+          "+855 23 888 999",
         shipping_address: shippingAddressObj,
         subtotal,
         shipping_fee: shippingFee,
@@ -280,9 +318,12 @@ export const orderService = {
         discount,
         total,
         currency: orderData.currency || "USD",
-        payment_method: orderData.paymentMethod || orderData.payment_method || "Bakong KHQR",
-        payment_status: orderData.paymentStatus || orderData.payment_status || "Paid",
-        order_status: orderData.orderStatus || orderData.order_status || "Processing",
+        payment_method:
+          orderData.paymentMethod || orderData.payment_method || "Bakong KHQR",
+        payment_status:
+          orderData.paymentStatus || orderData.payment_status || "Paid",
+        order_status:
+          orderData.orderStatus || orderData.order_status || "Processing",
         notes: orderData.notes || "",
       };
 
@@ -303,12 +344,19 @@ export const orderService = {
             item.productId && item.productId.includes("-")
               ? item.productId
               : item.product_id && item.product_id.includes("-")
-              ? item.product_id
-              : null,
-          product_name: item.productName || item.product_name || item.name || "Haute Couture Piece",
+                ? item.product_id
+                : null,
+          product_name:
+            item.productName ||
+            item.product_name ||
+            item.name ||
+            "Haute Couture Piece",
           price: Number(item.price || 0),
           quantity: Number(item.quantity || 1),
-          image: item.image || (Array.isArray(item.images) && item.images[0]) || "/uploads/8a82fc7bb76c.jpg",
+          image:
+            item.image ||
+            (Array.isArray(item.images) && item.images[0]) ||
+            "/uploads/8a82fc7bb76c.jpg",
           size: item.size || item.selected_size || item.selectedSize || "M",
           color:
             item.color ||
@@ -317,14 +365,17 @@ export const orderService = {
               : item.selectedColor?.name || "Obsidian Black"),
         }));
 
-        const { error: itemsErr } = await supabase.from("order_items").insert(itemRows);
-        if (itemsErr) console.warn("[Supabase] order_items insert note:", itemsErr.message);
+        const { error: itemsErr } = await supabase
+          .from("order_items")
+          .insert(itemRows);
+        if (itemsErr)
+          console.warn("[Supabase] order_items insert note:", itemsErr.message);
 
         // Decrement catalog stock for each ordered item and dispatch Telegram Low-Stock Alert if <= 5
         await Promise.allSettled(
           rawItems.map(async (item) => {
             const rawProdId = String(
-              item.productId || item.product_id || item.id || ""
+              item.productId || item.product_id || item.id || "",
             ).trim();
             if (!rawProdId || !rawProdId.includes("-")) return;
 
@@ -360,7 +411,7 @@ export const orderService = {
                 triggerSource: `Order #${orderNumber} Purchase (${orderedQty} sold)`,
               });
             }
-          })
+          }),
         );
         window.dispatchEvent(new Event("atelier_products_updated"));
       }
@@ -401,12 +452,10 @@ export const orderService = {
       const cleanId = String(id).trim();
       const isUUID = cleanId.includes("-") && cleanId.length > 20;
 
-      let query = supabase
-        .from("orders")
-        .update({
-          order_status: newStatus,
-          ...(newStatus === "Delivered" ? { payment_status: "Paid" } : {}),
-        });
+      let query = supabase.from("orders").update({
+        order_status: newStatus,
+        ...(newStatus === "Delivered" ? { payment_status: "Paid" } : {}),
+      });
 
       if (isUUID) {
         query = query.eq("id", cleanId);
@@ -421,7 +470,7 @@ export const orderService = {
 
       const current = getOrdersStorage();
       const updated = current.map((o) =>
-        o.id === cleanId || o.orderNumber === cleanId ? normalized : o
+        o.id === cleanId || o.orderNumber === cleanId ? normalized : o,
       );
       saveOrdersStorage(updated);
       window.dispatchEvent(new Event("atelier_order_updated"));
@@ -431,7 +480,7 @@ export const orderService = {
         .sendOrderStatusAlert(
           normalized.orderNumber,
           newStatus,
-          normalized.customerName
+          normalized.customerName,
         )
         .catch(() => {});
 
@@ -451,10 +500,14 @@ export const orderService = {
       const cleanId = String(id).trim();
 
       const patch = {};
-      if (updatedFields.orderStatus !== undefined) patch.order_status = updatedFields.orderStatus;
-      if (updatedFields.order_status !== undefined) patch.order_status = updatedFields.order_status;
-      if (updatedFields.paymentStatus !== undefined) patch.payment_status = updatedFields.paymentStatus;
-      if (updatedFields.payment_status !== undefined) patch.payment_status = updatedFields.payment_status;
+      if (updatedFields.orderStatus !== undefined)
+        patch.order_status = updatedFields.orderStatus;
+      if (updatedFields.order_status !== undefined)
+        patch.order_status = updatedFields.order_status;
+      if (updatedFields.paymentStatus !== undefined)
+        patch.payment_status = updatedFields.paymentStatus;
+      if (updatedFields.payment_status !== undefined)
+        patch.payment_status = updatedFields.payment_status;
       if (updatedFields.notes !== undefined) patch.notes = updatedFields.notes;
 
       const { data, error } = await supabase
@@ -487,7 +540,10 @@ export const orderService = {
       const cleanId = String(id).trim();
 
       await supabase.from("order_items").delete().eq("order_id", cleanId);
-      const { error } = await supabase.from("orders").delete().eq("id", cleanId);
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", cleanId);
       if (error) throw error;
 
       const current = getOrdersStorage();
