@@ -190,6 +190,45 @@ export function Settings() {
     }
   };
 
+  const handleTestLowStockAlert = async () => {
+    storedBranding.updateStoreSettings(storeSettings);
+    setTelegramStatus((prev) => ({
+      ...prev,
+      testing: true,
+      feedback: "Sending sample Low-Stock Alert to Telegram...",
+      isError: false,
+    }));
+
+    const res = await telegramService.sendLowStockAlert({
+      productName: "Atelier Cashmere Double-Breasted Coat",
+      remainingStock: 2,
+      previousStock: 6,
+      productId: "ATL-COAT-092",
+      category: "Women",
+      brand: "ATELIER PARIS",
+      price: 240,
+      triggerSource: "Admin Configuration Test Alert",
+      forceSend: true,
+    });
+
+    if (res.ok) {
+      setTelegramStatus((prev) => ({
+        ...prev,
+        testing: false,
+        feedback: "Low-Stock Alert delivered to your Telegram chat!",
+        isError: false,
+      }));
+      showNotification("Low-Stock Alert sent to Telegram successfully!");
+    } else {
+      setTelegramStatus((prev) => ({
+        ...prev,
+        testing: false,
+        feedback: `Telegram Error: ${res.description || "Check Bot Token & Chat ID."}`,
+        isError: true,
+      }));
+    }
+  };
+
   const handleShippingSave = (e) => {
     e.preventDefault();
     setShippingConfig({
@@ -551,14 +590,22 @@ export function Settings() {
                   type="button"
                   disabled={telegramStatus.testing}
                   onClick={handleTestTelegramAlert}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs disabled:opacity-50"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>
-                    {telegramStatus.testing
-                      ? "Sending Test..."
-                      : "Send Test Alert to Telegram"}
+                    {telegramStatus.testing ? "Sending..." : "Test Connection"}
                   </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={telegramStatus.testing}
+                  onClick={handleTestLowStockAlert}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-all font-black text-xs uppercase tracking-wider cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Test Low-Stock Alert</span>
                 </button>
               </div>
             </form>

@@ -6,11 +6,33 @@ const DEFAULT_BOT_TOKEN =
 
 const DEFAULT_CHAT_ID = env.VITE_TELEGRAM_CHAT_ID || "1389246582";
 
+const ADMIN_PRODUCTS_URL =
+  typeof window !== "undefined" && window.location.origin.startsWith("http")
+    ? `${window.location.origin}/admin/products`
+    : "https://frontend-react-ecommerce-inky.vercel.app/admin/products";
+
+const ADMIN_ORDERS_URL =
+  typeof window !== "undefined" && window.location.origin.startsWith("http")
+    ? `${window.location.origin}/admin/orders`
+    : "https://frontend-react-ecommerce-inky.vercel.app/admin/orders";
+
 export interface TelegramConfig {
   botToken: string;
   chatId: string;
   orderNotification: boolean;
   stockAlertNotification: boolean;
+}
+
+export interface LowStockAlertOptions {
+  productName: string;
+  remainingStock: number;
+  previousStock?: number;
+  productId?: string | number;
+  category?: string;
+  brand?: string;
+  price?: number;
+  triggerSource?: string;
+  forceSend?: boolean;
 }
 
 function getStoredTelegramConfig(): TelegramConfig {
@@ -44,7 +66,24 @@ function escapeHtml(str: any): string {
     .replace(/>/g, "&gt;");
 }
 
-// Deduplication guard so the same order/payment alert isn't sent twice in one session
+function formatCambodiaTimestamp(): string {
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Phnom_Penh",
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(new Date()) + " ICT";
+  } catch {
+    return new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC";
+  }
+}
+
+// Deduplication guard so identical order/payment alerts aren't sent twice in one session
 const sentAlertsCache = new Set<string>();
 
 export const telegramService = {
@@ -80,7 +119,6 @@ export const telegramService = {
       bodyPayload.reply_markup = replyMarkup;
     }
 
-    // 1. Direct Telegram Bot API call (supports browser CORS natively)
     try {
       const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
@@ -138,7 +176,6 @@ export const telegramService = {
 
   /**
    * Auto-detects the most recent Chat ID by querying /getUpdates on the Bot Token.
-   * All the user needs to do is send "/start" or "hello" to their bot in Telegram.
    */
   detectChatId: async (
     botToken: string
@@ -172,7 +209,6 @@ export const telegramService = {
         };
       }
 
-      // Search from newest update to oldest for a chat object
       for (let i = data.result.length - 1; i >= 0; i--) {
         const upd = data.result[i];
         const chat =
@@ -295,11 +331,23 @@ export const telegramService = {
         ? `<b>Txn Ref:</b> <code>${escapeHtml(orderData.transactionId)}</code>\n`
         : "") +
       `<b>Total:</b> <b>$${totalUsd.toFixed(2)} USD</b> (៛ ${totalKhr.toLocaleString()} KHR)\n` +
+      `<b>Time:</b> ${formatCambodiaTimestamp()}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `<b>Items (${items.reduce((s: number, i: any) => s + (Number(i.quantity) || 1), 0)}):</b>\n` +
       `${itemsSummary}`;
 
-    const res = await telegramService.sendMessage(msg);
+    const replyMarkup = {
+      inline_keyboard: [
+        [
+          {
+            text: "📋 Manage Order in Admin Portal",
+            url: ADMIN_ORDERS_URL,
+          },
+        ],
+      ],
+    };
+
+    const res = await telegramService.sendMessage(msg, undefined, undefined, replyMarkup);
     return res.ok;
   },
 
@@ -334,6 +382,7 @@ export const telegramService = {
         ? `<b>Patron:</b> ${escapeHtml(params.customerName)}\n`
         : "") +
       `<b>Merchant:</b> <code>rayou_va@bkrt</code> (Rayou Va)\n` +
+      `<b>Settled At:</b> ${formatCambodiaTimestamp()}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━`;
 
     const res = await telegramService.sendMessage(msg);
@@ -366,6 +415,7 @@ export const telegramService = {
       `<b>Order ID:</b> <code>${escapeHtml(orderNumber)}</code>\n` +
       (customerName ? `<b>Patron:</b> ${escapeHtml(customerName)}\n` : "") +
       `<b>New Status:</b> <b>${escapeHtml(newStatus.toUpperCase())}</b>\n` +
+      `<b>Updated At:</b> ${formatCambodiaTimestamp()}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━`;
 
     const res = await telegramService.sendMessage(msg);
@@ -373,33 +423,172 @@ export const telegramService = {
   },
 
   /**
-   * Dispatches a low-stock or out-of-stock alert when inventory drops to <= 5 units.
+   * Dispatches an executive, standard-compliant Low-Stock or Out-of-Stock alert to Telegram.
+   * Accepts either (productName, remainingStock, productId) or a rich LowStockAlertOptions object.
    */
   sendLowStockAlert: async (
-    productName: string,
-    remainingStock: number,
-    productId?: string | number
-  ): Promise<boolean> => {
+    productOrName: string | LowStockAlertOptions,
+    remainingStockArg?: number,
+    productIdArg?: string | number
+  ): Promise<{ ok: boolean; description?: string }> => {
     const cfg = getStoredTelegramConfig();
-    if (!cfg.stockAlertNotification || !cfg.botToken || !cfg.chatId) return false;
+    const opts: LowStockAlertOptions =
+      typeof productOrName === "object" && productOrName !== null
+        ? productOrName
+        : {
+            productName: String(productOrName || "Atelier Piece"),
+            remainingStock: Number(remainingStockArg ?? 0),
+            productId: productIdArg,
+          };
 
-    const statusText =
-      remainingStock <= 0
-        ? "OUT OF STOCK"
-        : `LOW STOCK (${remainingStock} left)`;
-    const icon = remainingStock <= 0 ? "🚨" : "⚠️";
+    if (!opts.forceSend && !cfg.stockAlertNotification) {
+      return { ok: false, description: "Low-stock notifications are disabled in settings." };
+    }
+    if (!cfg.botToken || !cfg.chatId) {
+      return { ok: false, description: "Missing Telegram Bot Token or Chat ID." };
+    }
+
+    const remaining = Math.max(0, Number(opts.remainingStock ?? 0));
+    const isOut = remaining <= 0;
+    const shortId = opts.productId
+      ? String(opts.productId).slice(-8).toUpperCase()
+      : "CAT-SKU";
+
+    const header = isOut
+      ? "🚨 <b>CRITICAL INVENTORY ALERT: OUT OF STOCK</b>"
+      : "⚠️ <b>LOW STOCK THRESHOLD WARNING (≤ 5 UNITS)</b>";
+
+    const statusBadge = isOut
+      ? "🔴 OUT OF STOCK (0 AVAILABLE)"
+      : `🟠 LOW STOCK (${remaining} ${remaining === 1 ? "UNIT" : "UNITS"} LEFT)`;
+
+    const stockTransition =
+      opts.previousStock !== undefined && Number(opts.previousStock) !== remaining
+        ? `${opts.previousStock} units → <b>${remaining} units</b>`
+        : `<b>${remaining} ${remaining === 1 ? "unit" : "units"} remaining</b>`;
+
+    const priceLine =
+      opts.price !== undefined && Number(opts.price) > 0
+        ? `<b>Unit Price:</b> <b>$${Number(opts.price).toFixed(2)} USD</b> (៛ ${Math.round(
+            Number(opts.price) * 4100
+          ).toLocaleString()} KHR)\n`
+        : "";
+
+    const categoryLine =
+      opts.category || opts.brand
+        ? `<b>Collection:</b> ${escapeHtml(opts.category || "Runway")} • ${escapeHtml(
+            opts.brand || "ATELIER"
+          )}\n`
+        : "";
+
+    const triggerLine = opts.triggerSource
+      ? `<b>Trigger:</b> ${escapeHtml(opts.triggerSource)}\n`
+      : "";
 
     const msg =
-      `${icon} <b>INVENTORY ALERT: ${statusText}</b>\n` +
+      `${header}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `<b>Piece:</b> ${escapeHtml(productName)}\n` +
-      `<b>Remaining Stock:</b> <b>${remainingStock} units</b>\n` +
-      (productId ? `<b>Catalog ID:</b> <code>#${escapeHtml(String(productId).slice(-6).toUpperCase())}</code>\n` : "") +
+      `<b>Piece:</b> <b>${escapeHtml(opts.productName)}</b>\n` +
+      `<b>Catalog SKU:</b> <code>#${escapeHtml(shortId)}</code>\n` +
+      categoryLine +
+      priceLine +
+      `<b>Stock Level:</b> ${stockTransition}\n` +
+      `<b>Status:</b> <b>${statusBadge}</b>\n` +
+      triggerLine +
+      `<b>Time:</b> ${formatCambodiaTimestamp()}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `Please restock via the Atelier Admin Portal.`;
+      (isOut
+        ? `Immediate restock required — piece is currently marked <b>Sold Out</b> on the storefront.`
+        : `Inventory has fallen to or below the 5-unit safety threshold. Please replenish stock soon.`);
 
-    const res = await telegramService.sendMessage(msg);
-    return res.ok;
+    const replyMarkup = {
+      inline_keyboard: [
+        [
+          {
+            text: "📦 Restock in Admin Inventory Portal",
+            url: ADMIN_PRODUCTS_URL,
+          },
+        ],
+      ],
+    };
+
+    return telegramService.sendMessage(msg, undefined, undefined, replyMarkup);
+  },
+
+  /**
+   * Dispatches a comprehensive Inventory Health & Low-Stock Summary Report to Telegram.
+   */
+  sendInventoryAuditReport: async (
+    products: any[]
+  ): Promise<{ ok: boolean; description?: string; lowCount: number; outCount: number }> => {
+    const list = Array.isArray(products) ? products : [];
+    const outOfStockItems = list.filter(
+      (p) =>
+        Number(p.stock ?? p.quantity ?? 0) <= 0 ||
+        String(p.status || "").toLowerCase() === "out of stock"
+    );
+    const lowStockItems = list.filter((p) => {
+      const s = Number(p.stock ?? p.quantity ?? 0);
+      const isOut = String(p.status || "").toLowerCase() === "out of stock";
+      return !isOut && s > 0 && s <= 5;
+    });
+    const healthyItems = list.filter((p) => {
+      const s = Number(p.stock ?? p.quantity ?? 0);
+      const isOut = String(p.status || "").toLowerCase() === "out of stock";
+      return !isOut && s > 5;
+    });
+
+    const outLines = outOfStockItems.slice(0, 12).map((p) => {
+      const sku = String(p.id || "").slice(-6).toUpperCase();
+      return `  🔴 <b>${escapeHtml(p.name)}</b> (<code>#${sku}</code>) — <b>0 left</b> ($${Number(
+        p.price || 0
+      ).toFixed(2)})`;
+    });
+
+    const lowLines = lowStockItems.slice(0, 12).map((p) => {
+      const sku = String(p.id || "").slice(-6).toUpperCase();
+      const s = Number(p.stock ?? p.quantity ?? 0);
+      return `  🟠 <b>${escapeHtml(p.name)}</b> (<code>#${sku}</code>) — <b>${s} left</b> ($${Number(
+        p.price || 0
+      ).toFixed(2)})`;
+    });
+
+    const msg =
+      `📊 <b>ATELIER INVENTORY HEALTH &amp; LOW-STOCK AUDIT</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `<b>Total Catalog SKUs:</b> <b>${list.length} pieces</b>\n` +
+      `✅ <b>Healthy Stock (&gt;5):</b> ${healthyItems.length} pieces\n` +
+      `⚠️ <b>Low Stock (1–5):</b> <b>${lowStockItems.length} pieces</b>\n` +
+      `🚨 <b>Out of Stock (0):</b> <b>${outOfStockItems.length} pieces</b>\n` +
+      `<b>Audited At:</b> ${formatCambodiaTimestamp()}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      (outLines.length > 0
+        ? `<b>🚨 Out of Stock (${outOfStockItems.length}):</b>\n${outLines.join("\n")}\n\n`
+        : "") +
+      (lowLines.length > 0
+        ? `<b>⚠️ Low Stock ≤ 5 Units (${lowStockItems.length}):</b>\n${lowLines.join("\n")}`
+        : outLines.length === 0
+        ? `✨ <b>All catalog pieces are well-stocked above the 5-unit safety threshold!</b>`
+        : "");
+
+    const replyMarkup = {
+      inline_keyboard: [
+        [
+          {
+            text: "📦 Open Admin Inventory Portal",
+            url: ADMIN_PRODUCTS_URL,
+          },
+        ],
+      ],
+    };
+
+    const res = await telegramService.sendMessage(msg, undefined, undefined, replyMarkup);
+    return {
+      ok: res.ok,
+      description: res.description,
+      lowCount: lowStockItems.length,
+      outCount: outOfStockItems.length,
+    };
   },
 };
 

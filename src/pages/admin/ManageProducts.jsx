@@ -21,9 +21,11 @@ import {
   Layers,
   Check,
   Download,
+  Send,
 } from "lucide-react";
 import { productService } from "../../services/productService";
 import { categoryService } from "../../services/categoryService";
+import { telegramService } from "../../services/telegramService";
 import DataTable from "../../components/admin/DataTable";
 import Modal from "../../components/common/Modal";
 import Input from "../../components/common/Input";
@@ -101,6 +103,44 @@ export function ManageProducts() {
   const [toast, setToast] = useState(null);
   const [stockFilter, setStockFilter] = useState("all"); // 'all' | 'active' | 'low' | 'out'
   const [restockingId, setRestockingId] = useState(null);
+  const [sendingTelegramAudit, setSendingTelegramAudit] = useState(false);
+
+  const handleSendTelegramAudit = async () => {
+    setSendingTelegramAudit(true);
+    try {
+      const res = await telegramService.sendInventoryAuditReport(products);
+      if (res.ok) {
+        showNotification(
+          `Inventory Audit sent to Telegram (${res.lowCount} Low Stock, ${res.outCount} Out of Stock)`
+        );
+      } else {
+        showNotification(
+          `Telegram Notice: ${res.description || "Check Bot Token & Chat ID in Settings"}`
+        );
+      }
+    } finally {
+      setSendingTelegramAudit(false);
+    }
+  };
+
+  const handleSendItemAlert = async (item) => {
+    const qty = Number(item.stock ?? item.quantity ?? 0);
+    const res = await telegramService.sendLowStockAlert({
+      productName: item.name,
+      remainingStock: qty,
+      productId: item.id || item._id,
+      category: item.category,
+      brand: item.brand,
+      price: Number(item.price || 0),
+      triggerSource: "Manual Admin Inventory Alert",
+      forceSend: true,
+    });
+    if (res.ok) {
+      showNotification(`Low-stock alert for "${item.name}" sent to Telegram!`);
+    } else {
+      showNotification(`Telegram Error: ${res.description || "Check Settings"}`);
+    }
+  };
 
   const handleQuickRestock = async (item, addQty = 5) => {
     const prodId = item.id || item._id;
@@ -577,6 +617,17 @@ export function ManageProducts() {
                   +15
                 </button>
               )}
+              {qty <= 5 && (
+                <button
+                  type="button"
+                  onClick={() => handleSendItemAlert(item)}
+                  className="px-2 py-0.5 rounded-md bg-[#0088cc] hover:bg-[#0077b5] text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-1"
+                  title="Push low-stock alert for this piece to Telegram"
+                >
+                  <Send className="w-2.5 h-2.5" />
+                  <span>Alert</span>
+                </button>
+              )}
             </div>
 
             {waitlistCount > 0 && (
@@ -637,7 +688,20 @@ export function ManageProducts() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+          <button
+            type="button"
+            disabled={sendingTelegramAudit}
+            onClick={handleSendTelegramAudit}
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white transition-all font-bold text-[11px] sm:text-xs uppercase tracking-wider cursor-pointer shadow-xs shrink-0 disabled:opacity-50"
+            title="Send full Inventory Health & Low-Stock Report to Telegram Bot"
+          >
+            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">
+              {sendingTelegramAudit ? "Sending..." : "Telegram Audit"}
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={handleExportCSV}
@@ -651,7 +715,7 @@ export function ManageProducts() {
           <button
             type="button"
             onClick={handleOpenAdd}
-            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-[11px] sm:text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
+            className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#111111] text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-[11px] sm:text-xs uppercase tracking-wider shadow-md hover:shadow-lg cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4 stroke-[3] shrink-0" />
             <span className="truncate">Add Product</span>

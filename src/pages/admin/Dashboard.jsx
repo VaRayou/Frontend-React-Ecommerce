@@ -16,11 +16,13 @@ import {
   CheckCircle2,
   QrCode,
   ArrowUpRight,
+  Send,
 } from "lucide-react";
 import { productService } from "../../services/productService";
 import { categoryService } from "../../services/categoryService";
 import { userService } from "../../services/userService";
 import { orderService } from "../../services/orderService";
+import { telegramService } from "../../services/telegramService";
 import Loader from "../../components/common/Loader";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
 
@@ -45,6 +47,9 @@ function Dashboard() {
     total: 1,
   });
   const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [allCatalogProducts, setAllCatalogProducts] = useState([]);
+  const [sendingRadarAlert, setSendingRadarAlert] = useState(false);
+  const [radarToast, setRadarToast] = useState("");
   const [posReceiptOrder, setPosReceiptOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -99,6 +104,7 @@ function Dashboard() {
         });
 
         // Low stock items (stock <= 5)
+        setAllCatalogProducts(prods);
         const low = prods.filter(
           (p) => Number(p.stock ?? p.quantity ?? 10) <= 5
         );
@@ -532,17 +538,51 @@ function Dashboard() {
 
         {/* Low Stock Radar Alert */}
         <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3.5 mb-3 sm:mb-4">
+          <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-3.5 mb-3 sm:mb-4">
             <h3 className="text-sm sm:text-base font-extrabold text-gray-900 truncate">
               Inventory Radar
             </h3>
-            <Link
-              to="/admin/products"
-              className="text-xs font-bold text-gray-900 hover:underline shrink-0 ml-2"
-            >
-              Restock &rarr;
-            </Link>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                disabled={sendingRadarAlert}
+                onClick={async () => {
+                  setSendingRadarAlert(true);
+                  try {
+                    const res = await telegramService.sendInventoryAuditReport(
+                      allCatalogProducts.length > 0 ? allCatalogProducts : lowStockProducts
+                    );
+                    setRadarToast(
+                      res.ok
+                        ? "Inventory Radar report sent to Telegram!"
+                        : `Telegram Notice: ${res.description || "Check Settings"}`
+                    );
+                    setTimeout(() => setRadarToast(""), 3500);
+                  } finally {
+                    setSendingRadarAlert(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                title="Send Inventory Health & Low-Stock Audit to Telegram"
+              >
+                <Send className="w-3 h-3" />
+                <span>{sendingRadarAlert ? "Sending..." : "Alert Telegram"}</span>
+              </button>
+              <Link
+                to="/admin/products"
+                className="text-xs font-bold text-gray-900 hover:underline shrink-0"
+              >
+                Restock &rarr;
+              </Link>
+            </div>
           </div>
+
+          {radarToast && (
+            <div className="mb-3 px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 text-[11px] font-bold text-sky-900 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+              <span>{radarToast}</span>
+            </div>
+          )}
 
           {lowStockProducts.length > 0 ? (
             <div className="space-y-2.5">

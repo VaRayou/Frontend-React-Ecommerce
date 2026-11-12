@@ -319,6 +319,50 @@ export const orderService = {
 
         const { error: itemsErr } = await supabase.from("order_items").insert(itemRows);
         if (itemsErr) console.warn("[Supabase] order_items insert note:", itemsErr.message);
+
+        // Decrement catalog stock for each ordered item and dispatch Telegram Low-Stock Alert if <= 5
+        await Promise.allSettled(
+          rawItems.map(async (item) => {
+            const rawProdId = String(
+              item.productId || item.product_id || item.id || ""
+            ).trim();
+            if (!rawProdId || !rawProdId.includes("-")) return;
+
+            const orderedQty = Math.max(1, Number(item.quantity || 1));
+            const { data: prodRow } = await supabase
+              .from("products")
+              .select("id, name, stock, brand, price")
+              .eq("id", rawProdId)
+              .maybeSingle();
+
+            if (!prodRow) return;
+            const prevStock = Math.max(0, Number(prodRow.stock ?? 10));
+            const nextStock = Math.max(0, prevStock - orderedQty);
+            const nextStatus = nextStock <= 0 ? "Out of Stock" : "Active";
+
+            await supabase
+              .from("products")
+              .update({ stock: nextStock, status: nextStatus })
+              .eq("id", rawProdId);
+
+            if (nextStock <= 5) {
+              await telegramService.sendLowStockAlert({
+                productName:
+                  prodRow.name ||
+                  item.productName ||
+                  item.name ||
+                  "Atelier Piece",
+                remainingStock: nextStock,
+                previousStock: prevStock,
+                productId: rawProdId,
+                brand: prodRow.brand || "ATELIER",
+                price: Number(prodRow.price ?? item.price ?? 0),
+                triggerSource: `Order #${orderNumber} Purchase (${orderedQty} sold)`,
+              });
+            }
+          })
+        );
+        window.dispatchEvent(new Event("atelier_products_updated"));
       }
 
       // Fetch freshly composed order with items

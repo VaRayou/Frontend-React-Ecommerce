@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { telegramService } from "./telegramService";
 
 const PRODUCTS_STORAGE_KEY = "atelier_products_v3";
 
@@ -181,10 +182,10 @@ export const productService = {
     try {
       const hasCategoryFilter = Boolean(category && category.toLowerCase() !== "all");
 
-      // Build Supabase Query
+      // Build Supabase Query (include both Active and Out of Stock items)
       let query = hasCategoryFilter
-        ? supabase.from("products").select("*, categories:category_id!inner(id, name, slug)").eq("status", "Active")
-        : supabase.from("products").select("*, categories:category_id(id, name, slug)").eq("status", "Active");
+        ? supabase.from("products").select("*, categories:category_id!inner(id, name, slug)")
+        : supabase.from("products").select("*, categories:category_id(id, name, slug)");
 
       if (hasCategoryFilter) {
         query = query.ilike("categories.name", `%${category.trim()}%`);
@@ -325,6 +326,22 @@ export const productService = {
       const current = getProductsStorage();
       saveProductsStorage([formatted, ...current]);
       window.dispatchEvent(new Event("atelier_products_updated"));
+
+      // Dispatch low-stock or out-of-stock alert to Telegram if initial stock <= 5
+      if (formatted.stock <= 5) {
+        telegramService
+          .sendLowStockAlert({
+            productName: formatted.name,
+            remainingStock: formatted.stock,
+            productId: formatted.id,
+            category: formatted.category,
+            brand: formatted.brand,
+            price: formatted.price,
+            triggerSource: "New Catalog Product Created",
+          })
+          .catch(() => {});
+      }
+
       return formatted;
     } catch (err) {
       console.error("Supabase createProduct failed:", err);
@@ -337,6 +354,13 @@ export const productService = {
     try {
       await ensureAdminSession();
       const cleanId = String(id).trim();
+      const existingCached = getProductsStorage().find(
+        (p) => String(p.id) === cleanId
+      );
+      const prevStock =
+        existingCached?.stock !== undefined
+          ? Number(existingCached.stock)
+          : undefined;
 
       let categoryId = updatedFields.categoryId || updatedFields.category_id;
       if (!categoryId && updatedFields.category) {
@@ -387,6 +411,28 @@ export const productService = {
       const updatedList = current.map((p) => (p.id === cleanId ? formatted : p));
       saveProductsStorage(updatedList);
       window.dispatchEvent(new Event("atelier_products_updated"));
+
+      // Dispatch Low-Stock / Out-of-Stock Telegram Alert whenever stock is <= 5
+      if (
+        formatted.stock <= 5 &&
+        (updatedFields.stock !== undefined ||
+          String(updatedFields.status || "").toLowerCase() === "out of stock")
+      ) {
+        telegramService
+          .sendLowStockAlert({
+            productName: formatted.name,
+            remainingStock: formatted.stock,
+            previousStock: prevStock,
+            productId: formatted.id,
+            category: formatted.category,
+            brand: formatted.brand,
+            price: formatted.price,
+            triggerSource:
+              updatedFields.triggerSource || "Admin Inventory Stock Update",
+          })
+          .catch(() => {});
+      }
+
       return formatted;
     } catch (err) {
       console.error("Supabase updateProduct failed:", err);
