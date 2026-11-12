@@ -21,7 +21,11 @@ import {
 import { productService } from "../../services/productService";
 import { categoryService } from "../../services/categoryService";
 import { userService } from "../../services/userService";
-import { orderService } from "../../services/orderService";
+import {
+  orderService,
+  calculateOrderFinancials,
+  isOrderPaid,
+} from "../../services/orderService";
 import { telegramService } from "../../services/telegramService";
 import Loader from "../../components/common/Loader";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
@@ -36,9 +40,12 @@ function Dashboard() {
     users: 0,
     orders: 0,
     pendingOrders: 0,
+    paidCount: 0,
+    pendingAmount: 0,
     revenue: 0,
   });
 
+  const [allOrders, setAllOrders] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [paymentBreakdown, setPaymentBreakdown] = useState({
@@ -63,44 +70,36 @@ function Dashboard() {
           orderService.getOrders(),
         ]);
 
-        const activeOrders = ords.filter(
-          (o) =>
-            String(o.orderStatus || o.status || "").toLowerCase() !== "cancelled"
-        );
-        const pending = ords.filter(
-          (o) =>
-            o.orderStatus === "Pending" ||
-            o.status === "Processing" ||
-            o.orderStatus === "Processing"
-        ).length;
-        const totalRev = Number(
-          activeOrders
-            .reduce((sum, o) => sum + (Number(o.total) || 0), 0)
-            .toFixed(2)
-        );
+        const financials = calculateOrderFinancials(ords);
+        const paidOrdersList = ords.filter((o) => isOrderPaid(o));
 
+        setAllOrders(ords);
         setStats({
           products: prods.length,
           categories: cats.length,
           users: usrs.length,
           orders: ords.length,
-          pendingOrders: pending,
-          revenue: totalRev,
+          pendingOrders: financials.pendingCount,
+          paidCount: financials.paidCount,
+          pendingAmount: financials.pendingAmount,
+          revenue: financials.paidRevenue,
         });
 
-        // Payment Methods Breakdown (across non-cancelled orders)
-        const khqrOrders = activeOrders.filter(
+        // Payment Methods Breakdown (across verified PAID orders)
+        const khqrOrders = paidOrdersList.filter(
           (o) =>
             (o.paymentMethod || "").toLowerCase().includes("khqr") ||
             (o.paymentMethod || "").toLowerCase().includes("qr")
         ).length;
-        const codOrders = activeOrders.filter((o) =>
+        const codOrders = paidOrdersList.filter((o) =>
           (o.paymentMethod || "").toLowerCase().includes("cash")
         ).length;
         setPaymentBreakdown({
-          khqr: khqrOrders || (activeOrders.length > 0 ? activeOrders.length : 1),
+          khqr:
+            khqrOrders ||
+            (paidOrdersList.length > 0 ? paidOrdersList.length : 1),
           cod: codOrders,
-          total: activeOrders.length || 1,
+          total: paidOrdersList.length || 1,
         });
 
         // Low stock items (stock <= 5)
@@ -166,19 +165,69 @@ function Dashboard() {
   );
   const codPercent = Math.max(0, 100 - khqrPercent);
 
+  // Compute 100% real revenue bars from actual orders in Supabase
+  const paidOrdersOnly = allOrders.filter((o) => isOrderPaid(o));
+  const paidProcessingRev = paidOrdersOnly
+    .filter((o) => String(o.orderStatus || "").toLowerCase() === "processing")
+    .reduce((s, o) => s + (Number(o.total) || 0), 0);
+  const paidShippedRev = paidOrdersOnly
+    .filter((o) => String(o.orderStatus || "").toLowerCase() === "shipped")
+    .reduce((s, o) => s + (Number(o.total) || 0), 0);
+  const paidDeliveredRev = paidOrdersOnly
+    .filter((o) => String(o.orderStatus || "").toLowerCase() === "delivered")
+    .reduce((s, o) => s + (Number(o.total) || 0), 0);
+  const paidKhqrRev = paidOrdersOnly
+    .filter(
+      (o) =>
+        String(o.paymentMethod || "").toLowerCase().includes("khqr") ||
+        String(o.paymentMethod || "").toLowerCase().includes("qr")
+    )
+    .reduce((s, o) => s + (Number(o.total) || 0), 0);
+  const pendingUnpaidRev = Number(stats.pendingAmount || 0);
+  const totalPaidRev = Number(stats.revenue || 0);
+
+  const maxBarVal = Math.max(
+    1,
+    paidProcessingRev,
+    paidShippedRev,
+    paidDeliveredRev,
+    paidKhqrRev,
+    pendingUnpaidRev,
+    totalPaidRev
+  );
+  const toBarPct = (val) =>
+    val <= 0 ? 10 : Math.max(16, Math.min(96, Math.round((val / maxBarVal) * 96)));
+
   const revenueBars = [
-    { month: "Jun", pct: 45, value: "$1,240" },
-    { month: "Jul", pct: 62, value: "$1,890" },
-    { month: "Aug", pct: 52, value: "$1,540" },
-    { month: "Sep", pct: 76, value: "$2,400" },
-    { month: "Oct", pct: 86, value: "$2,980" },
     {
-      month: "Nov",
-      pct: 96,
-      value: `$${(3620 + Number(stats.revenue || 0)).toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
+      month: "Pending",
+      pct: toBarPct(pendingUnpaidRev),
+      value: `$${pendingUnpaidRev.toFixed(2)}`,
+    },
+    {
+      month: "Processing",
+      pct: toBarPct(paidProcessingRev),
+      value: `$${paidProcessingRev.toFixed(2)}`,
+    },
+    {
+      month: "Shipped",
+      pct: toBarPct(paidShippedRev),
+      value: `$${paidShippedRev.toFixed(2)}`,
+    },
+    {
+      month: "Delivered",
+      pct: toBarPct(paidDeliveredRev),
+      value: `$${paidDeliveredRev.toFixed(2)}`,
+    },
+    {
+      month: "KHQR Paid",
+      pct: toBarPct(paidKhqrRev),
+      value: `$${paidKhqrRev.toFixed(2)}`,
+    },
+    {
+      month: "Paid Total",
+      pct: totalPaidRev > 0 ? 96 : 12,
+      value: `$${totalPaidRev.toFixed(2)}`,
       active: true,
     },
   ];
@@ -342,9 +391,9 @@ function Dashboard() {
           </div>
         </Link>
 
-        {/* Gross Revenue Card (Prominent on Phone with 2-Column Span) */}
+        {/* Paid Revenue Card (Prominent on Phone with 2-Column Span) */}
         <Link
-          to="/admin/payments"
+          to="/admin/orders"
           className="col-span-2 sm:col-span-2 lg:col-span-1 bg-[#111111] text-white rounded-2xl border border-black p-4 sm:p-5 flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-all group"
         >
           <div className="min-w-0">
@@ -352,10 +401,10 @@ function Dashboard() {
               ${Number(stats.revenue || 0).toFixed(2)}
             </div>
             <div className="text-[11px] sm:text-xs font-semibold text-gray-300 mt-0.5">
-              Gross Revenue
+              Paid Revenue ({stats.paidCount} Paid)
             </div>
-            <span className="block text-[10px] sm:text-[11px] font-bold text-[#D6FF00]/90 mt-1 sm:mt-1.5">
-              +24.6% vs last week
+            <span className="block text-[10px] sm:text-[11px] font-bold text-[#D6FF00]/90 mt-1 sm:mt-1.5 truncate">
+              Pending: ${Number(stats.pendingAmount || 0).toFixed(2)} (Excluded)
             </span>
           </div>
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
@@ -699,13 +748,21 @@ function Dashboard() {
                       ${Number(ord.total || 0).toFixed(2)}
                     </span>
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        ord.paymentStatus === "Paid"
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                        isOrderPaid(ord)
                           ? "bg-emerald-100 text-emerald-800"
+                          : String(ord.orderStatus || "").toLowerCase() ===
+                            "cancelled"
+                          ? "bg-rose-100 text-rose-700"
                           : "bg-amber-100 text-amber-800"
                       }`}
                     >
-                      {ord.paymentStatus || "Pending"}
+                      {isOrderPaid(ord)
+                        ? "PAID"
+                        : String(ord.orderStatus || "").toLowerCase() ===
+                          "cancelled"
+                        ? "CANCELLED"
+                        : "PENDING"}
                     </span>
                   </div>
 
@@ -776,13 +833,21 @@ function Dashboard() {
                   </td>
                   <td className="px-5 py-3.5 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        ord.paymentStatus === "Paid"
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
+                        isOrderPaid(ord)
                           ? "bg-emerald-100 text-emerald-800"
+                          : String(ord.orderStatus || "").toLowerCase() ===
+                            "cancelled"
+                          ? "bg-rose-100 text-rose-700"
                           : "bg-amber-100 text-amber-800"
                       }`}
                     >
-                      {ord.paymentStatus || "Pending"}
+                      {isOrderPaid(ord)
+                        ? "PAID"
+                        : String(ord.orderStatus || "").toLowerCase() ===
+                          "cancelled"
+                        ? "CANCELLED"
+                        : "PENDING"}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 whitespace-nowrap">

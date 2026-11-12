@@ -17,7 +17,11 @@ import {
   FileText,
   Download,
 } from "lucide-react";
-import { orderService } from "../../services/orderService";
+import {
+  orderService,
+  calculateOrderFinancials,
+  isOrderPaid,
+} from "../../services/orderService";
 import DataTable from "../../components/admin/DataTable";
 import Modal from "../../components/common/Modal";
 import Loader from "../../components/common/Loader";
@@ -36,6 +40,7 @@ export function ManageOrders() {
   const [posReceiptOrder, setPosReceiptOrder] = useState(null);
   const [isPosCounterOpen, setIsPosCounterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
   const [toast, setToast] = useState(null);
 
   const showNotification = (msg) => {
@@ -187,11 +192,18 @@ export function ManageOrders() {
       showNotification(`Order #${targetId} status updated to ${newStatus}`);
       await loadOrders(true);
       if (selectedOrder && (selectedOrder.id === targetId || selectedOrder.orderNumber === targetId)) {
+        const sLower = String(newStatus || "").toLowerCase();
         setSelectedOrder((prev) => ({
           ...prev,
           orderStatus: newStatus,
           status: newStatus,
-          ...(newStatus === "Delivered" ? { paymentStatus: "Paid" } : {}),
+          ...(sLower === "delivered"
+            ? { paymentStatus: "Paid" }
+            : sLower === "pending"
+            ? { paymentStatus: "Pending" }
+            : sLower === "cancelled"
+            ? { paymentStatus: "Cancelled" }
+            : {}),
         }));
       }
     } catch {
@@ -199,18 +211,45 @@ export function ManageOrders() {
     }
   };
 
+  const handlePaymentStatusChange = async (targetId, newPayStatus) => {
+    try {
+      await orderService.updatePaymentStatus(targetId, newPayStatus);
+      showNotification(`Order #${targetId} payment marked ${newPayStatus}`);
+      await loadOrders(true);
+      if (
+        selectedOrder &&
+        (selectedOrder.id === targetId || selectedOrder.orderNumber === targetId)
+      ) {
+        setSelectedOrder((prev) => ({
+          ...prev,
+          paymentStatus: newPayStatus,
+          payment_status: newPayStatus,
+        }));
+      }
+    } catch {
+      alert("Failed to update payment status");
+    }
+  };
+
   const filteredOrders = orders.filter((o) => {
-    if (statusFilter === "all") return true;
-    const currentStatus = o.orderStatus || o.status || "Pending";
-    return currentStatus.toLowerCase() === statusFilter.toLowerCase();
+    if (statusFilter !== "all") {
+      const currentStatus = o.orderStatus || o.status || "Pending";
+      if (currentStatus.toLowerCase() !== statusFilter.toLowerCase()) {
+        return false;
+      }
+    }
+    if (paymentFilter === "paid") {
+      return isOrderPaid(o);
+    }
+    if (paymentFilter === "pending") {
+      const ordStatus = String(o.orderStatus || o.status || "").toLowerCase();
+      return ordStatus !== "cancelled" && !isOrderPaid(o);
+    }
+    return true;
   });
 
-  // Calculate live stats
-  const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
-  const pendingProcessingCount = orders.filter((o) => {
-    const s = (o.orderStatus || o.status || "").toLowerCase();
-    return s === "pending" || s === "processing";
-  }).length;
+  // Calculate standard e-commerce financials (Paid Revenue vs Pending Unpaid Volume)
+  const financials = calculateOrderFinancials(orders);
 
   const getStatusBadge = (status) => {
     const s = status || "Pending";
@@ -301,22 +340,47 @@ export function ManageOrders() {
     {
       title: "Payment",
       key: "paymentStatus",
-      render: (item) => (
-        <div>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-              item.paymentStatus === "Paid"
-                ? "bg-emerald-100 text-emerald-800"
-                : "bg-amber-100 text-amber-800"
-            }`}
-          >
-            {item.paymentStatus || "Authorized"}
-          </span>
-          <span className="block text-[11px] text-gray-500 mt-0.5 font-medium">
-            {item.paymentMethod || "Bakong KHQR"}
-          </span>
-        </div>
-      ),
+      render: (item) => {
+        const paid = isOrderPaid(item);
+        const ordStatus = String(
+          item.orderStatus || item.status || "Pending"
+        ).toLowerCase();
+        const isCancelled = ordStatus === "cancelled";
+        const effectivePayStatus = isCancelled
+          ? "Cancelled"
+          : paid
+          ? "Paid"
+          : "Pending";
+
+        return (
+          <div>
+            <select
+              value={effectivePayStatus}
+              onChange={(e) =>
+                handlePaymentStatusChange(
+                  item.id || item.orderNumber,
+                  e.target.value
+                )
+              }
+              className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border cursor-pointer focus:outline-hidden ${
+                effectivePayStatus === "Paid"
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                  : effectivePayStatus === "Cancelled"
+                  ? "bg-rose-100 text-rose-700 border-rose-200"
+                  : "bg-amber-100 text-amber-800 border-amber-200"
+              }`}
+              title="Change Payment Status (Only PAID orders count toward Settled Revenue)"
+            >
+              <option value="Paid">PAID</option>
+              <option value="Pending">PENDING</option>
+              <option value="Cancelled">CANCELLED</option>
+            </select>
+            <span className="block text-[11px] text-gray-500 mt-0.5 font-medium">
+              {item.paymentMethod || "Bakong KHQR"}
+            </span>
+          </div>
+        );
+      },
     },
     {
       title: "Order Status",
@@ -419,66 +483,114 @@ export function ManageOrders() {
             </button>
           </div>
 
-          {/* Filter dropdown */}
-          <div className="flex items-center justify-between sm:justify-start gap-2.5 bg-gray-50 px-3.5 py-2.5 sm:py-2 rounded-xl border border-gray-200">
-            <span className="text-xs font-bold text-gray-600 shrink-0">Filter Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs font-bold bg-transparent text-gray-900 focus:outline-hidden cursor-pointer flex-1 sm:flex-initial text-right sm:text-left"
-            >
-              <option value="all">All Orders ({orders.length})</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+          {/* Filter dropdowns */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center justify-between sm:justify-start gap-2 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 flex-1 sm:flex-initial">
+              <span className="text-xs font-bold text-gray-600 shrink-0">
+                Payment:
+              </span>
+              <select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+                className="text-xs font-bold bg-transparent text-gray-900 focus:outline-hidden cursor-pointer"
+              >
+                <option value="all">All ({orders.length})</option>
+                <option value="paid">Paid Only ({financials.paidCount})</option>
+                <option value="pending">
+                  Pending / Unpaid ({financials.pendingCount})
+                </option>
+              </select>
+            </div>
+
+            <div className="flex items-center justify-between sm:justify-start gap-2 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 flex-1 sm:flex-initial">
+              <span className="text-xs font-bold text-gray-600 shrink-0">
+                Order Status:
+              </span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="text-xs font-bold bg-transparent text-gray-900 focus:outline-hidden cursor-pointer"
+              >
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Metrics Row (3 compact cards side-by-side on mobile & desktop) */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        <div className="p-3 sm:p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
+      {/* Standard E-Commerce Financial Metrics Row (2x2 on phones, 4 cols on desktop) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
           <div className="min-w-0">
             <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider block truncate">
-              Total
+              Total Orders
             </span>
-            <span className="text-base sm:text-xl font-black text-gray-950 mt-0.5 sm:mt-1 block truncate">
-              {orders.length} <span className="hidden sm:inline">Orders</span>
+            <span className="text-lg sm:text-xl font-black text-gray-950 mt-0.5 block truncate">
+              {orders.length} Orders
+            </span>
+            <span className="text-[10px] font-semibold text-gray-400 block truncate mt-0.5">
+              {financials.paidCount} Paid • {financials.cancelledCount} Cancelled
             </span>
           </div>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center font-bold shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center font-bold shrink-0">
             <Package className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-emerald-200/90 shadow-xs flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider block truncate">
-              Active
+            <span className="text-[10px] sm:text-xs text-emerald-700 font-extrabold uppercase tracking-wider block truncate">
+              Paid Revenue
             </span>
-            <span className="text-base sm:text-xl font-black text-amber-600 mt-0.5 sm:mt-1 block truncate">
-              {pendingProcessingCount} <span className="hidden sm:inline">Orders</span>
+            <span className="text-lg sm:text-xl font-black text-emerald-600 mt-0.5 block truncate">
+              ${financials.paidRevenue.toFixed(2)}
+            </span>
+            <span className="text-[10px] font-semibold text-gray-500 block truncate mt-0.5">
+              ៛ {Math.round(financials.paidRevenue * 4100).toLocaleString()} •{" "}
+              {financials.paidCount} Paid
             </span>
           </div>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0">
+            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+        </div>
+
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-amber-200/80 shadow-xs flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-xs text-amber-700 font-bold uppercase tracking-wider block truncate">
+              Pending (Unpaid)
+            </span>
+            <span className="text-lg sm:text-xl font-black text-amber-600 mt-0.5 block truncate">
+              ${financials.pendingAmount.toFixed(2)}
+            </span>
+            <span className="text-[10px] font-semibold text-gray-400 block truncate mt-0.5">
+              {financials.pendingCount} Pending • Excluded
+            </span>
+          </div>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold shrink-0">
             <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
           <div className="min-w-0">
             <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider block truncate">
-              Revenue
+              In Fulfillment
             </span>
-            <span className="text-base sm:text-xl font-black text-emerald-600 mt-0.5 sm:mt-1 block truncate">
-              ${totalRevenue.toFixed(0)}
+            <span className="text-lg sm:text-xl font-black text-indigo-600 mt-0.5 block truncate">
+              {financials.activeFulfillmentCount} Active
+            </span>
+            <span className="text-[10px] font-semibold text-gray-400 block truncate mt-0.5">
+              Processing &amp; Shipped
             </span>
           </div>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0">
-            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold shrink-0">
+            <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
       </div>
@@ -512,7 +624,7 @@ export function ManageOrders() {
                 </strong>
               </div>
 
-              {/* Middle Row: Patron + Payment Badge */}
+              {/* Middle Row: Patron + Payment Selector */}
               <div className="flex items-center justify-between gap-2 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
                 <div className="min-w-0">
                   <div className="font-bold text-gray-900 text-xs truncate">
@@ -523,15 +635,40 @@ export function ManageOrders() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                      item.paymentStatus === "Paid"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-800"
-                    }`}
-                  >
-                    {item.paymentStatus || "Authorized"}
-                  </span>
+                  {(() => {
+                    const paid = isOrderPaid(item);
+                    const ordStatus = String(
+                      item.orderStatus || item.status || "Pending"
+                    ).toLowerCase();
+                    const effectivePayStatus =
+                      ordStatus === "cancelled"
+                        ? "Cancelled"
+                        : paid
+                        ? "Paid"
+                        : "Pending";
+                    return (
+                      <select
+                        value={effectivePayStatus}
+                        onChange={(e) =>
+                          handlePaymentStatusChange(
+                            item.id || item.orderNumber,
+                            e.target.value
+                          )
+                        }
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border cursor-pointer focus:outline-hidden ${
+                          effectivePayStatus === "Paid"
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                            : effectivePayStatus === "Cancelled"
+                            ? "bg-rose-100 text-rose-700 border-rose-200"
+                            : "bg-amber-100 text-amber-800 border-amber-200"
+                        }`}
+                      >
+                        <option value="Paid">PAID</option>
+                        <option value="Pending">PENDING</option>
+                        <option value="Cancelled">CANCELLED</option>
+                      </select>
+                    );
+                  })()}
                   <span className="block text-[10px] text-gray-500 mt-0.5 font-medium">
                     {item.paymentMethod || "Bakong KHQR"}
                   </span>

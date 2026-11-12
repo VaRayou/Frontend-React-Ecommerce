@@ -64,12 +64,26 @@ export const normalizeOrder = (order, idx = 0) => {
   const createdAtStr =
     order.created_at || order.createdAt || new Date().toISOString();
 
-  // Statuses
+  // Statuses (Standard e-commerce alignment between order_status and payment_status)
   const orderStatus =
     order.order_status || order.orderStatus || order.status || "Processing";
   const paymentMethod =
     order.payment_method || order.paymentMethod || "Bakong KHQR";
-  const paymentStatus = order.payment_status || order.paymentStatus || "Paid";
+  const rawPayStatus =
+    order.payment_status ||
+    order.paymentStatus ||
+    (String(orderStatus).toLowerCase() === "pending"
+      ? "Pending"
+      : String(orderStatus).toLowerCase() === "cancelled"
+      ? "Cancelled"
+      : "Paid");
+  const paymentStatus =
+    String(orderStatus).toLowerCase() === "cancelled"
+      ? "Cancelled"
+      : String(orderStatus).toLowerCase() === "pending" &&
+        String(paymentMethod).toLowerCase().includes("cash")
+      ? "Pending"
+      : rawPayStatus;
 
   // Order Items normalization
   const rawItems = order.order_items || order.items || [];
@@ -155,6 +169,95 @@ export const normalizeOrder = (order, idx = 0) => {
     order_status: orderStatus,
     status: orderStatus,
     notes: order.notes || "",
+  };
+};
+
+/**
+ * Standard E-Commerce Rule:
+ * An order counts toward Paid / Settled Revenue ONLY when:
+ * 1) Order status is NOT "Cancelled" and NOT "Pending"
+ * 2) Payment status is explicitly "Paid" (or Order status is "Delivered")
+ */
+export const isOrderPaid = (order) => {
+  if (!order) return false;
+  const ordStatus = String(
+    order.orderStatus || order.order_status || order.status || ""
+  )
+    .trim()
+    .toLowerCase();
+  const payStatus = String(
+    order.paymentStatus || order.payment_status || ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (
+    ordStatus === "cancelled" ||
+    ordStatus === "pending" ||
+    payStatus === "cancelled" ||
+    payStatus === "refunded" ||
+    payStatus === "pending" ||
+    payStatus === "unpaid" ||
+    payStatus === "failed"
+  ) {
+    return false;
+  }
+
+  return payStatus === "paid" || ordStatus === "delivered";
+};
+
+/**
+ * Computes standard e-commerce financial metrics from an array of orders:
+ * - paidRevenue: Sum of totals for verified PAID (non-pending, non-cancelled) orders
+ * - pendingAmount: Sum of totals for PENDING / UNPAID (non-cancelled) orders
+ * - cancelledAmount: Sum of totals for CANCELLED orders
+ */
+export const calculateOrderFinancials = (orders = []) => {
+  const list = Array.isArray(orders) ? orders : [];
+  let paidRevenue = 0;
+  let paidCount = 0;
+  let pendingAmount = 0;
+  let pendingCount = 0;
+  let cancelledAmount = 0;
+  let cancelledCount = 0;
+  let activeFulfillmentCount = 0;
+
+  for (const o of list) {
+    const amt = Number(o?.total || 0);
+    const ordStatus = String(
+      o?.orderStatus || o?.order_status || o?.status || "Pending"
+    )
+      .trim()
+      .toLowerCase();
+
+    if (ordStatus === "cancelled") {
+      cancelledAmount += amt;
+      cancelledCount += 1;
+      continue;
+    }
+
+    if (ordStatus === "processing" || ordStatus === "shipped") {
+      activeFulfillmentCount += 1;
+    }
+
+    if (isOrderPaid(o)) {
+      paidRevenue += amt;
+      paidCount += 1;
+    } else {
+      pendingAmount += amt;
+      pendingCount += 1;
+    }
+  }
+
+  return {
+    paidRevenue: Number(paidRevenue.toFixed(2)),
+    paidCount,
+    pendingAmount: Number(pendingAmount.toFixed(2)),
+    pendingCount,
+    cancelledAmount: Number(cancelledAmount.toFixed(2)),
+    cancelledCount,
+    activeFulfillmentCount,
+    totalOrders: list.length,
   };
 };
 
@@ -452,9 +555,19 @@ export const orderService = {
       const cleanId = String(id).trim();
       const isUUID = cleanId.includes("-") && cleanId.length > 20;
 
+      const sLower = String(newStatus || "").toLowerCase();
+      const autoPaymentPatch =
+        sLower === "delivered"
+          ? { payment_status: "Paid" }
+          : sLower === "pending"
+          ? { payment_status: "Pending" }
+          : sLower === "cancelled"
+          ? { payment_status: "Cancelled" }
+          : {};
+
       let query = supabase.from("orders").update({
         order_status: newStatus,
-        ...(newStatus === "Delivered" ? { payment_status: "Paid" } : {}),
+        ...autoPaymentPatch,
       });
 
       if (isUUID) {
@@ -487,6 +600,42 @@ export const orderService = {
       return normalized;
     } catch (err) {
       console.error("Supabase updateOrderStatus failed:", err);
+      throw err;
+    }
+  },
+
+  /**
+   * Updates an order's payment status ("Paid", "Pending", "Refunded", "Cancelled")
+   */
+  updatePaymentStatus: async (id, newPaymentStatus) => {
+    try {
+      await ensureAdminSession();
+      const cleanId = String(id).trim();
+      const isUUID = cleanId.includes("-") && cleanId.length > 20;
+
+      let query = supabase.from("orders").update({
+        payment_status: newPaymentStatus,
+      });
+
+      if (isUUID) {
+        query = query.eq("id", cleanId);
+      } else {
+        query = query.eq("order_number", cleanId);
+      }
+
+      const { data, error } = await query.select("*, order_items(*)").single();
+      if (error) throw error;
+      const normalized = normalizeOrder(data);
+
+      const current = getOrdersStorage();
+      const updated = current.map((o) =>
+        o.id === cleanId || o.orderNumber === cleanId ? normalized : o,
+      );
+      saveOrdersStorage(updated);
+      window.dispatchEvent(new Event("atelier_order_updated"));
+      return normalized;
+    } catch (err) {
+      console.error("Supabase updatePaymentStatus failed:", err);
       throw err;
     }
   },

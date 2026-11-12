@@ -81,17 +81,37 @@ async function buildStatsMessage(sbHeaders) {
   const products = productsRes.ok ? await productsRes.json() : [];
   const payments = paymentsRes.ok ? await paymentsRes.json() : [];
 
-  const activeOrders = (Array.isArray(orders) ? orders : []).filter(
-    (o) => String(o.order_status || "").toLowerCase() !== "cancelled",
-  );
-  const grossRevenue = activeOrders.reduce(
+  const allOrders = Array.isArray(orders) ? orders : [];
+  const isPaidOrder = (o) => {
+    const ordSt = String(o?.order_status || "Pending").trim().toLowerCase();
+    const paySt = String(o?.payment_status || "Paid").trim().toLowerCase();
+    if (
+      ordSt === "cancelled" ||
+      ordSt === "pending" ||
+      paySt === "cancelled" ||
+      paySt === "refunded" ||
+      paySt === "pending" ||
+      paySt === "unpaid"
+    ) {
+      return false;
+    }
+    return paySt === "paid" || ordSt === "delivered";
+  };
+
+  const paidOrders = allOrders.filter(isPaidOrder);
+  const pendingUnpaidOrders = allOrders.filter((o) => {
+    const ordSt = String(o?.order_status || "Pending").trim().toLowerCase();
+    return ordSt !== "cancelled" && !isPaidOrder(o);
+  });
+
+  const paidRevenue = paidOrders.reduce(
     (sum, o) => sum + (Number(o.total) || 0),
     0,
   );
-  const pendingOrders = activeOrders.filter((o) => {
-    const s = String(o.order_status || "Pending").toLowerCase();
-    return s === "pending" || s === "processing";
-  }).length;
+  const pendingVolume = pendingUnpaidOrders.reduce(
+    (sum, o) => sum + (Number(o.total) || 0),
+    0,
+  );
 
   const prodList = Array.isArray(products) ? products : [];
   const lowStockCount = prodList.filter(
@@ -110,10 +130,11 @@ async function buildStatsMessage(sbHeaders) {
   const text =
     `📊 <b>ATELIER LIVE EXECUTIVE DASHBOARD</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `💰 <b>Gross Revenue:</b> <b>$${grossRevenue.toFixed(2)} USD</b> (៛ ${Math.round(
-      grossRevenue * 4100,
+    `💰 <b>Paid Revenue (Settled):</b> <b>$${paidRevenue.toFixed(2)} USD</b> (៛ ${Math.round(
+      paidRevenue * 4100,
     ).toLocaleString()} KHR)\n` +
-    `🛍 <b>Total Orders:</b> <b>${orders.length}</b> (${pendingOrders} Processing)\n` +
+    `⏳ <b>Pending (Unpaid):</b> $${pendingVolume.toFixed(2)} USD (${pendingUnpaidOrders.length} excluded)\n` +
+    `🛍 <b>Total Orders:</b> <b>${allOrders.length}</b> (${paidOrders.length} Paid)\n` +
     `✅ <b>Settled KHQR Transfers:</b> <b>${paidKhqrCount}</b>\n` +
     `📦 <b>Catalog SKUs:</b> <b>${prodList.length} pieces</b>\n` +
     `⚠️ <b>Low Stock (1–5):</b> <b>${lowStockCount} pieces</b>\n` +
