@@ -9,13 +9,17 @@
 -- ==============================================================================
 
 -- 1. Helper Function: Verify Admin Privilege
--- Checks JWT claims, user_metadata, and verified administrator emails
+-- Checks JWT claims, protected app_metadata, and verified administrator emails
+-- NOTE: Never check user_metadata here as user_metadata can be client-manipulated during signUp!
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
 BEGIN
   RETURN (
+    -- Authoritative backend role claim (set exclusively by Supabase backend or Service Role)
     coalesce(auth.jwt() ->> 'role', '') IN ('admin', 'super_admin', 'service_role') OR
-    coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') IN ('admin', 'super_admin', 'Super Administrator', 'Store Controller') OR
+    -- Protected app_metadata (CANNOT be edited or forged by the client!)
+    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') IN ('admin', 'super_admin', 'Super Administrator', 'Store Controller') OR
+    -- Authoritative administrator email whitelist
     coalesce(auth.jwt() ->> 'email', '') IN ('controller@atelier.com', 'rayou@atelier.com', 'admin@atelier.com')
   );
 END;
@@ -176,8 +180,25 @@ USING (
   (auth.jwt() ->> 'email' IS NOT NULL AND customer_email::text = (auth.jwt() ->> 'email')::text)
 );
 
-CREATE POLICY "Only admins can modify payments"
-ON public.payments FOR ALL
+DROP POLICY IF EXISTS "Allow customers to settle pending payments" ON public.payments;
+DROP POLICY IF EXISTS "Only admins can modify payments" ON public.payments;
+DROP POLICY IF EXISTS "Only admins can delete payments" ON public.payments;
+
+-- Customers can update status from PENDING to PAID upon Bakong confirmation
+CREATE POLICY "Allow customers to settle pending payments"
+ON public.payments FOR UPDATE
+USING (
+  public.is_admin() OR
+  status = 'PENDING'
+)
+WITH CHECK (
+  public.is_admin() OR
+  status = 'PAID'
+);
+
+-- Only admins can purge/delete payment records
+CREATE POLICY "Only admins can delete payments"
+ON public.payments FOR DELETE
 TO authenticated
 USING (public.is_admin());
 

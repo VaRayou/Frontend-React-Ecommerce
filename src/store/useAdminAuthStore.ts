@@ -47,9 +47,9 @@ export const useAdminAuthStore = create<AdminAuthState>()(
 
           if (!error && data?.user) {
             const u = data.user;
-            // Determine authoritative RBAC role from claims/metadata (never trust arbitrary client input)
+            // Determine authoritative RBAC role from tamper-proof app_metadata claims
             let resolvedRole: AdminUser["role"] = "Store Controller";
-            const rawRole = String(u.user_metadata?.role || "").toLowerCase();
+            const rawRole = String((u as any).app_metadata?.role || "").toLowerCase();
             if (
               rawRole.includes("super") ||
               cleanEmail === "controller@atelier.com" ||

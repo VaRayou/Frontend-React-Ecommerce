@@ -93,6 +93,12 @@ function formatCambodiaTimestamp(): string {
 // Deduplication guard so identical order/payment alerts aren't sent twice in one session
 const sentAlertsCache = new Set<string>();
 
+// Rate limiting & anti-flooding shield (protects against automated script spamming)
+let lastSentTimestamp = 0;
+const sentTimestamps: number[] = [];
+const MAX_MESSAGES_PER_MINUTE = 15;
+const MIN_INTERVAL_MS = 1200; // Minimum 1.2s delay between dispatches
+
 export const telegramService = {
   getConfig: getStoredTelegramConfig,
 
@@ -115,6 +121,23 @@ export const telegramService = {
         description: "Missing Telegram Bot Token or Chat ID.",
       };
     }
+
+    // Rate Limiting & Anti-Flood Enforcement
+    const now = Date.now();
+    while (sentTimestamps.length > 0 && sentTimestamps[0] < now - 60000) {
+      sentTimestamps.shift();
+    }
+    if (sentTimestamps.length >= MAX_MESSAGES_PER_MINUTE) {
+      console.warn("[Security Alert] Telegram alert dropped: Rate limit of 15 msg/min reached.");
+      return { ok: false, description: "Anti-flood protection: Throttled to prevent bot abuse." };
+    }
+    if (now - lastSentTimestamp < MIN_INTERVAL_MS) {
+      console.warn("[Security Alert] Telegram alert throttled: Minimum 1.2s dispatch interval required.");
+      return { ok: false, description: "Anti-flood protection: Rapid message throttled." };
+    }
+
+    lastSentTimestamp = now;
+    sentTimestamps.push(now);
 
     const bodyPayload: Record<string, any> = {
       chat_id: chatId,

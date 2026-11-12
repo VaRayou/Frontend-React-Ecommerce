@@ -65,12 +65,13 @@ function AdminLayout() {
         const { data } = await supabase.auth.getSession();
         const user = data?.session?.user;
         const email = user?.email?.toLowerCase() || "";
-        const role = String(user?.user_metadata?.role || "").toLowerCase();
+        // Use app_metadata (tamper-proof) or verified email whitelist. Never trust user_metadata!
+        const role = String(user?.app_metadata?.role || "").toLowerCase();
 
         const isAuthorized =
           Boolean(user) &&
           (role.includes("admin") ||
-            role.includes("controller") ||
+            role.includes("super_admin") ||
             email === "controller@atelier.com" ||
             email === "rayou@atelier.com" ||
             email === "admin@atelier.com");
@@ -78,7 +79,9 @@ function AdminLayout() {
         if (active) {
           if (!isAuthorized) {
             // Detected local storage spoofing or expired JWT token
-            console.warn("[Security Alert] Unauthorized or expired admin session. Revoking access.");
+            console.warn(
+              "[Security Alert] Unauthorized or expired admin session. Revoking access.",
+            );
             useAdminAuthStore.getState().adminLogout();
             setIsValidAdmin(false);
           } else {
@@ -125,13 +128,16 @@ function AdminLayout() {
 
   const currentRole = adminUser?.role || "Super Administrator";
   const allowedPaths =
-    ROLE_ALLOWED_PATHS[currentRole] || ROLE_ALLOWED_PATHS["Super Administrator"];
+    ROLE_ALLOWED_PATHS[currentRole] ||
+    ROLE_ALLOWED_PATHS["Super Administrator"];
   const isRouteAllowed = allowedPaths.some((p) =>
-    location.pathname.toLowerCase().startsWith(p)
+    location.pathname.toLowerCase().startsWith(p),
   );
 
   return (
-    <div className={`admin-app-container ${collapsed ? "sidebar-collapsed" : ""}`}>
+    <div
+      className={`admin-app-container ${collapsed ? "sidebar-collapsed" : ""}`}
+    >
       {/* Mobile Backdrop Overlay */}
       {mobileOpen && (
         <div
@@ -174,7 +180,10 @@ function AdminLayout() {
                 </div>
               }
             >
-              <div key={location.pathname} className="animate-in fade-in duration-150">
+              <div
+                key={location.pathname}
+                className="animate-in fade-in duration-150"
+              >
                 <Outlet />
               </div>
             </Suspense>
@@ -215,8 +224,9 @@ function AdminLayout() {
               </h2>
               <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20 }}>
                 Your active role (<strong>{currentRole}</strong>) does not have
-                permission to access <code>{location.pathname}</code>. Please sign in as
-                a <strong>Super Administrator</strong> for full system privileges.
+                permission to access <code>{location.pathname}</code>. Please
+                sign in as a <strong>Super Administrator</strong> for full
+                system privileges.
               </p>
               <Link
                 to="/admin/dashboard"
@@ -232,9 +242,20 @@ function AdminLayout() {
 
         {/* Standard Admin Footer */}
         <footer className="admin-footer">
-          <div className="container-fluid" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div
+            className="container-fluid"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+            }}
+          >
             <span>
-              &copy; {new Date().getFullYear()} <strong>ATELIER PARIS STUDIO</strong> • Commercial Management Controller.
+              &copy; {new Date().getFullYear()}{" "}
+              <strong>ATELIER PARIS STUDIO</strong> • Commercial Management
+              Controller.
             </span>
             <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600 }}>
               ● Supabase Cloud PostgreSQL & Realtime Synchronized
@@ -249,7 +270,9 @@ function AdminLayout() {
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all ${
-                isActive ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+                isActive
+                  ? "text-[#D6FF00] bg-white/10"
+                  : "text-gray-400 hover:text-white"
               }`
             }
           >
@@ -262,7 +285,9 @@ function AdminLayout() {
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all ${
-                isActive ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+                isActive
+                  ? "text-[#D6FF00] bg-white/10"
+                  : "text-gray-400 hover:text-white"
               }`
             }
           >
@@ -276,7 +301,9 @@ function AdminLayout() {
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all ${
-                  isActive ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+                  isActive
+                    ? "text-[#D6FF00] bg-white/10"
+                    : "text-gray-400 hover:text-white"
                 }`
               }
             >
@@ -291,7 +318,9 @@ function AdminLayout() {
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all ${
-                  isActive ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+                  isActive
+                    ? "text-[#D6FF00] bg-white/10"
+                    : "text-gray-400 hover:text-white"
                 }`
               }
             >
@@ -304,7 +333,9 @@ function AdminLayout() {
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
-              mobileOpen ? "text-[#D6FF00] bg-white/10" : "text-gray-400 hover:text-white"
+              mobileOpen
+                ? "text-[#D6FF00] bg-white/10"
+                : "text-gray-400 hover:text-white"
             }`}
           >
             <Menu className="w-4 h-4 mb-0.5" />

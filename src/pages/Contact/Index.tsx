@@ -29,6 +29,7 @@ export const Contact: React.FC = () => {
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [formSent, setFormSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -48,6 +49,12 @@ export const Contact: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (honeypot) {
+      // Invisible honeypot trap triggered by automated scraper/spambot! Discard quietly.
+      console.warn("[Security Trap] Automated spam bot detected and discarded.");
+      setFormSent(true);
+      return;
+    }
     if (!formData.name || !formData.email || !formData.message) return;
     setSubmitting(true);
     try {
@@ -111,7 +118,22 @@ export const Contact: React.FC = () => {
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs relative">
+              {/* Invisible honeypot trap to catch automated scraping bots */}
+              <div
+                style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }}
+                aria-hidden="true"
+              >
+                <input
+                  type="text"
+                  name="bot_field_honey"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-gray-700 mb-1">Your Full Name *</label>

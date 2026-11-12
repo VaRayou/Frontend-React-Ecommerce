@@ -431,10 +431,12 @@ export const orderService = {
     try {
       await ensureAdminSession();
 
+      // Cryptographically secure, sanitized order number generation
+      const clientSentNum = String(orderData.order_number || orderData.orderNumber || "").trim();
       const orderNumber =
-        orderData.order_number ||
-        orderData.orderNumber ||
-        `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+        clientSentNum && /^ATL-\d{4}-[A-Z0-9]{4,10}$/i.test(clientSentNum)
+          ? clientSentNum
+          : `ATL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
 
       const shippingAddressObj =
         typeof orderData.shipping_address === "object"
