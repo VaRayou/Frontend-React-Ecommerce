@@ -11,7 +11,7 @@ const SUPABASE_ANON_KEY =
 const DEFAULT_BOT_TOKEN =
   process.env.VITE_TELEGRAM_BOT_TOKEN ||
   process.env.TELEGRAM_BOT_TOKEN ||
-  "9048372338:AAHADX6G3fszbnyUTF58AEn0X2BSRbptx8A";
+  "";
 
 const STOREFRONT_URL = "https://frontend-react-ecommerce-inky.vercel.app";
 
@@ -25,32 +25,36 @@ function escapeHtml(str) {
 async function getSupabaseAuthHeaders() {
   const headers = {
     apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY}`,
     "Content-Type": "application/json",
   };
-  try {
-    const authRes = await fetch(
-      `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-      {
-        method: "POST",
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          "Content-Type": "application/json",
+  
+  // If service role key is not configured, authenticate via admin env credentials
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.ADMIN_PASSWORD) {
+    try {
+      const authRes = await fetch(
+        `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+        {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: process.env.ADMIN_EMAIL || "controller@atelier.com",
+            password: process.env.ADMIN_PASSWORD,
+          }),
         },
-        body: JSON.stringify({
-          email: "controller@atelier.com",
-          password: "adminpass123",
-        }),
-      },
-    );
-    if (authRes.ok) {
-      const data = await authRes.json();
-      if (data?.access_token) {
-        headers.Authorization = `Bearer ${data.access_token}`;
+      );
+      if (authRes.ok) {
+        const data = await authRes.json();
+        if (data?.access_token) {
+          headers.Authorization = `Bearer ${data.access_token}`;
+        }
       }
+    } catch {
+      // fallback to anon key
     }
-  } catch {
-    // fallback to anon key
   }
   return headers;
 }

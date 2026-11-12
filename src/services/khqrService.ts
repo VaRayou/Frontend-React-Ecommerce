@@ -6,8 +6,7 @@ import { telegramService } from "./telegramService";
 const env = (import.meta as any).env || {};
 
 const BAKONG_API_TOKEN =
-  env.VITE_BAKONG_API_TOKEN ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiYTQ2Yjk3YTMzOTYyNDg4ZiJ9LCJpYXQiOjE3OTQxMzA5OTEsImV4cCI6MTgwMTkwNjk5MX0.WcswF46ufm9d7UqPtN48LcoKc0AzCjb0rLN4Zir2lIw";
+  env.VITE_BAKONG_API_TOKEN || "";
 
 const BAKONG_API_URL =
   env.VITE_BAKONG_API_URL || "https://api-bakong.nbc.gov.kh";

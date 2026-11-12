@@ -51,7 +51,7 @@ Prior to remediation, the application possessed an **initial security grade of B
   // productService.js (Vulnerable)
   await supabase.auth.signInWithPassword({
     email: "controller@atelier.com",
-    password: "adminpass123",
+    password: "[REDACTED_DEVELOPMENT_FALLBACK]",
   });
   ```
 * **Exploit Scenario:**
@@ -97,7 +97,7 @@ Prior to remediation, the application possessed an **initial security grade of B
 * **Severity:** **HIGH (CVSS 7.5)**
 * **Affected Files:** `src/services/telegramService.ts`, `src/store/useStoreSettings.js`, `src/pages/admin/Settings.jsx`
 * **Vulnerability Description:**
-  The Telegram bot token (`9048372338:AAHADX6G...`) and chat ID (`1389246582`) were hardcoded as fallback string literals in JavaScript and TypeScript source files tracked in Git.
+  The Telegram bot token (`[REDACTED_BOT_TOKEN]`) and chat ID (`[REDACTED_CHAT_ID]`) were hardcoded as fallback string literals in JavaScript and TypeScript source files tracked in Git.
 * **Exploit Scenario:**
   Anyone inspecting the GitHub repository or the compiled production JavaScript bundle could extract the token, hijack the Telegram bot, inspect customer shipping details, delete webhooks, or send spam.
 * **Remediation Applied:**
