@@ -59,7 +59,9 @@ export const supabaseAuth = {
 
   // Get current active session and profile
   getCurrentSession: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session?.user) return null;
 
     const { data: profile } = await supabase
@@ -72,7 +74,8 @@ export const supabaseAuth = {
       session,
       user: session.user,
       profile: profile as UserProfile | null,
-      isAdmin: profile?.role === "super_admin" || profile?.role === "store_controller",
+      isAdmin:
+        profile?.role === "super_admin" || profile?.role === "store_controller",
     };
   },
 
@@ -83,4 +86,3 @@ export const supabaseAuth = {
 };
 
 export default supabaseAuth;
-

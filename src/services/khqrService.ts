@@ -5,8 +5,7 @@ import { telegramService } from "./telegramService";
 
 const env = (import.meta as any).env || {};
 
-const BAKONG_API_TOKEN =
-  env.VITE_BAKONG_API_TOKEN || "";
+const BAKONG_API_TOKEN = env.VITE_BAKONG_API_TOKEN || "";
 
 const BAKONG_API_URL =
   env.VITE_BAKONG_API_URL || "https://api-bakong.nbc.gov.kh";
@@ -477,7 +476,10 @@ function addDeletedPaymentIdentifiers(
     const arr = Array.from(current).slice(-2000);
     localStorage.setItem(DELETED_PAYMENTS_KEY, JSON.stringify(arr));
   } catch (e) {
-    console.warn("[khqrService] Failed to persist deleted payment tombstones:", e);
+    console.warn(
+      "[khqrService] Failed to persist deleted payment tombstones:",
+      e,
+    );
   }
 }
 
@@ -501,7 +503,8 @@ function getCachedPaymentsStorage(): any[] {
           if (status === "EXPIRED") return false;
           if (p.id && deletedSet.has(String(p.id))) return false;
           if (p.md5_hash && deletedSet.has(String(p.md5_hash))) return false;
-          if (p.order_number && deletedSet.has(String(p.order_number))) return false;
+          if (p.order_number && deletedSet.has(String(p.order_number)))
+            return false;
           return true;
         });
         return _memoryPayments;
@@ -642,10 +645,9 @@ export const khqrService = {
 
     // 2. Query official NBC Bakong Open API via CORS-safe proxy
     try {
-      const resJson = await callBakongOpenApi(
-        "/v1/check_transaction_by_md5",
-        { md5: md5Str },
-      );
+      const resJson = await callBakongOpenApi("/v1/check_transaction_by_md5", {
+        md5: md5Str,
+      });
 
       if (resJson) {
         // ResponseCode 0 = TRANSACTION SUCCESSFUL AND SETTLED ON NBC BAKONG
@@ -682,7 +684,8 @@ export const khqrService = {
                 amount: Number(updatedPay?.amount || txnData.amount || 0),
                 currency: updatedPay?.currency || txnData.currency || "USD",
                 transactionId: txnId,
-                customerName: updatedPay?.customer_name || txnData.fromAccountId || "",
+                customerName:
+                  updatedPay?.customer_name || txnData.fromAccountId || "",
               })
               .catch(() => {});
           } catch {}
@@ -759,7 +762,8 @@ export const khqrService = {
         const expRes: KhqrStatusResponse = {
           status: "EXPIRED",
           is_paid: false,
-          message: "KHQR payment window expired (10-minute validity exceeded). Please generate a fresh QR code.",
+          message:
+            "KHQR payment window expired (10-minute validity exceeded). Please generate a fresh QR code.",
         };
         checkStatusCache[md5Str] = { timestamp: now, result: expRes };
         return expRes;
@@ -865,7 +869,8 @@ export const khqrService = {
           if (status === "EXPIRED") return false;
           if (p.id && deletedSet.has(String(p.id))) return false;
           if (p.md5_hash && deletedSet.has(String(p.md5_hash))) return false;
-          if (p.order_number && deletedSet.has(String(p.order_number))) return false;
+          if (p.order_number && deletedSet.has(String(p.order_number)))
+            return false;
           return true;
         });
 
@@ -913,7 +918,8 @@ export const khqrService = {
       if (paymentOrKey && typeof paymentOrKey === "object") {
         if (paymentOrKey.id) idsToTombstone.push(paymentOrKey.id);
         if (paymentOrKey.md5_hash) idsToTombstone.push(paymentOrKey.md5_hash);
-        if (paymentOrKey.order_number) idsToTombstone.push(paymentOrKey.order_number);
+        if (paymentOrKey.order_number)
+          idsToTombstone.push(paymentOrKey.order_number);
 
         if (paymentOrKey.md5_hash) {
           delete checkStatusCache[String(paymentOrKey.md5_hash)];
@@ -929,7 +935,7 @@ export const khqrService = {
             supabase
               .from("payments")
               .update({ status: "EXPIRED" })
-              .eq("id", paymentOrKey.id)
+              .eq("id", paymentOrKey.id),
           );
         }
         if (paymentOrKey.md5_hash) {
@@ -937,7 +943,7 @@ export const khqrService = {
             supabase
               .from("payments")
               .update({ status: "EXPIRED" })
-              .eq("md5_hash", paymentOrKey.md5_hash)
+              .eq("md5_hash", paymentOrKey.md5_hash),
           );
         }
         if (paymentOrKey.order_number) {
@@ -945,7 +951,7 @@ export const khqrService = {
             supabase
               .from("payments")
               .update({ status: "EXPIRED" })
-              .eq("order_number", paymentOrKey.order_number)
+              .eq("order_number", paymentOrKey.order_number),
           );
         }
         await Promise.allSettled(updateTasks);
@@ -953,13 +959,25 @@ export const khqrService = {
         // 3. Also attempt hard delete in Supabase
         const deleteTasks: Promise<any>[] = [];
         if (paymentOrKey.id) {
-          deleteTasks.push(supabase.from("payments").delete().eq("id", paymentOrKey.id));
+          deleteTasks.push(
+            supabase.from("payments").delete().eq("id", paymentOrKey.id),
+          );
         }
         if (paymentOrKey.md5_hash) {
-          deleteTasks.push(supabase.from("payments").delete().eq("md5_hash", paymentOrKey.md5_hash));
+          deleteTasks.push(
+            supabase
+              .from("payments")
+              .delete()
+              .eq("md5_hash", paymentOrKey.md5_hash),
+          );
         }
         if (paymentOrKey.order_number) {
-          deleteTasks.push(supabase.from("payments").delete().eq("order_number", paymentOrKey.order_number));
+          deleteTasks.push(
+            supabase
+              .from("payments")
+              .delete()
+              .eq("order_number", paymentOrKey.order_number),
+          );
         }
         await Promise.allSettled(deleteTasks);
 
@@ -972,9 +990,18 @@ export const khqrService = {
         addDeletedPaymentIdentifiers([cleanKey]);
 
         await Promise.allSettled([
-          supabase.from("payments").update({ status: "EXPIRED" }).eq("md5_hash", cleanKey),
-          supabase.from("payments").update({ status: "EXPIRED" }).eq("id", cleanKey),
-          supabase.from("payments").update({ status: "EXPIRED" }).eq("order_number", cleanKey),
+          supabase
+            .from("payments")
+            .update({ status: "EXPIRED" })
+            .eq("md5_hash", cleanKey),
+          supabase
+            .from("payments")
+            .update({ status: "EXPIRED" })
+            .eq("id", cleanKey),
+          supabase
+            .from("payments")
+            .update({ status: "EXPIRED" })
+            .eq("order_number", cleanKey),
           supabase.from("payments").delete().eq("md5_hash", cleanKey),
           supabase.from("payments").delete().eq("id", cleanKey),
           supabase.from("payments").delete().eq("order_number", cleanKey),
@@ -1053,10 +1080,7 @@ export const khqrService = {
 
       // 5. Also attempt hard delete for PENDING records in Supabase
       try {
-        await supabase
-          .from("payments")
-          .delete()
-          .eq("status", "PENDING");
+        await supabase.from("payments").delete().eq("status", "PENDING");
       } catch {}
 
       return true;

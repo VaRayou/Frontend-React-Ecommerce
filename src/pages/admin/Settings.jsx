@@ -26,6 +26,8 @@ import { ensureAdminSession } from "../../services/productService";
 import api from "../../services/api";
 import Input from "../../components/common/Input";
 
+const env = import.meta.env || {};
+
 export function Settings() {
   const { adminUser } = useAdminAuthStore();
   const {
