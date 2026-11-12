@@ -26,6 +26,7 @@ import { useUIStore } from "../../store/useUIStore";
 import { orderService } from "../../services/orderService";
 import { KhqrPaymentModal } from "../../components/checkout/KhqrPaymentModal";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
+import { InvoiceModal } from "../../components/common/InvoiceModal";
 import { khqrService, KhqrCreateResponse } from "../../services/khqrService";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 
@@ -58,6 +59,7 @@ export const Checkout: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [placedOrder, setPlacedOrder] = useState<any | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState<boolean>(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
 
   const {
     items,
@@ -437,20 +439,28 @@ export const Checkout: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsReceiptModalOpen(true)}
-            className="px-7 py-3.5 rounded-full bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3.5 rounded-full bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Print POS Receipt</span>
+            <span>POS Receipt</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsInvoiceModalOpen(true)}
+            className="px-6 py-3.5 rounded-full bg-neutral-800 text-white hover:bg-black font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Printer className="w-4 h-4 text-[#D6FF00]" />
+            <span>Print Tax Invoice</span>
           </button>
           <Link
             to="/orders"
-            className="px-7 py-3.5 rounded-full bg-neutral-900 text-white font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-all"
+            className="px-6 py-3.5 rounded-full bg-neutral-900 text-white font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-all inline-flex items-center justify-center"
           >
-            Track in Order History
+            Track in Orders
           </Link>
           <Link
             to="/shop"
-            className="px-7 py-3.5 rounded-full border border-gray-300 text-black font-bold text-xs uppercase tracking-widest hover:border-black transition-all"
+            className="px-6 py-3.5 rounded-full border border-gray-300 text-black font-bold text-xs uppercase tracking-widest hover:border-black transition-all inline-flex items-center justify-center"
           >
             Continue Shopping
           </Link>
@@ -461,6 +471,13 @@ export const Checkout: React.FC = () => {
           isOpen={isReceiptModalOpen}
           onClose={() => setIsReceiptModalOpen(false)}
           invoiceData={placedOrder}
+        />
+
+        {/* Official Tax Invoice Modal */}
+        <InvoiceModal
+          isOpen={isInvoiceModalOpen}
+          onClose={() => setIsInvoiceModalOpen(false)}
+          order={placedOrder}
         />
       </div>
     );

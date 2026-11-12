@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Printer,
   Download,
@@ -13,6 +14,8 @@ import {
   Phone,
   MapPin,
   Sparkles,
+  Store,
+  ArrowLeft,
 } from "lucide-react";
 
 export interface InvoiceOrder {
@@ -65,6 +68,22 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   onClose,
   order,
 }) => {
+  let navigate: any;
+  try {
+    navigate = useNavigate();
+  } catch {
+    navigate = null;
+  }
+
+  const handleBackToStore = () => {
+    onClose();
+    if (navigate) {
+      navigate("/shop");
+    } else {
+      window.location.href = "/shop";
+    }
+  };
+
   React.useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -142,6 +161,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       document.title = originalTitle;
     }, 3000);
 
+    const storeUrl = typeof window !== "undefined" ? `${window.location.origin}/shop` : "/shop";
+
     const printContent = document.getElementById("atelier-printable-invoice");
     if (!printContent) {
       window.print();
@@ -163,6 +184,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       <html>
         <head>
           <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>${docTitle}</title>
           ${styles}
           <style>
@@ -188,12 +210,98 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             .no-print {
               display: none !important;
             }
+            @media screen {
+              .print-top-bar {
+                position: -webkit-sticky;
+                position: sticky;
+                top: 0;
+                z-index: 99999;
+                margin: -16px -16px 24px -16px;
+                padding: 14px 20px;
+                background: #0f172a;
+                color: #ffffff;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 2px solid #D6FF00;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+              }
+              .btn-return-store {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: #D6FF00;
+                color: #000000;
+                text-decoration: none;
+                padding: 9px 18px;
+                border-radius: 10px;
+                font-weight: 900;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                cursor: pointer;
+                box-shadow: 0 2px 8px rgba(214,255,0,0.3);
+              }
+              .btn-action-outline {
+                background: rgba(255,255,255,0.12);
+                color: #ffffff;
+                border: 1px solid rgba(255,255,255,0.25);
+                padding: 9px 16px;
+                border-radius: 10px;
+                font-weight: 800;
+                font-size: 12px;
+                text-transform: uppercase;
+                cursor: pointer;
+              }
+            }
           </style>
         </head>
         <body>
+          <!-- Screen-only Persistent Top Navigation Bar -->
+          <div class="no-print print-top-bar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #D6FF00;"></span>
+              <span style="font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #D6FF00;">
+                Atelier Tax Invoice &bull; ${invoiceNumber}
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="btn-return-store">
+                &larr; Back to Store
+              </a>
+              <button onclick="window.print()" class="btn-action-outline">
+                Print / Save PDF
+              </button>
+              <button onclick="window.close()" class="btn-action-outline" style="background: rgba(255,255,255,0.08); color: #94a3b8; border: none;">
+                Close
+              </button>
+            </div>
+          </div>
+
           <div id="atelier-printable-invoice">
             ${printContent.innerHTML}
           </div>
+
+          <!-- Screen-only Persistent Bottom Return Bar -->
+          <div class="no-print" style="max-width: 800px; margin: 32px auto 0 auto; padding: 18px 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+            <div>
+              <div style="font-weight: 900; font-size: 13px; color: #0f172a; text-transform: uppercase;">
+                Atelier Studio Official Platform
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                Verified Digital Tax Invoice &bull; Preah Norodom Blvd, Phnom Penh
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="btn-return-store" style="padding: 10px 20px;">
+                &larr; Back to Store
+              </a>
+              <button onclick="window.close()" class="btn-action-outline" style="background: #e2e8f0; color: #334155; border: none; padding: 10px 16px;">
+                Close Window
+              </button>
+            </div>
+          </div>
+
           <script>
             window.onload = function() {
               setTimeout(function() {
@@ -254,6 +362,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
+              onClick={handleBackToStore}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#D6FF00] font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all cursor-pointer border border-[#D6FF00]/40"
+              title="Return to Atelier Storefront"
+            >
+              <Store className="w-3.5 h-3.5 text-[#D6FF00]" />
+              <span className="hidden xs:inline sm:inline">Back to Store</span>
+              <span className="inline xs:hidden sm:hidden">Store</span>
+            </button>
+            <button
+              type="button"
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[#D6FF00] hover:bg-[#c6ef00] text-black font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
               title="Print or Save PDF"
@@ -264,7 +382,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               title="Download direct PDF file via browser Print to PDF"
             >
               <Download className="w-3.5 h-3.5" />
@@ -480,26 +598,63 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 Thank you for patronizing Atelier Studio.
               </p>
             </div>
+
+            {/* Patron Navigation & Action Footer (Screen only) */}
+            <div className="no-print pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50 p-4 sm:p-5 rounded-2xl mt-6">
+              <button
+                type="button"
+                onClick={handleBackToStore}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-black hover:bg-neutral-800 text-[#D6FF00] font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>← Back to Store / Continue Shopping</span>
+              </button>
+              <div className="w-full sm:w-auto flex items-center gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-[#D6FF00] hover:bg-[#c6ef00] text-black font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print / Save PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Close</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Mobile Sticky Bottom Action Bar */}
-        <div className="no-print sm:hidden sticky bottom-0 z-20 p-3 bg-white/95 backdrop-blur-md border-t border-gray-100 flex items-center gap-2 shrink-0">
+        <div className="no-print sm:hidden sticky bottom-0 z-20 p-2.5 bg-white/95 backdrop-blur-md border-t border-gray-100 flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleBackToStore}
+            className="flex-1 py-2.5 px-3 rounded-xl bg-black text-[#D6FF00] font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs"
+          >
+            <Store className="w-3.5 h-3.5 text-[#D6FF00]" />
+            <span>Back to Store</span>
+          </button>
           <button
             type="button"
             onClick={handlePrint}
-            className="flex-1 py-2.5 px-4 rounded-xl bg-[#D6FF00] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs"
+            className="py-2.5 px-3 rounded-xl bg-[#D6FF00] text-black font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print / Save PDF</span>
+            <span>Print</span>
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="py-2.5 px-4 rounded-xl bg-gray-900 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1"
+            className="py-2.5 px-3 rounded-xl bg-gray-200 text-gray-800 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1"
           >
-            <span>Close</span>
-            <X className="w-3.5 h-3.5 text-[#D6FF00]" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

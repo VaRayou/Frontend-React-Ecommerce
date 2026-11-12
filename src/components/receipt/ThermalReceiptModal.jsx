@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   Clock,
   AlertCircle,
+  Store,
+  ShoppingBag,
 } from "lucide-react";
 import { useStoreSettings } from "../../store/useStoreSettings";
 
@@ -454,6 +456,8 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
       document.title = originalTitle;
     }, 3000);
 
+    const storeUrl = typeof window !== "undefined" ? `${window.location.origin}/shop` : "/shop";
+
     const printContent = document.getElementById("pos-thermal-receipt-paper");
     if (!printContent) {
       window.print();
@@ -475,6 +479,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
       <html>
         <head>
           <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>${receiptDocTitle}</title>
           ${styles}
           <style>
@@ -496,12 +501,65 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
               max-height: none !important;
               overflow: visible !important;
             }
+            .no-print {
+              display: none !important;
+            }
+            @media screen {
+              .receipt-screen-bar {
+                margin: -8px -8px 12px -8px;
+                padding: 10px 14px;
+                background: #0f172a;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-radius: 8px;
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+              }
+              .receipt-return-link {
+                background: #D6FF00;
+                color: #000;
+                text-decoration: none;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-weight: 800;
+                font-size: 11px;
+                text-transform: uppercase;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+              }
+            }
           </style>
         </head>
         <body>
+          <!-- Screen-only Persistent Top Navigation Bar -->
+          <div class="no-print receipt-screen-bar">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; color: #D6FF00; letter-spacing: 0.5px;">
+              Receipt &bull; ${normalized?.invoiceNumber || "Receipt"}
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="receipt-return-link">
+                &larr; Back to Store
+              </a>
+              <button onclick="window.close()" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; cursor: pointer;">
+                Close
+              </button>
+            </div>
+          </div>
+
           <div id="pos-thermal-receipt-paper">
             ${printContent.innerHTML}
           </div>
+
+          <!-- Screen-only Bottom Return Link -->
+          <div class="no-print" style="margin-top: 16px; padding: 12px; text-align: center; border-top: 1px dashed #cbd5e1; font-family: -apple-system, sans-serif;">
+            <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="receipt-return-link" style="padding: 8px 16px; font-size: 12px;">
+              &larr; Return to Atelier Store
+            </a>
+          </div>
+
           <script>
             window.onload = function() {
               setTimeout(function() {
@@ -553,6 +611,18 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
 
               <div className="flex items-center gap-2 shrink-0">
                 <PrinterStatusBadge isPrinting={isPrinting} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onClose) onClose();
+                    window.location.href = "/shop";
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-[#D6FF00] border border-[#D6FF00]/40 text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+                  title="Return to Atelier Store"
+                >
+                  <Store className="w-3.5 h-3.5 text-[#D6FF00]" />
+                  <span className="hidden xs:inline">Back to Store</span>
+                </button>
                 <button
                   type="button"
                   onClick={onClose}
@@ -834,27 +904,40 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
             <div className="w-full flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 mt-4 px-1">
               <button
                 type="button"
-                onClick={handlePrintAgain}
-                className="flex-1 py-3 px-4 rounded-2xl bg-[#D6FF00] hover:bg-[#c6ef00] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer"
+                onClick={() => {
+                  if (onClose) onClose();
+                  window.location.href = "/shop";
+                }}
+                className="py-3 px-4 rounded-2xl bg-black hover:bg-neutral-900 text-[#D6FF00] border border-[#D6FF00]/40 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-transform active:scale-95 cursor-pointer"
+                title="Return to Atelier Storefront"
               >
-                <RotateCcw className={`w-4 h-4 ${isPrinting ? "animate-spin" : ""}`} />
+                <Store className="w-3.5 h-3.5 text-[#D6FF00]" />
+                <span>Back to Store</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintAgain}
+                className="flex-1 py-3 px-3 rounded-2xl bg-[#D6FF00] hover:bg-[#c6ef00] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg transition-transform active:scale-95 cursor-pointer"
+              >
+                <RotateCcw className={`w-3.5 h-3.5 ${isPrinting ? "animate-spin" : ""}`} />
                 <span>Print Again</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleSystemPrint}
-                className="py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="py-3 px-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 title="Print physical copy or save as PDF"
               >
-                <Printer className="w-4 h-4 text-[#D6FF00]" />
+                <Printer className="w-3.5 h-3.5 text-[#D6FF00]" />
                 <span className="hidden sm:inline">Save PDF</span>
               </button>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="py-3 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                className="py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
               >
                 Close
               </button>

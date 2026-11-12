@@ -16,6 +16,7 @@ import { Register } from "../pages/Register/Index";
 import { Profile } from "../pages/Profile/Index";
 import { Orders } from "../pages/Orders/Index";
 import { TrackOrder } from "../pages/TrackOrder/Index";
+import { InvoicePage } from "../pages/Invoice/Index";
 import { About } from "../pages/About/Index";
 import { Contact } from "../pages/Contact/Index";
 import { NotFound } from "../pages/NotFound/Index";
@@ -55,6 +56,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="/track/:orderNumber" element={<TrackOrder />} />
           <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/track-order/:orderNumber" element={<TrackOrder />} />
+          <Route path="/invoice" element={<InvoicePage />} />
+          <Route path="/invoice/:orderNumber" element={<InvoicePage />} />
 
           {/* Brand Information */}
           <Route path="/about" element={<About />} />
