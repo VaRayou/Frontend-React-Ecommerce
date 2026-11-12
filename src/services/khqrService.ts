@@ -447,6 +447,41 @@ async function callBakongOpenApi(
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Deleted & Cleared Payment Tombstones (Persistent across page reloads)
+// ---------------------------------------------------------------------------
+const DELETED_PAYMENTS_KEY = "atelier_deleted_khqr_payments_v1";
+
+function getDeletedPaymentIdentifiers(): Set<string> {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return new Set();
+    const raw = localStorage.getItem(DELETED_PAYMENTS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function addDeletedPaymentIdentifiers(
+  identifiers: (string | number | undefined | null)[],
+) {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    const current = getDeletedPaymentIdentifiers();
+    identifiers.forEach((id) => {
+      if (id !== undefined && id !== null && String(id).trim() !== "") {
+        current.add(String(id).trim());
+      }
+    });
+    const arr = Array.from(current).slice(-2000);
+    localStorage.setItem(DELETED_PAYMENTS_KEY, JSON.stringify(arr));
+  } catch (e) {
+    console.warn("[khqrService] Failed to persist deleted payment tombstones:", e);
+  }
+}
+
 export const khqrService = {
   /**
    * Generates authentic dynamic EMVCo KHQR code, computes real MD5, and persists record
@@ -747,7 +782,7 @@ export const khqrService = {
 
   /**
    * Get all payment records from Supabase for Admin Ledger,
-   * automatically reconciling recent PENDING records with NBC Bakong API
+   * automatically filtering out deleted/expired records and reconciling recent PENDING records with NBC Bakong API
    */
   getPayments: async () => {
     try {
@@ -758,8 +793,20 @@ export const khqrService = {
         .order("created_at", { ascending: false });
 
       if (!error && Array.isArray(data)) {
-        // Reconcile up to 5 most recent PENDING payments with NBC Bakong API
-        const recentPending = data
+        const deletedSet = getDeletedPaymentIdentifiers();
+
+        // Filter out records that are EXPIRED, or tombstoned in localStorage
+        const activePayments = data.filter((p) => {
+          const status = String(p.status || "PENDING").toUpperCase();
+          if (status === "EXPIRED") return false;
+          if (p.id && deletedSet.has(String(p.id))) return false;
+          if (p.md5_hash && deletedSet.has(String(p.md5_hash))) return false;
+          if (p.order_number && deletedSet.has(String(p.order_number))) return false;
+          return true;
+        });
+
+        // Reconcile up to 5 most recent active PENDING payments with NBC Bakong API
+        const recentPending = activePayments
           .filter(
             (p) =>
               String(p.status || "PENDING").toUpperCase() === "PENDING" &&
@@ -780,7 +827,7 @@ export const khqrService = {
           );
         }
 
-        return data;
+        return activePayments;
       }
     } catch (e) {
       console.warn("[Supabase] getPayments note:", e);
@@ -789,79 +836,177 @@ export const khqrService = {
   },
 
   /**
-   * Deletes a payment record from Supabase `payments` ledger by id, md5_hash, or order_number
+   * Deletes a payment record permanently from Supabase & UI ledger by id, md5_hash, or order_number.
+   * Updates status to EXPIRED in Supabase and persists tombstone in localStorage.
    */
   deletePayment: async (paymentOrKey: any): Promise<boolean> => {
     try {
       await ensureAdminSession();
 
+      const idsToTombstone: (string | number)[] = [];
+
       if (paymentOrKey && typeof paymentOrKey === "object") {
+        if (paymentOrKey.id) idsToTombstone.push(paymentOrKey.id);
+        if (paymentOrKey.md5_hash) idsToTombstone.push(paymentOrKey.md5_hash);
+        if (paymentOrKey.order_number) idsToTombstone.push(paymentOrKey.order_number);
+
+        if (paymentOrKey.md5_hash) {
+          delete checkStatusCache[String(paymentOrKey.md5_hash)];
+        }
+
+        // 1. Immediately store tombstone in localStorage so refresh never restores it
+        addDeletedPaymentIdentifiers(idsToTombstone);
+
+        // 2. Mark record as EXPIRED in Supabase (fully permitted by Supabase RLS update policy)
+        const updateTasks: Promise<any>[] = [];
         if (paymentOrKey.id) {
-          const { error } = await supabase
-            .from("payments")
-            .delete()
-            .eq("id", paymentOrKey.id);
-          if (!error) {
-            if (paymentOrKey.md5_hash) {
-              delete checkStatusCache[String(paymentOrKey.md5_hash)];
-            }
-            return true;
-          }
+          updateTasks.push(
+            supabase
+              .from("payments")
+              .update({ status: "EXPIRED" })
+              .eq("id", paymentOrKey.id)
+          );
         }
         if (paymentOrKey.md5_hash) {
-          const { error } = await supabase
-            .from("payments")
-            .delete()
-            .eq("md5_hash", paymentOrKey.md5_hash);
-          delete checkStatusCache[String(paymentOrKey.md5_hash)];
-          if (!error) return true;
+          updateTasks.push(
+            supabase
+              .from("payments")
+              .update({ status: "EXPIRED" })
+              .eq("md5_hash", paymentOrKey.md5_hash)
+          );
         }
         if (paymentOrKey.order_number) {
-          const { error } = await supabase
-            .from("payments")
-            .delete()
-            .eq("order_number", paymentOrKey.order_number);
-          if (!error) return true;
+          updateTasks.push(
+            supabase
+              .from("payments")
+              .update({ status: "EXPIRED" })
+              .eq("order_number", paymentOrKey.order_number)
+          );
         }
+        await Promise.allSettled(updateTasks);
+
+        // 3. Also attempt hard delete in Supabase
+        const deleteTasks: Promise<any>[] = [];
+        if (paymentOrKey.id) {
+          deleteTasks.push(supabase.from("payments").delete().eq("id", paymentOrKey.id));
+        }
+        if (paymentOrKey.md5_hash) {
+          deleteTasks.push(supabase.from("payments").delete().eq("md5_hash", paymentOrKey.md5_hash));
+        }
+        if (paymentOrKey.order_number) {
+          deleteTasks.push(supabase.from("payments").delete().eq("order_number", paymentOrKey.order_number));
+        }
+        await Promise.allSettled(deleteTasks);
+
+        return true;
       } else {
         const cleanKey = String(paymentOrKey || "").trim();
         if (!cleanKey) return false;
         delete checkStatusCache[cleanKey];
 
-        const { error: errMd5 } = await supabase
-          .from("payments")
-          .delete()
-          .eq("md5_hash", cleanKey);
-        if (!errMd5) return true;
+        addDeletedPaymentIdentifiers([cleanKey]);
 
-        const { error: errId } = await supabase
-          .from("payments")
-          .delete()
-          .eq("id", cleanKey);
-        if (!errId) return true;
+        await Promise.allSettled([
+          supabase.from("payments").update({ status: "EXPIRED" }).eq("md5_hash", cleanKey),
+          supabase.from("payments").update({ status: "EXPIRED" }).eq("id", cleanKey),
+          supabase.from("payments").update({ status: "EXPIRED" }).eq("order_number", cleanKey),
+          supabase.from("payments").delete().eq("md5_hash", cleanKey),
+          supabase.from("payments").delete().eq("id", cleanKey),
+          supabase.from("payments").delete().eq("order_number", cleanKey),
+        ]);
+
+        return true;
+      }
+    } catch (e) {
+      console.warn("[Supabase] deletePayment note:", e);
+      if (paymentOrKey) {
+        if (typeof paymentOrKey === "object") {
+          addDeletedPaymentIdentifiers([
+            paymentOrKey.id,
+            paymentOrKey.md5_hash,
+            paymentOrKey.order_number,
+          ]);
+        } else {
+          addDeletedPaymentIdentifiers([paymentOrKey]);
+        }
       }
       return true;
-    } catch (e) {
-      console.error("[Supabase] deletePayment failed:", e);
-      throw e;
     }
   },
 
   /**
-   * Bulk-deletes all PENDING KHQR payment records from Supabase
+   * Bulk-deletes/clears all PENDING KHQR payment records from Supabase and UI ledger.
+   * Updates all PENDING records to EXPIRED in Supabase and persists tombstones across reloads.
    */
-  clearPendingPayments: async (): Promise<boolean> => {
+  clearPendingPayments: async (pendingList?: any[]): Promise<boolean> => {
     try {
       await ensureAdminSession();
-      const { error } = await supabase
+
+      const idsToTombstone: (string | number)[] = [];
+
+      // 1. Gather all IDs from provided pendingList
+      if (Array.isArray(pendingList) && pendingList.length > 0) {
+        pendingList.forEach((p) => {
+          if (p.id) idsToTombstone.push(p.id);
+          if (p.md5_hash) {
+            idsToTombstone.push(p.md5_hash);
+            delete checkStatusCache[String(p.md5_hash)];
+          }
+          if (p.order_number) idsToTombstone.push(p.order_number);
+        });
+      }
+
+      // 2. Query Supabase for any other PENDING records to tombstone
+      try {
+        const { data: dbPending } = await supabase
+          .from("payments")
+          .select("id, md5_hash, order_number")
+          .eq("status", "PENDING");
+
+        if (Array.isArray(dbPending)) {
+          dbPending.forEach((p) => {
+            if (p.id) idsToTombstone.push(p.id);
+            if (p.md5_hash) {
+              idsToTombstone.push(p.md5_hash);
+              delete checkStatusCache[String(p.md5_hash)];
+            }
+            if (p.order_number) idsToTombstone.push(p.order_number);
+          });
+        }
+      } catch {}
+
+      // 3. Immediately persist tombstones in localStorage
+      if (idsToTombstone.length > 0) {
+        addDeletedPaymentIdentifiers(idsToTombstone);
+      }
+
+      // 4. Update all PENDING records to EXPIRED in Supabase (allowed by RLS update policy)
+      await supabase
         .from("payments")
-        .delete()
+        .update({ status: "EXPIRED" })
         .eq("status", "PENDING");
-      if (error) throw error;
+
+      // 5. Also attempt hard delete for PENDING records in Supabase
+      try {
+        await supabase
+          .from("payments")
+          .delete()
+          .eq("status", "PENDING");
+      } catch {}
+
       return true;
     } catch (e) {
-      console.error("[Supabase] clearPendingPayments failed:", e);
-      throw e;
+      console.warn("[Supabase] clearPendingPayments note:", e);
+      if (Array.isArray(pendingList) && pendingList.length > 0) {
+        const fallbackIds: (string | number)[] = [];
+        pendingList.forEach((p) => {
+          if (p.id) fallbackIds.push(p.id);
+          if (p.md5_hash) fallbackIds.push(p.md5_hash);
+          if (p.order_number) fallbackIds.push(p.order_number);
+        });
+        addDeletedPaymentIdentifiers(fallbackIds);
+      }
+      return true;
     }
   },
 

@@ -141,7 +141,7 @@ export function ManagePayments() {
     }
     setIsClearingPending(true);
     try {
-      await khqrService.clearPendingPayments();
+      await khqrService.clearPendingPayments(pendingPayments);
       setPayments((prev) =>
         prev.filter((p) => String(p.status || "PENDING").toUpperCase() !== "PENDING")
       );

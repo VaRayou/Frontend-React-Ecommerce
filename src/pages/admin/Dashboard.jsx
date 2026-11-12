@@ -89,10 +89,10 @@ function Dashboard() {
         const khqrOrders = paidOrdersList.filter(
           (o) =>
             (o.paymentMethod || "").toLowerCase().includes("khqr") ||
-            (o.paymentMethod || "").toLowerCase().includes("qr")
+            (o.paymentMethod || "").toLowerCase().includes("qr"),
         ).length;
         const codOrders = paidOrdersList.filter((o) =>
-          (o.paymentMethod || "").toLowerCase().includes("cash")
+          (o.paymentMethod || "").toLowerCase().includes("cash"),
         ).length;
         setPaymentBreakdown({
           khqr:
@@ -105,7 +105,7 @@ function Dashboard() {
         // Low stock items (stock <= 5)
         setAllCatalogProducts(prods);
         const low = prods.filter(
-          (p) => Number(p.stock ?? p.quantity ?? 10) <= 5
+          (p) => Number(p.stock ?? p.quantity ?? 10) <= 5,
         );
         setLowStockProducts(low);
 
@@ -161,7 +161,7 @@ function Dashboard() {
   }
 
   const khqrPercent = Math.round(
-    (paymentBreakdown.khqr / paymentBreakdown.total) * 100
+    (paymentBreakdown.khqr / paymentBreakdown.total) * 100,
   );
   const codPercent = Math.max(0, 100 - khqrPercent);
 
@@ -179,8 +179,12 @@ function Dashboard() {
   const paidKhqrRev = paidOrdersOnly
     .filter(
       (o) =>
-        String(o.paymentMethod || "").toLowerCase().includes("khqr") ||
-        String(o.paymentMethod || "").toLowerCase().includes("qr")
+        String(o.paymentMethod || "")
+          .toLowerCase()
+          .includes("khqr") ||
+        String(o.paymentMethod || "")
+          .toLowerCase()
+          .includes("qr"),
     )
     .reduce((s, o) => s + (Number(o.total) || 0), 0);
   const pendingUnpaidRev = Number(stats.pendingAmount || 0);
@@ -193,10 +197,12 @@ function Dashboard() {
     paidDeliveredRev,
     paidKhqrRev,
     pendingUnpaidRev,
-    totalPaidRev
+    totalPaidRev,
   );
   const toBarPct = (val) =>
-    val <= 0 ? 10 : Math.max(16, Math.min(96, Math.round((val / maxBarVal) * 96)));
+    val <= 0
+      ? 10
+      : Math.max(16, Math.min(96, Math.round((val / maxBarVal) * 96)));
 
   const revenueBars = [
     {
@@ -284,7 +290,9 @@ function Dashboard() {
               </span>
             </div>
             <p className="text-[10px] sm:text-[11px] text-gray-400 mt-0.5 truncate">
-              Collection: <strong className="text-white">django_lab.products</strong> • Atlas &amp; Render Cloud
+              Collection:{" "}
+              <strong className="text-white">django_lab.products</strong> •
+              Atlas &amp; Render Cloud
             </p>
           </div>
         </div>
@@ -599,12 +607,14 @@ function Dashboard() {
                   setSendingRadarAlert(true);
                   try {
                     const res = await telegramService.sendInventoryAuditReport(
-                      allCatalogProducts.length > 0 ? allCatalogProducts : lowStockProducts
+                      allCatalogProducts.length > 0
+                        ? allCatalogProducts
+                        : lowStockProducts,
                     );
                     setRadarToast(
                       res.ok
                         ? "Inventory Radar report sent to Telegram!"
-                        : `Telegram Notice: ${res.description || "Check Settings"}`
+                        : `Telegram Notice: ${res.description || "Check Settings"}`,
                     );
                     setTimeout(() => setRadarToast(""), 3500);
                   } finally {
@@ -615,7 +625,9 @@ function Dashboard() {
                 title="Send Inventory Health & Low-Stock Audit to Telegram"
               >
                 <Send className="w-3 h-3" />
-                <span>{sendingRadarAlert ? "Sending..." : "Alert Telegram"}</span>
+                <span>
+                  {sendingRadarAlert ? "Sending..." : "Alert Telegram"}
+                </span>
               </button>
               <Link
                 to="/admin/products"
@@ -668,9 +680,9 @@ function Dashboard() {
                               .map((p) =>
                                 p.id === item.id
                                   ? { ...p, stock: newQty, quantity: newQty }
-                                  : p
+                                  : p,
                               )
-                              .filter((p) => Number(p.stock) <= 5)
+                              .filter((p) => Number(p.stock) <= 5),
                           );
                         } catch (err) {
                           alert("Failed to restock: " + err.message);
@@ -717,7 +729,10 @@ function Dashboard() {
         <div className="block md:hidden divide-y divide-gray-100">
           {recentOrders.length > 0 ? (
             recentOrders.map((ord) => (
-              <div key={ord.id} className="p-3.5 hover:bg-gray-50/70 transition-colors space-y-2.5">
+              <div
+                key={ord.id}
+                className="p-3.5 hover:bg-gray-50/70 transition-colors space-y-2.5"
+              >
                 {/* Top Row: Order # & Status */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono font-black text-gray-950 text-xs tracking-tight">
@@ -752,17 +767,17 @@ function Dashboard() {
                         isOrderPaid(ord)
                           ? "bg-emerald-100 text-emerald-800"
                           : String(ord.orderStatus || "").toLowerCase() ===
-                            "cancelled"
-                          ? "bg-rose-100 text-rose-700"
-                          : "bg-amber-100 text-amber-800"
+                              "cancelled"
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-amber-100 text-amber-800"
                       }`}
                     >
                       {isOrderPaid(ord)
                         ? "PAID"
                         : String(ord.orderStatus || "").toLowerCase() ===
-                          "cancelled"
-                        ? "CANCELLED"
-                        : "PENDING"}
+                            "cancelled"
+                          ? "CANCELLED"
+                          : "PENDING"}
                     </span>
                   </div>
 
@@ -837,17 +852,17 @@ function Dashboard() {
                         isOrderPaid(ord)
                           ? "bg-emerald-100 text-emerald-800"
                           : String(ord.orderStatus || "").toLowerCase() ===
-                            "cancelled"
-                          ? "bg-rose-100 text-rose-700"
-                          : "bg-amber-100 text-amber-800"
+                              "cancelled"
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-amber-100 text-amber-800"
                       }`}
                     >
                       {isOrderPaid(ord)
                         ? "PAID"
                         : String(ord.orderStatus || "").toLowerCase() ===
-                          "cancelled"
-                        ? "CANCELLED"
-                        : "PENDING"}
+                            "cancelled"
+                          ? "CANCELLED"
+                          : "PENDING"}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 whitespace-nowrap">
