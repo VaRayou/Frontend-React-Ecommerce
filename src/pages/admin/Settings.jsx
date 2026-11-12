@@ -12,11 +12,15 @@ import {
   Plus,
   Trash2,
   Receipt,
+  Send,
+  Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
 import { useCartStore } from "../../store/useCartStore";
 import { useStoreSettings } from "../../store/useStoreSettings";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
+import { telegramService } from "../../services/telegramService";
 import api from "../../services/api";
 import Input from "../../components/common/Input";
 
@@ -42,6 +46,18 @@ export function Settings() {
     currency: storedBranding.currency || "USD ($)",
     orderNotification: storedBranding.orderNotification ?? true,
     stockAlertNotification: storedBranding.stockAlertNotification ?? true,
+    telegramBotToken:
+      storedBranding.telegramBotToken ||
+      "9048372338:AAHADX6G3fszbnyUTF58AEn0X2BSRbptx8A",
+    telegramChatId: storedBranding.telegramChatId || "1389246582",
+  });
+
+  const [telegramStatus, setTelegramStatus] = useState({
+    testing: false,
+    detecting: false,
+    botUsername: "",
+    feedback: "",
+    isError: false,
   });
 
   const [isReceiptPreviewOpen, setIsReceiptPreviewOpen] = useState(false);
@@ -94,7 +110,84 @@ export function Settings() {
   const handleStoreSave = (e) => {
     e.preventDefault();
     storedBranding.updateStoreSettings(storeSettings);
-    showNotification("Boutique & POS receipt branding saved!");
+    showNotification("Boutique & Telegram alert settings saved!");
+  };
+
+  const handleAutoDetectTelegramChat = async () => {
+    setTelegramStatus({
+      testing: false,
+      detecting: true,
+      botUsername: "",
+      feedback: "Contacting Telegram Bot API (/getUpdates)...",
+      isError: false,
+    });
+    const res = await telegramService.detectChatId(storeSettings.telegramBotToken);
+    if (res.ok && res.chatId) {
+      const updated = {
+        ...storeSettings,
+        telegramChatId: res.chatId,
+      };
+      setStoreSettings(updated);
+      storedBranding.updateStoreSettings(updated);
+      setTelegramStatus({
+        testing: false,
+        detecting: false,
+        botUsername: res.botUsername || "",
+        feedback: `Connected to @${res.botUsername} — Detected Chat ID: ${res.chatId} (${res.chatTitle})`,
+        isError: false,
+      });
+      showNotification(`Telegram Chat ID ${res.chatId} auto-detected & saved!`);
+    } else {
+      setTelegramStatus({
+        testing: false,
+        detecting: false,
+        botUsername: res.botUsername || "",
+        feedback: res.description || "Could not auto-detect Chat ID.",
+        isError: true,
+      });
+    }
+  };
+
+  const handleTestTelegramAlert = async () => {
+    storedBranding.updateStoreSettings(storeSettings);
+    setTelegramStatus((prev) => ({
+      ...prev,
+      testing: true,
+      feedback: "Sending live test alert to Telegram...",
+      isError: false,
+    }));
+
+    const testHtml =
+      `🔔 <b>ATELIER TELEGRAM BOT CONNECTED</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `<b>Store:</b> ${storeSettings.storeName}\n` +
+      `<b>Bakong Merchant:</b> <code>rayou_va@bkrt</code>\n` +
+      `<b>Status:</b> <b>LIVE REAL-TIME ALERTS ACTIVE</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `You will now receive instant notifications on every new customer order, POS counter sale, and verified Bakong KHQR settlement.`;
+
+    const res = await telegramService.sendMessage(
+      testHtml,
+      storeSettings.telegramBotToken,
+      storeSettings.telegramChatId
+    );
+
+    if (res.ok) {
+      setTelegramStatus((prev) => ({
+        ...prev,
+        testing: false,
+        feedback: "Test alert delivered to your Telegram chat! Check your Telegram app.",
+        isError: false,
+      }));
+      showNotification("Test message sent to Telegram successfully!");
+    } else {
+      setTelegramStatus((prev) => ({
+        ...prev,
+        testing: false,
+        feedback: `Telegram Error: ${res.description || "Check your Bot Token & Chat ID (and make sure you tapped /start in your bot)."}`,
+        isError: true,
+      }));
+    }
   };
 
   const handleShippingSave = (e) => {
@@ -339,6 +432,133 @@ export function Settings() {
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Boutique Branding</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Telegram Bot Real-Time Merchant Alerts Card */}
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#0088cc] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Send className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-gray-900">
+                    Telegram Bot Real-Time Merchant Alerts
+                  </h3>
+                  <span className="text-xs text-gray-400">
+                    Instant push notifications for Online Orders, POS Sales &amp; Bakong KHQR Settlements
+                  </span>
+                </div>
+              </div>
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 text-[10px] font-black uppercase tracking-wider text-sky-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+                Live Webhook
+              </span>
+            </div>
+
+            <form onSubmit={handleStoreSave} className="space-y-4">
+              <Input
+                label="Telegram Bot Token (from @BotFather)"
+                value={storeSettings.telegramBotToken}
+                onChange={(e) =>
+                  setStoreSettings({
+                    ...storeSettings,
+                    telegramBotToken: e.target.value,
+                  })
+                }
+                placeholder="e.g. 1234567890:AAH..."
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                <div className="sm:col-span-7">
+                  <Input
+                    label="Merchant Telegram Chat ID (User or Group ID)"
+                    value={storeSettings.telegramChatId}
+                    onChange={(e) =>
+                      setStoreSettings({
+                        ...storeSettings,
+                        telegramChatId: e.target.value,
+                      })
+                    }
+                    placeholder="e.g. 1389246582"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-5">
+                  <button
+                    type="button"
+                    disabled={telegramStatus.detecting}
+                    onClick={handleAutoDetectTelegramChat}
+                    className="w-full py-2.5 px-3 rounded-xl border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                    title="Send /start to your bot in Telegram, then click to auto-fill your Chat ID"
+                  >
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 ${
+                        telegramStatus.detecting ? "animate-spin" : ""
+                      }`}
+                    />
+                    <span>
+                      {telegramStatus.detecting
+                        ? "Detecting..."
+                        : "Auto-Detect Chat ID"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-sky-50/70 border border-sky-100 text-[11px] text-sky-900 space-y-1">
+                <p className="font-bold">How to connect in 10 seconds:</p>
+                <ol className="list-decimal list-inside space-y-0.5 text-sky-800">
+                  <li>
+                    Paste your Bot Token from <strong>@BotFather</strong> above.
+                  </li>
+                  <li>
+                    Open your bot in Telegram and tap <strong>Start</strong> (or send <code>/start</code>).
+                  </li>
+                  <li>
+                    Click <strong>Auto-Detect Chat ID</strong> above, then click <strong>Send Test Alert</strong>!
+                  </li>
+                </ol>
+              </div>
+
+              {telegramStatus.feedback && (
+                <div
+                  className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+                    telegramStatus.isError
+                      ? "bg-rose-50 border-rose-200 text-rose-700"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>{telegramStatus.feedback}</span>
+                </div>
+              )}
+
+              <div className="pt-1 flex flex-wrap items-center gap-2.5">
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Telegram Config</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={telegramStatus.testing}
+                  onClick={handleTestTelegramAlert}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>
+                    {telegramStatus.testing
+                      ? "Sending Test..."
+                      : "Send Test Alert to Telegram"}
+                  </span>
                 </button>
               </div>
             </form>

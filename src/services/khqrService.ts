@@ -1,6 +1,7 @@
 import api from "./api";
 import { supabase } from "./supabase";
 import { ensureAdminSession } from "./productService";
+import { telegramService } from "./telegramService";
 
 const env = (import.meta as any).env || {};
 
@@ -583,17 +584,29 @@ export const khqrService = {
             ? new Date(Number(txnData.acknowledgedDateMs)).toISOString()
             : new Date().toISOString();
 
-          // Update Supabase payment status
+          // Update Supabase payment status and dispatch Telegram Bot settlement alert
           try {
             await ensureAdminSession();
-            await supabase
+            const { data: updatedPay } = await supabase
               .from("payments")
               .update({
                 status: "PAID",
                 transaction_id: txnId,
                 paid_at: paidAtIso,
               })
-              .eq("md5_hash", md5Str);
+              .eq("md5_hash", md5Str)
+              .select("*")
+              .maybeSingle();
+
+            telegramService
+              .sendKhqrPaymentAlert({
+                orderNumber: updatedPay?.order_number || md5Str.slice(0, 10),
+                amount: Number(updatedPay?.amount || txnData.amount || 0),
+                currency: updatedPay?.currency || txnData.currency || "USD",
+                transactionId: txnId,
+                customerName: updatedPay?.customer_name || txnData.fromAccountId || "",
+              })
+              .catch(() => {});
           } catch {}
 
           const paidResult: KhqrStatusResponse = {

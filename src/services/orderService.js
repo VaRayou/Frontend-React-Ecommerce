@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { ensureAdminSession } from "./productService";
+import { telegramService } from "./telegramService";
 
 const ORDERS_STORAGE_KEY = "atelier_orders_v3";
 
@@ -331,6 +332,15 @@ export const orderService = {
       const current = getOrdersStorage();
       saveOrdersStorage([normalized, ...current]);
       window.dispatchEvent(new Event("atelier_order_updated"));
+
+      // Dispatch real-time Telegram Bot alert asynchronously
+      telegramService
+        .sendOrderAlert({
+          ...normalized,
+          transactionId: orderData.transactionId || "",
+        })
+        .catch(() => {});
+
       return normalized;
     } catch (err) {
       console.error("Supabase createOrder failed:", err);
@@ -360,6 +370,16 @@ export const orderService = {
       const updated = current.map((o) => (o.id === cleanId ? normalized : o));
       saveOrdersStorage(updated);
       window.dispatchEvent(new Event("atelier_order_updated"));
+
+      // Dispatch Telegram Bot status update alert asynchronously
+      telegramService
+        .sendOrderStatusAlert(
+          normalized.orderNumber,
+          newStatus,
+          normalized.customerName
+        )
+        .catch(() => {});
+
       return normalized;
     } catch (err) {
       console.error("Supabase updateOrderStatus failed:", err);

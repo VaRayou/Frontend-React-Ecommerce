@@ -13,6 +13,8 @@ export const useStoreSettings = create(
       currency: "USD ($)",
       orderNotification: true,
       stockAlertNotification: true,
+      telegramBotToken: "9048372338:AAHADX6G3fszbnyUTF58AEn0X2BSRbptx8A",
+      telegramChatId: "1389246582",
 
       updateStoreSettings: (updates) =>
         set((state) => ({
