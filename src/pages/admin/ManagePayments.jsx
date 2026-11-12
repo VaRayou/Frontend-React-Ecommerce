@@ -20,6 +20,8 @@ import Loader from "../../components/common/Loader";
 import Modal from "../../components/common/Modal";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
 import { khqrService } from "../../services/khqrService";
+import { supabase } from "../../services/supabase";
+import { soundEffects } from "../../utils/soundEffects";
 
 export function ManagePayments() {
   const cachedPayments = khqrService.getCachedPayments();
@@ -67,7 +69,35 @@ export function ManagePayments() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     loadPayments(cachedPayments.length > 0);
+
+    // Live Supabase Realtime WebSocket for Bakong payments ledger
+    const paymentsChannel = supabase
+      .channel("admin_payments_realtime_feed")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payments" },
+        (payload) => {
+          if (!active) return;
+          if (payload.eventType === "INSERT") {
+            const ordNum = payload.new?.order_number || "Payment";
+            showNotification(`💳 KHQR Transaction Logged: #${ordNum}`);
+          } else if (payload.eventType === "UPDATE") {
+            if (payload.new?.status === "PAID") {
+              soundEffects.playOrderChime();
+              showNotification(`✅ Bakong Payment PAID: $${payload.new?.amount} (${payload.new?.order_number})`);
+            }
+          }
+          loadPayments(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(paymentsChannel);
+    };
   }, [loadPayments]);
 
   const handleCopyHash = (hash) => {

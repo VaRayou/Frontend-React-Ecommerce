@@ -22,6 +22,8 @@ import {
   calculateOrderFinancials,
   isOrderPaid,
 } from "../../services/orderService";
+import { supabase } from "../../services/supabase";
+import { soundEffects } from "../../utils/soundEffects";
 import DataTable from "../../components/admin/DataTable";
 import Modal from "../../components/common/Modal";
 import Loader from "../../components/common/Loader";
@@ -156,10 +158,37 @@ export function ManageOrders() {
     window.addEventListener("atelier_order_updated", handleSync);
     window.addEventListener("storage", handleSync);
 
+    // Live Supabase Realtime WebSocket feed for new orders & status changes
+    const ordersChannel = supabase
+      .channel("admin_orders_realtime_feed")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        (payload) => {
+          if (!active) return;
+          if (payload.eventType === "INSERT") {
+            soundEffects.playOrderChime();
+            const ordNum = payload.new?.order_number || payload.new?.id || "New";
+            showNotification(`🛍 Live Order Received: #${ordNum}`);
+          } else if (payload.eventType === "UPDATE") {
+            const ordNum = payload.new?.order_number || payload.new?.id || "Order";
+            const newSt = payload.new?.order_status || payload.new?.status || "Updated";
+            const paySt = payload.new?.payment_status || "";
+            if (paySt.toLowerCase() === "paid") {
+              soundEffects.playOrderChime();
+            }
+            showNotification(`🔄 Order #${ordNum} updated (${newSt} • ${paySt || "Pending"})`);
+          }
+          loadOrders(true);
+        }
+      )
+      .subscribe();
+
     return () => {
       active = false;
       window.removeEventListener("atelier_order_updated", handleSync);
       window.removeEventListener("storage", handleSync);
+      supabase.removeChannel(ordersChannel);
     };
   }, [loadOrders]);
 

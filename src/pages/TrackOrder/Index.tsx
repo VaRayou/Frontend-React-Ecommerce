@@ -24,6 +24,8 @@ import { InvoiceModal } from "../../components/common/InvoiceModal";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 import { useAuthStore } from "../../store/useAuthStore";
+import { supabase } from "../../services/supabase";
+import { soundEffects } from "../../utils/soundEffects";
 
 export const TrackOrder: React.FC = () => {
   const { orderNumber: paramOrderNumber } = useParams<{ orderNumber?: string }>();
@@ -182,23 +184,46 @@ export const TrackOrder: React.FC = () => {
     }
   }, [paramOrderNumber, queryOrderId, handleLookup]);
 
-  // Real-time auto-refresh when viewing an active order
+  // Live Supabase Realtime WebSocket subscription for instant status progression
   useEffect(() => {
     const activeRef = order?.orderNumber || order?.order_number;
     if (!activeRef) return;
 
+    let active = true;
     const onOrderEvent = () => handleLookup(activeRef, true);
     window.addEventListener("atelier_order_updated", onOrderEvent);
+
+    const trackingChannel = supabase
+      .channel(`tracking_feed_${String(activeRef).replace(/[^a-zA-Z0-9_-]/g, "_")}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders" },
+        (payload) => {
+          if (!active) return;
+          const updatedNum = payload.new?.order_number || payload.new?.id;
+          const currentNum = order?.orderNumber || order?.order_number || order?.id;
+          if (
+            String(updatedNum).toLowerCase() === String(currentNum).toLowerCase() ||
+            String(updatedNum).toLowerCase() === String(activeRef).toLowerCase()
+          ) {
+            soundEffects.playOrderChime();
+            handleLookup(activeRef, true);
+          }
+        }
+      )
+      .subscribe();
 
     const interval = setInterval(() => {
       handleLookup(activeRef, true);
     }, 15000);
 
     return () => {
+      active = false;
       window.removeEventListener("atelier_order_updated", onOrderEvent);
       clearInterval(interval);
+      supabase.removeChannel(trackingChannel);
     };
-  }, [order?.orderNumber, order?.order_number, handleLookup]);
+  }, [order?.orderNumber, order?.order_number, order?.id, handleLookup]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

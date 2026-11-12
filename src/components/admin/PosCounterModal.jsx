@@ -12,11 +12,16 @@ import {
   User,
   Phone,
   Loader2,
+  Barcode,
+  ScanLine,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { productService } from "../../services/productService";
 import { orderService } from "../../services/orderService";
 import { khqrService } from "../../services/khqrService";
 import { KhqrPaymentModal } from "../checkout/KhqrPaymentModal";
+import { soundEffects } from "../../utils/soundEffects";
 
 export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
   const [products, setProducts] = useState(null);
@@ -28,10 +33,96 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mobileTab, setMobileTab] = useState("catalog"); // "catalog" | "ticket"
 
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [scanFeedback, setScanFeedback] = useState(null);
+
   // KHQR modal state for in-store QR scan
   const [khqrData, setKhqrData] = useState(null);
   const [isKhqrOpen, setIsKhqrOpen] = useState(false);
   const [pendingOrderNumber, setPendingOrderNumber] = useState("");
+
+  const handleScanCode = (rawCode) => {
+    const code = String(rawCode || "").trim().toLowerCase();
+    if (!code) return;
+
+    const list = products || [];
+    const matched =
+      list.find((p) => {
+        const pSku = String(p.sku || "").trim().toLowerCase();
+        const pBar = String(p.barcode || "").trim().toLowerCase();
+        const pId = String(p.id || "").trim().toLowerCase();
+        const pName = String(p.name || "").trim().toLowerCase();
+        return pSku === code || pBar === code || pId === code || pName === code;
+      }) ||
+      list.find((p) => (p.name || "").toLowerCase().includes(code));
+
+    if (matched) {
+      const stock = Number(matched.stock ?? matched.quantity ?? 10);
+      if (stock <= 0) {
+        soundEffects.playWarningBeep();
+        setScanFeedback({
+          type: "error",
+          message: `"${matched.name}" is OUT OF STOCK`,
+        });
+      } else {
+        addToCart(matched);
+        soundEffects.playBarcodeBeep();
+        setScanFeedback({
+          type: "success",
+          message: `Scanned & Added: "${matched.name}" ($${Number(matched.price || 0).toFixed(2)})`,
+        });
+      }
+    } else {
+      soundEffects.playWarningBeep();
+      setScanFeedback({
+        type: "error",
+        message: `Barcode / SKU "${rawCode}" not found in catalog`,
+      });
+    }
+
+    setTimeout(() => {
+      setScanFeedback((prev) => (prev?.message?.includes(rawCode) ? null : prev));
+    }, 3500);
+  };
+
+  // Hardware USB Barcode Scanner Auto-Listener
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let buffer = "";
+    let lastKeyTime = Date.now();
+
+    const handleKeydown = (e) => {
+      const targetTag = (e.target?.tagName || "").toLowerCase();
+      const isInput = targetTag === "input" || targetTag === "textarea";
+
+      const now = Date.now();
+      const timeDiff = now - lastKeyTime;
+      lastKeyTime = now;
+
+      if (e.key === "Enter") {
+        if (buffer.length >= 2 && (!isInput || timeDiff < 60)) {
+          e.preventDefault();
+          handleScanCode(buffer);
+          buffer = "";
+        }
+        return;
+      }
+
+      if (e.key.length === 1) {
+        if (timeDiff > 120 && !isInput) {
+          buffer = e.key;
+        } else {
+          buffer += e.key;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeydown);
+    return () => {
+      window.removeEventListener("keydown", handleKeydown);
+    };
+  }, [isOpen, products]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -269,6 +360,67 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
                 mobileTab === "catalog" ? "flex" : "hidden lg:flex"
               } lg:col-span-7 p-3.5 sm:p-5 border-b lg:border-b-0 lg:border-r border-gray-200 flex-col overflow-hidden bg-gray-50/50`}
             >
+              {/* Barcode & SKU Quick-Add Bar */}
+              <div className="mb-2.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!barcodeInput.trim()) return;
+                    handleScanCode(barcodeInput);
+                    setBarcodeInput("");
+                  }}
+                  className="flex-1 relative flex items-center"
+                >
+                  <Barcode className="w-4 h-4 text-gray-500 absolute left-3 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    placeholder="Scan USB Barcode or type SKU (e.g. ATL-101)..."
+                    className="w-full pl-9 pr-20 py-2 rounded-xl bg-white border border-gray-300 text-xs font-mono font-medium focus:outline-hidden focus:border-black focus:ring-1 focus:ring-black"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!barcodeInput.trim()}
+                    className="absolute right-1.5 px-2.5 py-1 rounded-lg bg-black text-[#D6FF00] hover:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider cursor-pointer disabled:opacity-40"
+                  >
+                    Scan SKU
+                  </button>
+                </form>
+
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>USB Scanner Active</span>
+                </div>
+              </div>
+
+              {/* Scanned Feedback Banner */}
+              {scanFeedback && (
+                <div
+                  className={`mb-2.5 p-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2 animate-in fade-in duration-150 ${
+                    scanFeedback.type === "success"
+                      ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                      : "bg-rose-100 text-rose-900 border border-rose-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    {scanFeedback.type === "success" ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    )}
+                    <span className="truncate">{scanFeedback.message}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setScanFeedback(null)}
+                    className="text-xs font-black cursor-pointer px-1 text-gray-500 hover:text-black"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
               <div className="relative mb-3">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input

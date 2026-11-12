@@ -27,6 +27,8 @@ import {
   isOrderPaid,
 } from "../../services/orderService";
 import { telegramService } from "../../services/telegramService";
+import { supabase } from "../../services/supabase";
+import { soundEffects } from "../../utils/soundEffects";
 import Loader from "../../components/common/Loader";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
 
@@ -82,8 +84,11 @@ function Dashboard() {
   const [loading, setLoading] = useState(!hasCache);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    let active = true;
+
+    const fetchDashboardData = async (silent = false) => {
       try {
+        if (!silent && !hasCache) setLoading(true);
         const [prods, cats, usrs, ords] = await Promise.all([
           productService.getProducts(),
           categoryService.getCategories(),
@@ -91,6 +96,7 @@ function Dashboard() {
           orderService.getOrders(),
         ]);
 
+        if (!active) return;
         const financials = calculateOrderFinancials(ords);
         const paidOrdersList = ords.filter((o) => isOrderPaid(o));
 
@@ -135,11 +141,39 @@ function Dashboard() {
       } catch (err) {
         console.error("Dashboard data load error", err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchDashboardData();
+
+    // Live Supabase Realtime channel for Dashboard KPIs
+    const dashboardChannel = supabase
+      .channel("admin_dashboard_realtime_feed")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        (payload) => {
+          if (!active) return;
+          if (payload.eventType === "INSERT") {
+            soundEffects.playOrderChime();
+          }
+          fetchDashboardData(true);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products" },
+        () => {
+          if (active) fetchDashboardData(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(dashboardChannel);
+    };
   }, []);
 
   const getStatusBadge = (status) => {
