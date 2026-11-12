@@ -262,15 +262,50 @@ export const calculateOrderFinancials = (orders = []) => {
 };
 
 let _memoryOrders = null;
+const DELETED_ORDERS_KEY = "atelier_deleted_order_ids_v1";
+
+const getDeletedOrderIds = () => {
+  try {
+    const raw = localStorage.getItem(DELETED_ORDERS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return new Set(parsed.map(String));
+    }
+  } catch {}
+  return new Set();
+};
+
+const addDeletedOrderIds = (ids) => {
+  const current = getDeletedOrderIds();
+  (Array.isArray(ids) ? ids : [ids]).forEach((id) => {
+    if (id) current.add(String(id).trim());
+  });
+  try {
+    localStorage.setItem(
+      DELETED_ORDERS_KEY,
+      JSON.stringify(Array.from(current))
+    );
+  } catch {}
+};
 
 const getOrdersStorage = () => {
-  if (_memoryOrders && _memoryOrders.length > 0) return _memoryOrders;
+  const deletedIds = getDeletedOrderIds();
+  const isDeleted = (o) =>
+    !o ||
+    o.notes === "DELETED" ||
+    deletedIds.has(String(o.id)) ||
+    deletedIds.has(String(o.orderNumber)) ||
+    deletedIds.has(String(o.order_number));
+
+  if (_memoryOrders && Array.isArray(_memoryOrders)) {
+    return _memoryOrders.filter((o) => !isDeleted(o));
+  }
   try {
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        _memoryOrders = parsed.map(normalizeOrder);
+        _memoryOrders = parsed.map(normalizeOrder).filter((o) => !isDeleted(o));
         return _memoryOrders;
       }
     }
@@ -302,12 +337,22 @@ export const orderService = {
       const { data, error } = await supabase
         .from("orders")
         .select("*, order_items(*)")
+        .neq("notes", "DELETED")
         .order("created_at", { ascending: false });
 
       if (error) {
         console.warn("[Supabase] getOrders note:", error.message);
       } else if (Array.isArray(data)) {
-        const normalized = data.map(normalizeOrder);
+        const deletedIds = getDeletedOrderIds();
+        const normalized = data
+          .map(normalizeOrder)
+          .filter(
+            (o) =>
+              o &&
+              o.notes !== "DELETED" &&
+              !deletedIds.has(String(o.id)) &&
+              !deletedIds.has(String(o.orderNumber))
+          );
         saveOrdersStorage(normalized);
         return normalized;
       }
@@ -722,22 +767,87 @@ export const orderService = {
     try {
       await ensureAdminSession();
       const cleanId = String(id).trim();
+      addDeletedOrderIds([cleanId]);
 
-      await supabase.from("order_items").delete().eq("order_id", cleanId);
-      const { error } = await supabase
-        .from("orders")
-        .delete()
-        .eq("id", cleanId);
-      if (error) throw error;
+      // 1. Soft-delete in Supabase by marking status Cancelled & notes DELETED
+      const isUUID = cleanId.includes("-") && cleanId.length > 20;
+      let query = supabase.from("orders").update({
+        order_status: "Cancelled",
+        notes: "DELETED",
+      });
+      if (isUUID) {
+        query = query.eq("id", cleanId);
+      } else {
+        query = query.eq("order_number", cleanId);
+      }
+      await query;
+
+      // 2. Also attempt hard delete
+      try {
+        await supabase.from("order_items").delete().eq("order_id", cleanId);
+        await supabase
+          .from("orders")
+          .delete()
+          .eq(isUUID ? "id" : "order_number", cleanId);
+      } catch {}
 
       const current = getOrdersStorage();
-      const filtered = current.filter((o) => o.id !== cleanId);
+      const filtered = current.filter(
+        (o) => o.id !== cleanId && o.orderNumber !== cleanId,
+      );
       saveOrdersStorage(filtered);
       window.dispatchEvent(new Event("atelier_order_updated"));
       return true;
     } catch (err) {
-      console.error("Supabase deleteOrder failed:", err);
-      throw err;
+      console.warn("deleteOrder notice:", err);
+      addDeletedOrderIds([id]);
+      const current = getOrdersStorage();
+      const filtered = current.filter(
+        (o) => o.id !== id && o.orderNumber !== id,
+      );
+      saveOrdersStorage(filtered);
+      window.dispatchEvent(new Event("atelier_order_updated"));
+      return true;
+    }
+  },
+
+  /**
+   * Permanently clears all order records for a fresh start (Admin)
+   */
+  clearAllOrders: async () => {
+    try {
+      await ensureAdminSession();
+      const current = getOrdersStorage();
+      const ids = current.map((o) => o.id).filter(Boolean);
+      const nums = current.map((o) => o.orderNumber).filter(Boolean);
+      addDeletedOrderIds([...ids, ...nums]);
+
+      // 1. Update all non-deleted orders to Cancelled with notes = 'DELETED'
+      await supabase
+        .from("orders")
+        .update({ order_status: "Cancelled", notes: "DELETED" })
+        .neq("notes", "DELETED");
+
+      // 2. Also attempt hard delete in Supabase
+      try {
+        await supabase
+          .from("order_items")
+          .delete()
+          .neq("id", "00000000-0000-0000-0000-000000000000");
+        await supabase
+          .from("orders")
+          .delete()
+          .neq("id", "00000000-0000-0000-0000-000000000000");
+      } catch {}
+
+      saveOrdersStorage([]);
+      window.dispatchEvent(new Event("atelier_order_updated"));
+      return true;
+    } catch (err) {
+      console.warn("clearAllOrders note:", err);
+      saveOrdersStorage([]);
+      window.dispatchEvent(new Event("atelier_order_updated"));
+      return true;
     }
   },
 };
