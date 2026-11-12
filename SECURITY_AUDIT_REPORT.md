@@ -279,7 +279,23 @@ dist/assets/index-Ckmgxh7H.js             436.45 kB │ gzip:  98.50 kB
 
 1. Open your **[Supabase Project Dashboard](https://supabase.com/dashboard/project/awcgcpoibputqrtuvrms)**.
 2. Navigate to **SQL Editor** on the left menu.
-3. Open `frontend/supabase_rls_security_setup.sql` in your editor.
+3. Open `frontend/supabase_rls_security_setup.sql` or `frontend/supabase_provision_real_admins.sql`.
 4. Copy the entire file, paste it into the Supabase SQL Editor, and click **Run**.
-5. All 10 tables and storage policies will be active immediately.
+5. All 10 tables, storage policies, and official real admin accounts will be active immediately.
+
+---
+
+## 7. Official Real Administrator Accounts (Zero Demo Bypasses)
+
+All mock/fallback demo authentication has been permanently stripped from the codebase. The application exclusively authenticates against Supabase Cloud Auth with 3 official, production-grade roles:
+
+| Official Role | Cloud Email | Default Password | Clearance Level |
+| :--- | :--- | :--- | :--- |
+| **Super Administrator** | `controller@atelier.com` | `adminpass123` | **Full Clearance**: Dashboard, Products, Categories, Orders, Bakong KHQR Ledger, Coupons, Patron Directory, Store Settings |
+| **Catalog Manager** | `catalog@atelier.com` | `adminpass123` | **Catalog & Merchandising**: Dashboard, Products, Categories, Inventory Updates |
+| **Store Controller** | `admin@atelier.com` | `adminpass123` | **Operations & Commerce**: Dashboard, Products, Categories, Orders, Bakong KHQR Ledger, Coupons |
+
+> [!NOTE]
+> All passwords can be changed directly from inside the Studio via Supabase Auth settings (`supabase.auth.updateUser({ password: newPassword })`).
+
 
