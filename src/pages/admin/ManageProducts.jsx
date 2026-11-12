@@ -1206,15 +1206,15 @@ export function ManageProducts() {
         onClose={() => setIsAddEditModalOpen(false)}
         maxWidth={1080}
         title={
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
-              {isEditing ? <Pencil className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
+              {isEditing ? <Pencil className="w-4 h-4 sm:w-5 sm:h-5" /> : <Layers className="w-4 h-4 sm:w-5 sm:h-5" />}
             </div>
-            <div>
-              <div className="text-base font-extrabold text-gray-900">
+            <div className="min-w-0">
+              <div className="text-sm sm:text-base font-extrabold text-gray-900 truncate">
                 {isEditing ? `Edit Runway Piece: ${selectedProduct?.name}` : "Create New Runway Product"}
               </div>
-              <p className="text-xs text-gray-500 font-normal">
+              <p className="text-[11px] sm:text-xs text-gray-500 font-normal truncate">
                 {isEditing
                   ? "Update product specifications, media asset, and inventory stock"
                   : "Upload image from computer, configure price, and publish to Supabase"}
@@ -1223,11 +1223,11 @@ export function ManageProducts() {
           </div>
         }
         footer={
-          <>
+          <div className="flex items-center justify-end gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setIsAddEditModalOpen(false)}
-              className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial px-4 py-2 sm:py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer text-center"
             >
               Cancel
             </button>
@@ -1235,7 +1235,7 @@ export function ManageProducts() {
               type="button"
               onClick={handleSaveProduct}
               disabled={saving || uploadingImage}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 disabled:opacity-50 transition-all text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 disabled:opacity-50 transition-all text-xs font-black uppercase tracking-wider shadow-md cursor-pointer text-center"
             >
               {saving ? (
                 <>
@@ -1254,15 +1254,15 @@ export function ManageProducts() {
                 </>
               )}
             </button>
-          </>
+          </div>
         }
       >
-        <form onSubmit={handleSaveProduct} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <form onSubmit={handleSaveProduct} className="space-y-5 sm:space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 sm:gap-6">
             {/* Left Column: Product Identity & Details */}
-            <div className="lg:col-span-7 space-y-4">
+            <div className="xl:col-span-7 space-y-4">
               {/* 1. Core Product Specifications Card */}
-              <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-4">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-3.5 sm:space-y-4">
                 <div className="flex items-center justify-between border-b border-gray-200 pb-2.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-900">
                     Product Specifications
@@ -1286,7 +1286,7 @@ export function ManageProducts() {
                   onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                 />
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-gray-800 mb-1.5">
                       Category *
@@ -1648,16 +1648,16 @@ export function ManageProducts() {
             </div>
 
             {/* Right Column: Pricing, Inventory & Media Upload */}
-            <div className="lg:col-span-5 space-y-4">
+            <div className="xl:col-span-5 space-y-4">
               {/* Pricing & Stock Card */}
-              <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-3">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-3 sm:space-y-3.5">
                 <div className="flex items-center justify-between border-b border-gray-200 pb-2.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-900">
                     Pricing & Inventory
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
                     label="Retail Price ($)"
                     type="number"
@@ -1726,11 +1726,11 @@ export function ManageProducts() {
                 </div>
 
                 {/* Tabs for Upload, Presets, URL */}
-                <div className="flex items-center p-1 rounded-xl bg-gray-200/60 gap-1 text-xs font-bold">
+                <div className="grid grid-cols-3 p-1 rounded-xl bg-gray-200/60 gap-1 text-[11px] sm:text-xs font-bold">
                   <button
                     type="button"
                     onClick={() => setImageTab("upload")}
-                    className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                    className={`py-1.5 px-1 sm:px-2 rounded-lg text-center transition-all cursor-pointer truncate ${
                       imageTab === "upload" ? "bg-white text-black shadow-xs" : "text-gray-600 hover:text-black"
                     }`}
                   >
@@ -1739,7 +1739,7 @@ export function ManageProducts() {
                   <button
                     type="button"
                     onClick={() => setImageTab("preset")}
-                    className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                    className={`py-1.5 px-1 sm:px-2 rounded-lg text-center transition-all cursor-pointer truncate ${
                       imageTab === "preset" ? "bg-white text-black shadow-xs" : "text-gray-600 hover:text-black"
                     }`}
                   >
@@ -1748,7 +1748,7 @@ export function ManageProducts() {
                   <button
                     type="button"
                     onClick={() => setImageTab("url")}
-                    className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                    className={`py-1.5 px-1 sm:px-2 rounded-lg text-center transition-all cursor-pointer truncate ${
                       imageTab === "url" ? "bg-white text-black shadow-xs" : "text-gray-600 hover:text-black"
                     }`}
                   >
