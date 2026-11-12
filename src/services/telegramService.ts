@@ -16,6 +16,11 @@ const ADMIN_ORDERS_URL =
     ? `${window.location.origin}/admin/orders`
     : "https://frontend-react-ecommerce-inky.vercel.app/admin/orders";
 
+const WEBHOOK_BASE_URL =
+  typeof window !== "undefined" && window.location.origin.startsWith("https://")
+    ? window.location.origin
+    : "https://frontend-react-ecommerce-inky.vercel.app";
+
 export interface TelegramConfig {
   botToken: string;
   chatId: string;
@@ -197,6 +202,11 @@ export const telegramService = {
         return { ok: false, description: meCheck.description };
       }
 
+      // Temporarily clear webhook (preserving pending updates) so /getUpdates never throws 409 Conflict
+      await fetch(
+        `https://api.telegram.org/bot${cleanToken}/deleteWebhook?drop_pending_updates=false`
+      ).catch(() => {});
+
       const res = await fetch(
         `https://api.telegram.org/bot${cleanToken}/getUpdates?limit=20&allowed_updates=["message","channel_post","my_chat_member"]`
       );
@@ -222,6 +232,8 @@ export const telegramService = {
             [chat.first_name, chat.last_name].filter(Boolean).join(" ") ||
             chat.username ||
             "Telegram User";
+          // Re-enable interactive webhook in background
+          telegramService.enableInteractiveWebhook(cleanToken).catch(() => {});
           return {
             ok: true,
             chatId: String(chat.id),
@@ -240,6 +252,63 @@ export const telegramService = {
       return {
         ok: false,
         description: err?.message || "Failed querying Telegram getUpdates.",
+      };
+    }
+  },
+
+  /**
+   * Registers the 2-way interactive Vercel webhook (/api/telegram) and slash commands
+   * (/stats, /orders, /lowstock, /help) with Telegram BotFather API.
+   */
+  enableInteractiveWebhook: async (
+    overrideToken?: string
+  ): Promise<{ ok: boolean; webhookUrl?: string; description?: string }> => {
+    const cfg = getStoredTelegramConfig();
+    const token = String(
+      overrideToken !== undefined ? overrideToken : cfg.botToken
+    ).trim();
+    if (!token) {
+      return { ok: false, description: "Missing Telegram Bot Token." };
+    }
+
+    const webhookUrl = `${WEBHOOK_BASE_URL}/api/telegram?token=${encodeURIComponent(
+      token
+    )}`;
+
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/setMyCommands`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commands: [
+            { command: "stats", description: "Live revenue, order & stock KPIs" },
+            { command: "orders", description: "Manage latest 5 orders with 1-tap actions" },
+            { command: "lowstock", description: "Audit low-stock & out-of-stock SKUs" },
+            { command: "help", description: "Show interactive merchant command menu" },
+          ],
+        }),
+      }).catch(() => {});
+
+      const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: webhookUrl,
+          allowed_updates: ["message", "callback_query"],
+        }),
+      });
+      const data = await res.json();
+      if (data?.ok) {
+        return { ok: true, webhookUrl };
+      }
+      return {
+        ok: false,
+        description: data?.description || "Failed to register Telegram webhook.",
+      };
+    } catch (err: any) {
+      return {
+        ok: false,
+        description: err?.message || "Network error setting Telegram webhook.",
       };
     }
   },
@@ -336,11 +405,17 @@ export const telegramService = {
       `<b>Items (${items.reduce((s: number, i: any) => s + (Number(i.quantity) || 1), 0)}):</b>\n` +
       `${itemsSummary}`;
 
+    const safeRef = String(orderNum).slice(0, 48);
     const replyMarkup = {
       inline_keyboard: [
         [
+          { text: "🚚 Mark Shipped", callback_data: `ship:${safeRef}` },
+          { text: "✅ Mark Delivered", callback_data: `deliver:${safeRef}` },
+        ],
+        [
+          { text: "❌ Cancel Order", callback_data: `cancel:${safeRef}` },
           {
-            text: "📋 Manage Order in Admin Portal",
+            text: "📋 Open Admin Portal",
             url: ADMIN_ORDERS_URL,
           },
         ],
@@ -501,15 +576,28 @@ export const telegramService = {
         ? `Immediate restock required — piece is currently marked <b>Sold Out</b> on the storefront.`
         : `Inventory has fallen to or below the 5-unit safety threshold. Please replenish stock soon.`);
 
+    const inlineRows: any[][] = [];
+    if (opts.productId !== undefined && opts.productId !== null && String(opts.productId).length <= 44) {
+      inlineRows.push([
+        {
+          text: "➕ Restock +10 Units",
+          callback_data: `restock:${opts.productId}:10`,
+        },
+        {
+          text: "➕ Restock +25 Units",
+          callback_data: `restock:${opts.productId}:25`,
+        },
+      ]);
+    }
+    inlineRows.push([
+      {
+        text: "📦 Restock in Admin Inventory Portal",
+        url: ADMIN_PRODUCTS_URL,
+      },
+    ]);
+
     const replyMarkup = {
-      inline_keyboard: [
-        [
-          {
-            text: "📦 Restock in Admin Inventory Portal",
-            url: ADMIN_PRODUCTS_URL,
-          },
-        ],
-      ],
+      inline_keyboard: inlineRows,
     };
 
     return telegramService.sendMessage(msg, undefined, undefined, replyMarkup);
@@ -573,6 +661,10 @@ export const telegramService = {
 
     const replyMarkup = {
       inline_keyboard: [
+        [
+          { text: "📊 Live Revenue KPIs", callback_data: "cmd:stats" },
+          { text: "🛍 Latest 5 Orders", callback_data: "cmd:orders" },
+        ],
         [
           {
             text: "📦 Open Admin Inventory Portal",

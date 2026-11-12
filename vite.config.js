@@ -10,6 +10,26 @@ export default defineConfig({
   ],
   build: {
     chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          if (id.includes('framer-motion') || id.includes('motion-')) {
+            return 'vendor-motion'
+          }
+          if (id.includes('lucide-react')) {
+            return 'vendor-icons'
+          }
+          if (id.includes('@supabase')) {
+            return 'vendor-supabase'
+          }
+          if (id.includes('react-router') || id.includes('@remix-run')) {
+            return 'vendor-router'
+          }
+          return 'vendor-core'
+        },
+      },
+    },
   },
   server: {
     proxy: {

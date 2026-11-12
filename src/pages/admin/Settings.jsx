@@ -110,7 +110,40 @@ export function Settings() {
   const handleStoreSave = (e) => {
     e.preventDefault();
     storedBranding.updateStoreSettings(storeSettings);
+    telegramService
+      .enableInteractiveWebhook(storeSettings.telegramBotToken)
+      .catch(() => {});
     showNotification("Boutique & Telegram alert settings saved!");
+  };
+
+  const handleEnableInteractiveWebhook = async () => {
+    storedBranding.updateStoreSettings(storeSettings);
+    setTelegramStatus((prev) => ({
+      ...prev,
+      testing: true,
+      feedback: "Registering 2-way Telegram Bot commands (/stats, /orders, /lowstock) & webhook...",
+      isError: false,
+    }));
+    const res = await telegramService.enableInteractiveWebhook(
+      storeSettings.telegramBotToken
+    );
+    if (res.ok) {
+      setTelegramStatus((prev) => ({
+        ...prev,
+        testing: false,
+        feedback:
+          "2-Way Interactive Bot Webhook active! Type /stats, /orders, /lowstock, or /help in your Telegram bot.",
+        isError: false,
+      }));
+      showNotification("2-Way Telegram Bot commands & inline buttons activated!");
+    } else {
+      setTelegramStatus((prev) => ({
+        ...prev,
+        testing: false,
+        feedback: `Webhook Error: ${res.description || "Check Bot Token."}`,
+        isError: true,
+      }));
+    }
   };
 
   const handleAutoDetectTelegramChat = async () => {
@@ -162,14 +195,33 @@ export function Settings() {
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `<b>Store:</b> ${storeSettings.storeName}\n` +
       `<b>Bakong Merchant:</b> <code>rayou_va@bkrt</code>\n` +
-      `<b>Status:</b> <b>LIVE REAL-TIME ALERTS ACTIVE</b>\n` +
+      `<b>Status:</b> <b>LIVE 2-WAY BOT &amp; REAL-TIME ALERTS ACTIVE</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `You will now receive instant notifications on every new customer order, POS counter sale, and verified Bakong KHQR settlement.`;
+      `You will receive instant notifications on every new customer order, POS counter sale, Low-Stock warning, and verified Bakong KHQR settlement.\n\n` +
+      `<b>Interactive Commands:</b>\n` +
+      `• <code>/stats</code> — Live revenue &amp; order KPIs\n` +
+      `• <code>/orders</code> — Manage latest 5 orders\n` +
+      `• <code>/lowstock</code> — Audit low-stock SKUs`;
+
+    await telegramService
+      .enableInteractiveWebhook(storeSettings.telegramBotToken)
+      .catch(() => {});
 
     const res = await telegramService.sendMessage(
       testHtml,
       storeSettings.telegramBotToken,
-      storeSettings.telegramChatId
+      storeSettings.telegramChatId,
+      {
+        inline_keyboard: [
+          [
+            { text: "📊 Live Revenue KPIs", callback_data: "cmd:stats" },
+            { text: "🛍 Latest 5 Orders", callback_data: "cmd:orders" },
+          ],
+          [
+            { text: "⚠️ Low-Stock Audit", callback_data: "cmd:lowstock" },
+          ],
+        ],
+      }
     );
 
     if (res.ok) {
@@ -606,6 +658,16 @@ export function Settings() {
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Test Low-Stock Alert</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={telegramStatus.testing}
+                  onClick={handleEnableInteractiveWebhook}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-900 transition-all font-black text-xs uppercase tracking-wider cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Enable 2-Way Bot Commands</span>
                 </button>
               </div>
             </form>
