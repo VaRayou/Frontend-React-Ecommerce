@@ -73,12 +73,13 @@ ON public.orders FOR INSERT
 WITH CHECK (true);
 
 -- Customers can view only their own orders by email or customer_id; Admins view all
+-- Explicit ::text casts prevent "operator does not exist: uuid = text" errors
 CREATE POLICY "Users can view own orders or admins view all"
 ON public.orders FOR SELECT
 USING (
   public.is_admin() OR
-  (auth.jwt() ->> 'email' IS NOT NULL AND customer_email = (auth.jwt() ->> 'email')) OR
-  (customer_id IS NOT NULL AND customer_id = auth.uid()::text)
+  (auth.jwt() ->> 'email' IS NOT NULL AND customer_email::text = (auth.jwt() ->> 'email')::text) OR
+  (customer_id IS NOT NULL AND customer_id::text = (auth.uid())::text)
 );
 
 -- Only store administrators can change order status, payment status, or notes
@@ -114,11 +115,11 @@ USING (
   public.is_admin() OR
   EXISTS (
     SELECT 1 FROM public.orders o
-    WHERE o.id = order_items.order_id
+    WHERE o.id::text = order_items.order_id::text
     AND (
       public.is_admin() OR
-      (auth.jwt() ->> 'email' IS NOT NULL AND o.customer_email = (auth.jwt() ->> 'email')) OR
-      (o.customer_id IS NOT NULL AND o.customer_id = auth.uid()::text)
+      (auth.jwt() ->> 'email' IS NOT NULL AND o.customer_email::text = (auth.jwt() ->> 'email')::text) OR
+      (o.customer_id IS NOT NULL AND o.customer_id::text = (auth.uid())::text)
     )
   )
 );
