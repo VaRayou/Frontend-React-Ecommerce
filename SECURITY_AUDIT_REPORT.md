@@ -289,13 +289,13 @@ dist/assets/index-Ckmgxh7H.js             436.45 kB │ gzip:  98.50 kB
 
 All mock/fallback demo authentication has been permanently stripped from the codebase. The application exclusively authenticates against Supabase Cloud Auth with 3 official, production-grade roles:
 
-| Official Role | Cloud Email | Default Password | Clearance Level |
+| Official Role | Cloud Email | Initial Setup | Clearance Level |
 | :--- | :--- | :--- | :--- |
-| **Super Administrator** | `controller@atelier.com` | `adminpass123` | **Full Clearance**: Dashboard, Products, Categories, Orders, Bakong KHQR Ledger, Coupons, Patron Directory, Store Settings |
-| **Catalog Manager** | `catalog@atelier.com` | `adminpass123` | **Catalog & Merchandising**: Dashboard, Products, Categories, Inventory Updates |
-| **Store Controller** | `admin@atelier.com` | `adminpass123` | **Operations & Commerce**: Dashboard, Products, Categories, Orders, Bakong KHQR Ledger, Coupons |
+| **Super Administrator** | `controller@atelier.com` | Configured via Private SQL | **Full Clearance**: Dashboard, Products, Categories, Orders, Bakong KHQR Ledger, Coupons, Patron Directory, Store Settings |
+| **Catalog Manager** | `catalog@atelier.com` | Configured via Private SQL | **Catalog & Merchandising**: Dashboard, Products, Categories, Inventory Updates |
+| **Store Controller** | `admin@atelier.com` | Configured via Private SQL | **Operations & Commerce**: Dashboard, Products, Categories, Orders, Bakong KHQR Ledger, Coupons |
 
-> [!NOTE]
-> All passwords can be changed directly from inside the Studio via Supabase Auth settings (`supabase.auth.updateUser({ password: newPassword })`).
+> [!IMPORTANT]
+> Administrative accounts are provisioned directly in your Supabase project using private local SQL or the Supabase Authentication dashboard. Credentials are never committed to public Git. All passwords can be updated anytime inside the Studio via Supabase Auth settings (`supabase.auth.updateUser({ password: newPassword })`).
 
 

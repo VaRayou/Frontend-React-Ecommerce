@@ -18,6 +18,11 @@ dist-ssr
 .env.*
 !.env.example
 
+# Private Database Provisioning & Seed Scripts
+supabase_provision_real_admins.sql
+*_provision_*.sql
+*.seed.sql
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
