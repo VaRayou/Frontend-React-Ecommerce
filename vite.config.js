@@ -13,6 +13,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/bakong-api': {
+        target: 'https://api-bakong.nbc.gov.kh',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/bakong-api/, ''),
+      },
       '/api': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,

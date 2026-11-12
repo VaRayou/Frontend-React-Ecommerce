@@ -35,6 +35,8 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
   const [transactionId, setTransactionId] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [rateLimitNotice, setRateLimitNotice] = useState(false);
+  const [isCheckingNow, setIsCheckingNow] = useState(false);
+  const [checkHint, setCheckHint] = useState<string>("");
 
   // Countdown timer in seconds (defaults to 600s / 10 mins)
   const [timeLeft, setTimeLeft] = useState(600);
@@ -55,6 +57,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     setIsExpired(false);
     setRateLimitNotice(false);
     setTransactionId("");
+    setCheckHint("");
 
     const expiresAtMs = khqrData.expires_at ? new Date(khqrData.expires_at).getTime() : 0;
     const nowMs = Date.now();
@@ -82,27 +85,25 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
       return;
     }
 
-    const checkStatus = async () => {
+    const checkStatus = async (forceRefresh = false) => {
       try {
         const paymentId = khqrData.payment?.id || khqrData.md5_hash;
-        const res = await khqrService.checkStatus(paymentId);
+        const res = await khqrService.checkStatus(paymentId, forceRefresh);
 
         if (res.rate_limit_exceeded) {
           setRateLimitNotice(true);
-          // Stop polling when daily NBC quota is reached (100 req/day)
           if (pollingRef.current) clearInterval(pollingRef.current);
           return;
         }
 
         if (res.is_paid || res.status === "PAID") {
           setIsPaid(true);
-          const txn = res.transaction_id || `BAKONG-${Date.now()}`;
+          const txn = res.transaction_id || `NBC-${Date.now()}`;
           setTransactionId(txn);
           if (pollingRef.current) clearInterval(pollingRef.current);
-          // Brief delay so the user sees the success animation
           setTimeout(() => {
             onPaymentSuccessRef.current(txn);
-          }, 1800);
+          }, 1500);
         } else if (res.status === "EXPIRED") {
           setIsExpired(true);
           if (pollingRef.current) clearInterval(pollingRef.current);
@@ -112,15 +113,53 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
       }
     };
 
-    // First check after 2s, then every 6s to preserve the 100 req/day NBC quota
-    const initialTimeout = setTimeout(checkStatus, 2000);
-    pollingRef.current = setInterval(checkStatus, 6000);
+    // First check after 1.5s, then every 3.5s
+    const initialTimeout = setTimeout(() => checkStatus(false), 1500);
+    pollingRef.current = setInterval(() => checkStatus(false), 3500);
+
+    // Immediately verify when customer switches back from banking app (ABA / ACLEDA / Bakong)
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        checkStatus(true);
+      }
+    };
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
 
     return () => {
       clearTimeout(initialTimeout);
       if (pollingRef.current) clearInterval(pollingRef.current);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
   }, [isOpen, khqrData, isPaid, isExpired]);
+
+  const handleManualVerify = async () => {
+    if (!khqrData || isPaid || isCheckingNow) return;
+    setIsCheckingNow(true);
+    setCheckHint("Checking NBC Bakong network...");
+    try {
+      const paymentId = khqrData.payment?.id || khqrData.md5_hash;
+      const res = await khqrService.checkStatus(paymentId, true);
+      if (res.is_paid || res.status === "PAID") {
+        setIsPaid(true);
+        const txn = res.transaction_id || `NBC-${Date.now()}`;
+        setTransactionId(txn);
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        setTimeout(() => {
+          onPaymentSuccessRef.current(txn);
+        }, 1400);
+      } else {
+        setCheckHint("No settlement detected yet — please scan & confirm in your bank app.");
+        setTimeout(() => setCheckHint(""), 4000);
+      }
+    } catch {
+      setCheckHint("Could not reach NBC Bakong right now. Retrying automatically...");
+      setTimeout(() => setCheckHint(""), 4000);
+    } finally {
+      setIsCheckingNow(false);
+    }
+  };
 
   if (!isOpen || !khqrData) return null;
 
@@ -347,18 +386,36 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                 </div>
               </div>
 
-              {/* Open in Bakong App deep-link (mobile only) */}
-              {khqrData.deeplink && (
-                <a
-                  href={khqrData.deeplink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#E1251B] hover:bg-red-700 text-white font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Open in Bakong App</span>
-                </a>
+              {checkHint && (
+                <div className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 animate-in fade-in">
+                  {checkHint}
+                </div>
               )}
+
+              {/* Action Buttons: Check Status Now + Open in Bakong App */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={handleManualVerify}
+                  disabled={isCheckingNow}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#111111] hover:bg-neutral-800 text-[#D6FF00] font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingNow ? "animate-spin" : ""}`} />
+                  <span>{isCheckingNow ? "Verifying with NBC..." : "I Have Paid • Verify Now"}</span>
+                </button>
+
+                {khqrData.deeplink && (
+                  <a
+                    href={khqrData.deeplink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#E1251B] hover:bg-red-700 text-white font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Open Bakong App</span>
+                  </a>
+                )}
+              </div>
 
               {/* Supported Banking Apps & Audit Footer */}
               <div className="pt-1.5 border-t border-gray-100 flex flex-col items-center gap-1 text-center">

@@ -1,9 +1,16 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/bakong-api/:path*",
+      "destination": "https://api-bakong.nbc.gov.kh/:path*"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/((?!api/|bakong-api/).*)",
       "destination": "/index.html"
     }
   ]
 }
-
