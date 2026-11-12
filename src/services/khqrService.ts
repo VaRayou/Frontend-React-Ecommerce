@@ -726,7 +726,7 @@ export const khqrService = {
     try {
       const { data: dbPayment } = await supabase
         .from("payments")
-        .select("status, transaction_id, paid_at")
+        .select("status, transaction_id, paid_at, expires_at")
         .eq("md5_hash", md5Str)
         .maybeSingle();
 
@@ -743,6 +743,27 @@ export const khqrService = {
         };
         checkStatusCache[md5Str] = { timestamp: now, result: res };
         return res;
+      }
+
+      // Check if 10-minute validity window has expired:
+      if (
+        dbPayment?.expires_at &&
+        new Date(dbPayment.expires_at).getTime() < now &&
+        dbPayment?.status !== "PAID"
+      ) {
+        // Persist EXPIRED status in Supabase
+        await supabase
+          .from("payments")
+          .update({ status: "EXPIRED" })
+          .eq("md5_hash", md5Str);
+
+        const expRes: KhqrStatusResponse = {
+          status: "EXPIRED",
+          is_paid: false,
+          message: "KHQR payment window expired (10-minute validity exceeded). Please generate a fresh QR code.",
+        };
+        checkStatusCache[md5Str] = { timestamp: now, result: expRes };
+        return expRes;
       }
     } catch {}
 

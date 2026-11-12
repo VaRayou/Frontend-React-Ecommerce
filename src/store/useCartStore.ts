@@ -10,6 +10,7 @@ interface CartState {
   discountPercent: number;
   discountAmount: number;
   discountType: "percentage" | "fixed" | "shipping";
+  minSpend: number;
   promoDescription: string;
   promoError: string | null;
   freeShippingThreshold: number;
@@ -40,6 +41,45 @@ const STANDARD_SHIPPING_FEE = 15;
 
 const DEFAULT_IMG = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80";
 
+function revalidatePromoDiscount(state: CartState, newItems: CartItem[]) {
+  if (!state.promoCode) return {};
+
+  const subtotal = newItems.reduce((sum, item) => {
+    if (!item) return sum;
+    const price = Number(item.product?.price ?? (item as any)?.price ?? 0);
+    const qty = Number(item.quantity) || 1;
+    return sum + price * qty;
+  }, 0);
+
+  const minSpend = Number(state.minSpend || 0);
+  if (subtotal === 0 || (minSpend > 0 && subtotal < minSpend)) {
+    return {
+      promoCode: "",
+      discountPercent: 0,
+      discountAmount: 0,
+      minSpend: 0,
+      promoDescription: "",
+      promoError:
+        minSpend > 0 && subtotal > 0
+          ? `Promo code ${state.promoCode} removed: Minimum spend of $${minSpend} is no longer met.`
+          : null,
+    };
+  }
+
+  // Recalculate percentage discount on updated subtotal
+  if (state.discountType === "percentage" && state.discountPercent > 0) {
+    const nextDisc = Number(((subtotal * state.discountPercent) / 100).toFixed(2));
+    return { discountAmount: nextDisc, promoError: null };
+  }
+
+  // Fixed discount: ensure it doesn't exceed new subtotal
+  if (state.discountType === "fixed" && state.discountAmount > 0) {
+    return { discountAmount: Math.min(subtotal, state.discountAmount), promoError: null };
+  }
+
+  return { promoError: null };
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -48,6 +88,7 @@ export const useCartStore = create<CartState>()(
       discountPercent: 0,
       discountAmount: 0,
       discountType: "percentage",
+      minSpend: 0,
       promoDescription: "",
       promoError: null,
       freeShippingThreshold: 200,
@@ -136,9 +177,14 @@ export const useCartStore = create<CartState>()(
       },
 
       removeFromCart: (itemId) => {
-        set((state) => ({
-          items: (state.items || []).filter((item) => item.id !== itemId),
-        }));
+        set((state) => {
+          const nextItems = (state.items || []).filter((item) => item.id !== itemId);
+          const promoUpdates = revalidatePromoDiscount(state, nextItems);
+          return {
+            items: nextItems,
+            ...promoUpdates,
+          };
+        });
       },
 
       updateQuantity: (itemId, quantity) => {
@@ -146,14 +192,19 @@ export const useCartStore = create<CartState>()(
           get().removeFromCart(itemId);
           return;
         }
-        set((state) => ({
-          items: (state.items || []).map((item) => {
+        set((state) => {
+          const nextItems = (state.items || []).map((item) => {
             if (item.id !== itemId) return item;
             const maxStock = Number(item.product?.stock ?? item.product?.quantity ?? item.product?.stockCount ?? 99);
             const cappedQty = maxStock > 0 ? Math.min(quantity, maxStock) : quantity;
             return { ...item, quantity: cappedQty };
-          }),
-        }));
+          });
+          const promoUpdates = revalidatePromoDiscount(state, nextItems);
+          return {
+            items: nextItems,
+            ...promoUpdates,
+          };
+        });
       },
 
       clearCart: () => {
@@ -163,6 +214,7 @@ export const useCartStore = create<CartState>()(
           discountPercent: 0,
           discountAmount: 0,
           discountType: "percentage",
+          minSpend: 0,
           promoDescription: "",
           promoError: null,
         });
@@ -280,11 +332,13 @@ export const useCartStore = create<CartState>()(
               disc = shipping;
             }
 
+            const minOrder = Number(coupon.min_order_value ?? coupon.min_spend ?? 0);
             set({
               promoCode: cleanCode,
               discountAmount: disc,
               discountPercent: type === "percentage" ? val : 0,
               discountType: type,
+              minSpend: minOrder,
               promoDescription: coupon.description || `Coupon ${cleanCode}`,
               promoError: null,
             });
@@ -305,6 +359,7 @@ export const useCartStore = create<CartState>()(
             discountPercent: 20,
             discountAmount: disc,
             discountType: "percentage",
+            minSpend: 50,
             promoDescription: "20% Off Runway Collection",
             promoError: null,
           });
@@ -315,6 +370,7 @@ export const useCartStore = create<CartState>()(
             discountPercent: 0,
             discountAmount: 10,
             discountType: "fixed",
+            minSpend: 30,
             promoDescription: "$10 Welcome Patron Gift",
             promoError: null,
           });
@@ -325,6 +381,7 @@ export const useCartStore = create<CartState>()(
             discountPercent: 0,
             discountAmount: shipping,
             discountType: "shipping",
+            minSpend: 0,
             promoDescription: "Complimentary White-Glove Shipping",
             promoError: null,
           });
@@ -342,6 +399,7 @@ export const useCartStore = create<CartState>()(
           discountPercent: 0,
           discountAmount: 0,
           discountType: "percentage",
+          minSpend: 0,
           promoDescription: "",
           promoError: null,
         });

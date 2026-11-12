@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { ensureAdminSession } from "./productService";
+import { productService, ensureAdminSession } from "./productService";
 import { telegramService } from "./telegramService";
 
 const ORDERS_STORAGE_KEY = "atelier_orders_v3";
@@ -587,6 +587,34 @@ export const orderService = {
 
       if (error) throw error;
       const normalized = normalizeOrder(data);
+
+      // Automatic Inventory Restock on Order Cancellation
+      if (sLower === "cancelled" && Array.isArray(data?.order_items)) {
+        await Promise.allSettled(
+          data.order_items.map(async (item) => {
+            const rawProdId = String(item.product_id || item.productId || "").trim();
+            if (!rawProdId || !rawProdId.includes("-")) return;
+            const returnQty = Math.max(1, Number(item.quantity || 1));
+
+            const { data: prodRow } = await supabase
+              .from("products")
+              .select("id, stock, name")
+              .eq("id", rawProdId)
+              .maybeSingle();
+
+            if (prodRow) {
+              const currentStock = Math.max(0, Number(prodRow.stock || 0));
+              const restoredStock = currentStock + returnQty;
+              await supabase
+                .from("products")
+                .update({ stock: restoredStock, status: "Active" })
+                .eq("id", rawProdId);
+            }
+          })
+        );
+        // Refresh cached catalog immediately
+        productService.getProducts().catch(() => {});
+      }
 
       const current = getOrdersStorage();
       const updated = current.map((o) =>

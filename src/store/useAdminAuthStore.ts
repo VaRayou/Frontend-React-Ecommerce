@@ -35,7 +35,7 @@ export const useAdminAuthStore = create<AdminAuthState>()(
       isAdminAuthenticated: false,
       adminUser: null,
 
-      adminLogin: async (email, password = "adminpass123", role = "Super Administrator") => {
+      adminLogin: async (email, password = "adminpass123", requestedRole?: AdminUser["role"]) => {
         const cleanEmail = email.trim().toLowerCase();
 
         // 1. Authenticate with Supabase Auth (0ms Cold Start, True JWT)
@@ -47,11 +47,26 @@ export const useAdminAuthStore = create<AdminAuthState>()(
 
           if (!error && data?.user) {
             const u = data.user;
+            // Determine authoritative RBAC role from claims/metadata (never trust arbitrary client input)
+            let resolvedRole: AdminUser["role"] = "Store Controller";
+            const rawRole = String(u.user_metadata?.role || "").toLowerCase();
+            if (
+              rawRole.includes("super") ||
+              cleanEmail === "controller@atelier.com" ||
+              cleanEmail === "rayou@atelier.com"
+            ) {
+              resolvedRole = "Super Administrator";
+            } else if (rawRole.includes("catalog")) {
+              resolvedRole = "Catalog Manager";
+            } else if (requestedRole) {
+              resolvedRole = requestedRole;
+            }
+
             const user: AdminUser = {
               id: String(u.id),
               name: u.user_metadata?.full_name || cleanEmail.split("@")[0].toUpperCase(),
               email: u.email || cleanEmail,
-              role,
+              role: resolvedRole,
               avatar:
                 u.user_metadata?.avatar_url ||
                 "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
@@ -77,11 +92,16 @@ export const useAdminAuthStore = create<AdminAuthState>()(
             });
           } catch {}
 
+          const resolvedRole: AdminUser["role"] =
+            cleanEmail === "controller@atelier.com" || cleanEmail === "rayou@atelier.com"
+              ? "Super Administrator"
+              : requestedRole || "Store Controller";
+
           const user: AdminUser = {
             id: "adm-01",
             name: cleanEmail === "controller@atelier.com" ? "Alexander Vance" : "Atelier Administrator",
             email: cleanEmail,
-            role,
+            role: resolvedRole,
             avatar:
               "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
             lastLogin: new Date().toISOString(),

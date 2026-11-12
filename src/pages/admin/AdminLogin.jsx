@@ -9,7 +9,6 @@ export const AdminLogin = () => {
 
   const [email, setEmail] = useState("controller@atelier.com");
   const [password, setPassword] = useState("adminpass123");
-  const [role, setRole] = useState("Super Administrator");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,7 +22,7 @@ export const AdminLogin = () => {
     setError("");
 
     try {
-      const res = await adminLogin(email, password, role);
+      const res = await adminLogin(email, password);
       if (res && res.success) {
         navigate("/admin/dashboard");
       } else {
@@ -39,10 +38,9 @@ export const AdminLogin = () => {
   const handleInstantDemoLogin = async () => {
     setEmail("controller@atelier.com");
     setPassword("adminpass123");
-    setRole("Super Administrator");
     setLoading(true);
     setError("");
-    const res = await adminLogin("controller@atelier.com", "adminpass123", "Super Administrator");
+    const res = await adminLogin("controller@atelier.com", "adminpass123");
     setLoading(false);
     if (res && res.success) {
       navigate("/admin/dashboard");
@@ -141,19 +139,12 @@ export const AdminLogin = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-300 mb-1.5">
-                Controller Security Role
-              </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#1E2129] border border-white/10 focus:border-[#D6FF00] text-white outline-none font-medium cursor-pointer"
-              >
-                <option value="Super Administrator">Super Administrator (Full Root Access)</option>
-                <option value="Store Controller">Store Controller (Orders & Catalog)</option>
-                <option value="Catalog Manager">Catalog Manager (Products Only)</option>
-              </select>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-xs flex items-center justify-between">
+              <span className="font-semibold text-gray-300">Security Clearance</span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D6FF00]/10 text-[#D6FF00] border border-[#D6FF00]/30 font-bold text-[10px] uppercase">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Verified by Server Claims</span>
+              </span>
             </div>
 
             <button
