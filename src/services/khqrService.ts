@@ -482,7 +482,51 @@ function addDeletedPaymentIdentifiers(
   }
 }
 
+// ---------------------------------------------------------------------------
+// In-Memory & LocalStorage Payments Cache (Instant 0ms Ledger Paint)
+// ---------------------------------------------------------------------------
+let _memoryPayments: any[] | null = null;
+const PAYMENTS_CACHE_KEY = "atelier_khqr_payments_cache_v1";
+
+function getCachedPaymentsStorage(): any[] {
+  if (_memoryPayments && _memoryPayments.length > 0) return _memoryPayments;
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return [];
+    const raw = localStorage.getItem(PAYMENTS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const deletedSet = getDeletedPaymentIdentifiers();
+        _memoryPayments = parsed.filter((p) => {
+          const status = String(p.status || "PENDING").toUpperCase();
+          if (status === "EXPIRED") return false;
+          if (p.id && deletedSet.has(String(p.id))) return false;
+          if (p.md5_hash && deletedSet.has(String(p.md5_hash))) return false;
+          if (p.order_number && deletedSet.has(String(p.order_number))) return false;
+          return true;
+        });
+        return _memoryPayments;
+      }
+    }
+  } catch {}
+  return [];
+}
+
+function savePaymentsStorage(list: any[]) {
+  _memoryPayments = list;
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    localStorage.setItem(PAYMENTS_CACHE_KEY, JSON.stringify(list));
+  } catch {}
+}
+
 export const khqrService = {
+  /**
+   * Synchronously returns cached Bakong payments for instant 0ms ledger paint
+   */
+  getCachedPayments: () => {
+    return getCachedPaymentsStorage();
+  },
   /**
    * Generates authentic dynamic EMVCo KHQR code, computes real MD5, and persists record
    */
@@ -827,12 +871,13 @@ export const khqrService = {
           );
         }
 
+        savePaymentsStorage(activePayments);
         return activePayments;
       }
     } catch (e) {
       console.warn("[Supabase] getPayments note:", e);
     }
-    return [];
+    return getCachedPaymentsStorage();
   },
 
   /**

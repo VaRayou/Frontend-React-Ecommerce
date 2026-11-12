@@ -70,9 +70,13 @@ const PRESET_IMAGES = [
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80";
 
 export function ManageProducts() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedProds = productService.getCachedProducts();
+  const cachedCats = categoryService.getCachedCategories();
+
+  const [products, setProducts] = useState(cachedProds);
+  const [categories, setCategories] = useState(cachedCats);
+  const [loading, setLoading] = useState(cachedProds.length === 0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Modals state
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
@@ -239,7 +243,9 @@ export function ManageProducts() {
     showNotification(`Exported ${products.length} catalog items to CSV successfully`);
   };
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
+    if (!silent && products.length === 0) setLoading(true);
+    else setIsRefreshing(true);
     try {
       const [prodList, catList] = await Promise.all([
         productService.getProducts(),
@@ -251,11 +257,12 @@ export function ManageProducts() {
       console.error("Failed to load products/categories:", err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(cachedProds.length > 0);
   }, []);
 
   const handleOpenAdd = () => {
@@ -656,7 +663,7 @@ export function ManageProducts() {
     },
   ];
 
-  if (loading) {
+  if (loading && products.length === 0) {
     return <Loader message="Connecting to MongoDB catalog..." />;
   }
 

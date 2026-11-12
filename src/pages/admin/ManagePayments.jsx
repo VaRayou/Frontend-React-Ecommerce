@@ -22,9 +22,10 @@ import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModa
 import { khqrService } from "../../services/khqrService";
 
 export function ManagePayments() {
-  const [payments, setPayments] = useState([]);
+  const cachedPayments = khqrService.getCachedPayments();
+  const [payments, setPayments] = useState(cachedPayments);
   const [gatewayInfo, setGatewayInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(cachedPayments.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [verifyingId, setVerifyingId] = useState(null);
   const [copiedHash, setCopiedHash] = useState(null);
@@ -66,7 +67,7 @@ export function ManagePayments() {
   }, []);
 
   useEffect(() => {
-    loadPayments(false);
+    loadPayments(cachedPayments.length > 0);
   }, [loadPayments]);
 
   const handleCopyHash = (hash) => {
@@ -232,7 +233,7 @@ export function ManagePayments() {
     showNotification(`Exported ${filteredPayments.length} KHQR ledger records to CSV!`);
   };
 
-  if (loading) {
+  if (loading && payments.length === 0) {
     return <Loader message="Loading NBC Bakong KHQR payment ledger..." />;
   }
 

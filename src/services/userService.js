@@ -17,7 +17,35 @@ const formatUser = (u) => ({
   shippingAddress: u.shipping_address || {},
 });
 
+let _memoryUsers = null;
+
+const getUsersStorage = () => {
+  if (_memoryUsers && _memoryUsers.length > 0) return _memoryUsers;
+  try {
+    const raw = localStorage.getItem(USERS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        _memoryUsers = parsed;
+        return _memoryUsers;
+      }
+    }
+  } catch {}
+  return [];
+};
+
+const saveUsersStorage = (list) => {
+  _memoryUsers = list;
+  try {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(list));
+  } catch {}
+};
+
 export const userService = {
+  getCachedUsers: () => {
+    return getUsersStorage();
+  },
+
   getUsers: async () => {
     try {
       await ensureAdminSession();
@@ -27,12 +55,15 @@ export const userService = {
         .order("created_at", { ascending: false });
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        return data.map(formatUser);
+        const formatted = data.map(formatUser);
+        saveUsersStorage(formatted);
+        return formatted;
       }
+      return getUsersStorage();
     } catch (err) {
       console.warn("[Supabase] getUsers note:", err.message);
+      return getUsersStorage();
     }
-    return [];
   },
 
   getUserById: async (id) => {

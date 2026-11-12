@@ -287,6 +287,13 @@ const saveOrdersStorage = (orders) => {
 
 export const orderService = {
   /**
+   * Synchronously returns cached Supabase orders for instant 0ms render
+   */
+  getCachedOrders: () => {
+    return getOrdersStorage();
+  },
+
+  /**
    * Retrieves all customer orders directly from Supabase
    */
   getOrders: async () => {

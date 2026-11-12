@@ -138,6 +138,19 @@ export function AdminSidebar({
 
   const isCollapsed = collapsed && !mobileOpen;
 
+  const handlePreload = (path) => {
+    try {
+      if (path === "/admin/dashboard") import("../../pages/admin/Dashboard");
+      else if (path === "/admin/products") import("../../pages/admin/ManageProducts");
+      else if (path === "/admin/categories") import("../../pages/admin/ManageCategories");
+      else if (path === "/admin/orders") import("../../pages/admin/ManageOrders");
+      else if (path === "/admin/payments") import("../../pages/admin/ManagePayments");
+      else if (path === "/admin/coupons") import("../../pages/admin/ManageCoupons");
+      else if (path === "/admin/users") import("../../pages/admin/ManageUsers");
+      else if (path === "/admin/settings") import("../../pages/admin/Settings");
+    } catch {}
+  };
+
   return (
     <aside
       className={`admin-sidebar ${isCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}
@@ -258,6 +271,7 @@ export function AdminSidebar({
                         className={({ isActive }) =>
                           `sidebar-menu-link ${isActive ? "active" : ""}`
                         }
+                        onMouseEnter={() => handlePreload(item.path)}
                         onClick={onCloseMobile}
                         title={isCollapsed ? item.title : undefined}
                       >

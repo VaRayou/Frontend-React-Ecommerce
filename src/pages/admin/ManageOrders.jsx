@@ -30,8 +30,9 @@ import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModa
 import { PosCounterModal } from "../../components/admin/PosCounterModal";
 
 export function ManageOrders() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedOrders = orderService.getCachedOrders();
+  const [orders, setOrders] = useState(cachedOrders);
+  const [loading, setLoading] = useState(cachedOrders.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -401,7 +402,7 @@ export function ManageOrders() {
     },
   ];
 
-  if (loading) {
+  if (loading && orders.length === 0) {
     return <Loader message="Loading customer orders..." />;
   }
 

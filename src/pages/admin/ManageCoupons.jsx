@@ -58,8 +58,10 @@ const FALLBACK_COUPONS = [
 ];
 
 export function ManageCoupons() {
-  const [coupons, setCoupons] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [coupons, setCoupons] = useState(() =>
+    FALLBACK_COUPONS.map((c) => ({ ...c, id: c.code }))
+  );
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
 
@@ -351,7 +353,7 @@ export function ManageCoupons() {
     },
   ];
 
-  if (loading) {
+  if (loading && coupons.length === 0) {
     return <Loader message="Loading promotional vouchers from MongoDB..." />;
   }
 

@@ -20,8 +20,10 @@ import Input from "../../components/common/Input";
 import Loader from "../../components/common/Loader";
 
 export function ManageUsers() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedUsers = userService.getCachedUsers();
+  const [users, setUsers] = useState(cachedUsers);
+  const [loading, setLoading] = useState(cachedUsers.length === 0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -44,7 +46,9 @@ export function ManageUsers() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const loadUsers = async () => {
+  const loadUsers = async (silent = false) => {
+    if (!silent && users.length === 0) setLoading(true);
+    else setIsRefreshing(true);
     try {
       const list = await userService.getUsers();
       setUsers(list || []);
@@ -52,11 +56,12 @@ export function ManageUsers() {
       console.error(e);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    loadUsers();
+    loadUsers(cachedUsers.length > 0);
   }, []);
 
   const handleOpenAdd = () => {
@@ -199,7 +204,7 @@ export function ManageUsers() {
     },
   ];
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return <Loader message="Loading registered patron directory..." />;
   }
 

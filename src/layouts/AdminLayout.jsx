@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Outlet, Navigate, useLocation, Link, NavLink } from "react-router-dom";
 import {
   ShieldAlert,
@@ -65,6 +65,25 @@ function AdminLayout() {
         })
         .catch(() => {});
     }
+
+    // Preload all admin page bundles in background idle time for 0ms transitions
+    const preloadAdminChunks = () => {
+      import("../pages/admin/Dashboard");
+      import("../pages/admin/ManageProducts");
+      import("../pages/admin/ManageCategories");
+      import("../pages/admin/ManageOrders");
+      import("../pages/admin/ManagePayments");
+      import("../pages/admin/ManageCoupons");
+      import("../pages/admin/ManageUsers");
+      import("../pages/admin/Settings");
+    };
+    if (typeof window !== "undefined") {
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(preloadAdminChunks);
+      } else {
+        setTimeout(preloadAdminChunks, 150);
+      }
+    }
   }, [isAdminAuthenticated, adminUser?.email]);
 
   if (!isAdminAuthenticated) {
@@ -105,10 +124,27 @@ function AdminLayout() {
           onToggleMobile={() => setMobileOpen(!mobileOpen)}
         />
 
-        {/* Dynamic Route Content (Enforced by RBAC) */}
+        {/* Dynamic Route Content (Enforced by RBAC with Persistent Layout) */}
         <main className="admin-page-container">
           {isRouteAllowed ? (
-            <Outlet />
+            <Suspense
+              fallback={
+                <div className="space-y-4 animate-pulse p-1 sm:p-2">
+                  <div className="h-16 bg-white/70 rounded-2xl border border-gray-200/50" />
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="h-20 bg-white/70 rounded-2xl border border-gray-200/50" />
+                    <div className="h-20 bg-white/70 rounded-2xl border border-gray-200/50" />
+                    <div className="h-20 bg-white/70 rounded-2xl border border-gray-200/50" />
+                    <div className="h-20 bg-white/70 rounded-2xl border border-gray-200/50" />
+                  </div>
+                  <div className="h-72 bg-white/70 rounded-2xl border border-gray-200/50" />
+                </div>
+              }
+            >
+              <div key={location.pathname} className="animate-in fade-in duration-150">
+                <Outlet />
+              </div>
+            </Suspense>
           ) : (
             <div
               className="admin-card"

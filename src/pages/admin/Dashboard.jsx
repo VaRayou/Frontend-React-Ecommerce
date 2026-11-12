@@ -34,31 +34,52 @@ const DEFAULT_PRODUCT_IMG =
   "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80";
 
 function Dashboard() {
+  const cachedProds = productService.getCachedProducts();
+  const cachedCats = categoryService.getCachedCategories();
+  const cachedUsers = userService.getCachedUsers();
+  const cachedOrds = orderService.getCachedOrders();
+  const hasCache = cachedOrds.length > 0 || cachedProds.length > 0;
+
+  const initialFinancials = calculateOrderFinancials(cachedOrds);
+  const initialPaidOrders = cachedOrds.filter((o) => isOrderPaid(o));
+  const initialKhqr = initialPaidOrders.filter(
+    (o) =>
+      (o.paymentMethod || "").toLowerCase().includes("khqr") ||
+      (o.paymentMethod || "").toLowerCase().includes("qr"),
+  ).length;
+  const initialCod = initialPaidOrders.filter((o) =>
+    (o.paymentMethod || "").toLowerCase().includes("cash"),
+  ).length;
+
   const [stats, setStats] = useState({
-    products: 0,
-    categories: 0,
-    users: 0,
-    orders: 0,
-    pendingOrders: 0,
-    paidCount: 0,
-    pendingAmount: 0,
-    revenue: 0,
+    products: cachedProds.length,
+    categories: cachedCats.length,
+    users: cachedUsers.length,
+    orders: cachedOrds.length,
+    pendingOrders: initialFinancials.pendingCount,
+    paidCount: initialFinancials.paidCount,
+    pendingAmount: initialFinancials.pendingAmount,
+    revenue: initialFinancials.paidRevenue,
   });
 
-  const [allOrders, setAllOrders] = useState([]);
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [topProducts, setTopProducts] = useState([]);
+  const [allOrders, setAllOrders] = useState(cachedOrds);
+  const [recentOrders, setRecentOrders] = useState(cachedOrds.slice(0, 6));
+  const [topProducts, setTopProducts] = useState(cachedProds.slice(0, 4));
   const [paymentBreakdown, setPaymentBreakdown] = useState({
-    khqr: 0,
-    cod: 0,
-    total: 1,
+    khqr:
+      initialKhqr ||
+      (initialPaidOrders.length > 0 ? initialPaidOrders.length : 1),
+    cod: initialCod,
+    total: initialPaidOrders.length || 1,
   });
-  const [lowStockProducts, setLowStockProducts] = useState([]);
-  const [allCatalogProducts, setAllCatalogProducts] = useState([]);
+  const [lowStockProducts, setLowStockProducts] = useState(
+    cachedProds.filter((p) => Number(p.stock ?? p.quantity ?? 10) <= 5),
+  );
+  const [allCatalogProducts, setAllCatalogProducts] = useState(cachedProds);
   const [sendingRadarAlert, setSendingRadarAlert] = useState(false);
   const [radarToast, setRadarToast] = useState("");
   const [posReceiptOrder, setPosReceiptOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!hasCache);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -156,7 +177,7 @@ function Dashboard() {
     }
   };
 
-  if (loading) {
+  if (loading && !hasCache) {
     return <Loader message="Loading controller statistics..." />;
   }
 

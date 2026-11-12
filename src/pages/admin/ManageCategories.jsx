@@ -23,8 +23,10 @@ import Loader from "../../components/common/Loader";
 const DEFAULT_CATEGORY_IMAGE = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&q=80";
 
 export function ManageCategories() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedCats = categoryService.getCachedCategories();
+  const [categories, setCategories] = useState(cachedCats);
+  const [loading, setLoading] = useState(cachedCats.length === 0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -113,7 +115,9 @@ export function ManageCategories() {
     }
   };
 
-  const loadCategories = async () => {
+  const loadCategories = async (silent = false) => {
+    if (!silent && categories.length === 0) setLoading(true);
+    else setIsRefreshing(true);
     try {
       const list = await categoryService.getCategories();
       setCategories(list);
@@ -121,11 +125,12 @@ export function ManageCategories() {
       console.error(e);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    loadCategories();
+    loadCategories(cachedCats.length > 0);
   }, []);
 
   const handleOpenAdd = () => {
@@ -266,7 +271,7 @@ export function ManageCategories() {
     },
   ];
 
-  if (loading) {
+  if (loading && categories.length === 0) {
     return <Loader message="Loading categories catalog..." />;
   }
 
