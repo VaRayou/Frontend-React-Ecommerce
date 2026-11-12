@@ -282,3 +282,4 @@ dist/assets/index-Ckmgxh7H.js             436.45 kB │ gzip:  98.50 kB
 3. Open `frontend/supabase_rls_security_setup.sql` in your editor.
 4. Copy the entire file, paste it into the Supabase SQL Editor, and click **Run**.
 5. All 10 tables and storage policies will be active immediately.
+

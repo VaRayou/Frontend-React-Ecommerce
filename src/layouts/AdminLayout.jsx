@@ -72,9 +72,13 @@ function AdminLayout() {
           Boolean(user) &&
           (role.includes("admin") ||
             role.includes("super_admin") ||
+            role.includes("catalog") ||
+            role.includes("controller") ||
             email === "controller@atelier.com" ||
             email === "rayou@atelier.com" ||
-            email === "admin@atelier.com");
+            email === "admin@atelier.com" ||
+            email === "catalog@atelier.com" ||
+            email === "manager@atelier.com");
 
         if (active) {
           if (!isAuthorized) {

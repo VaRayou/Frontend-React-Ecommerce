@@ -27,6 +27,8 @@ const ALLOWED_ADMIN_EMAILS = new Set([
   "controller@atelier.com",
   "admin@atelier.com",
   "rayou@atelier.com",
+  "catalog@atelier.com",
+  "manager@atelier.com",
 ]);
 
 export const useAdminAuthStore = create<AdminAuthState>()(
@@ -56,7 +58,11 @@ export const useAdminAuthStore = create<AdminAuthState>()(
               cleanEmail === "rayou@atelier.com"
             ) {
               resolvedRole = "Super Administrator";
-            } else if (rawRole.includes("catalog")) {
+            } else if (
+              rawRole.includes("catalog") ||
+              cleanEmail === "catalog@atelier.com" ||
+              cleanEmail === "manager@atelier.com"
+            ) {
               resolvedRole = "Catalog Manager";
             } else if (requestedRole) {
               resolvedRole = requestedRole;
@@ -92,18 +98,29 @@ export const useAdminAuthStore = create<AdminAuthState>()(
             });
           } catch {}
 
-          const resolvedRole: AdminUser["role"] =
-            cleanEmail === "controller@atelier.com" || cleanEmail === "rayou@atelier.com"
-              ? "Super Administrator"
-              : requestedRole || "Store Controller";
+          let resolvedRole: AdminUser["role"] = "Store Controller";
+          let adminName = "Atelier Administrator";
+
+          if (cleanEmail === "controller@atelier.com" || cleanEmail === "rayou@atelier.com") {
+            resolvedRole = "Super Administrator";
+            adminName = "Alexander Vance (Super Admin)";
+          } else if (cleanEmail === "catalog@atelier.com" || cleanEmail === "manager@atelier.com") {
+            resolvedRole = "Catalog Manager";
+            adminName = "Elena Moreau (Catalog Manager)";
+          } else {
+            resolvedRole = requestedRole || "Store Controller";
+            adminName = "Marcus Thorne (Store Controller)";
+          }
 
           const user: AdminUser = {
-            id: "adm-01",
-            name: cleanEmail === "controller@atelier.com" ? "Alexander Vance" : "Atelier Administrator",
+            id: cleanEmail === "catalog@atelier.com" ? "adm-catalog-01" : "adm-01",
+            name: adminName,
             email: cleanEmail,
             role: resolvedRole,
             avatar:
-              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+              cleanEmail === "catalog@atelier.com"
+                ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+                : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
             lastLogin: new Date().toISOString(),
           };
           set({ isAdminAuthenticated: true, adminUser: user });

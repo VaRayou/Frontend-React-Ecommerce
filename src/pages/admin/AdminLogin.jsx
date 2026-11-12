@@ -35,12 +35,12 @@ export const AdminLogin = () => {
     }
   };
 
-  const handleInstantDemoLogin = async () => {
-    setEmail("controller@atelier.com");
+  const handleInstantDemoLogin = async (demoEmail = "controller@atelier.com") => {
+    setEmail(demoEmail);
     setPassword("adminpass123");
     setLoading(true);
     setError("");
-    const res = await adminLogin("controller@atelier.com", "adminpass123");
+    const res = await adminLogin(demoEmail, "adminpass123");
     setLoading(false);
     if (res && res.success) {
       navigate("/admin/dashboard");
@@ -87,16 +87,33 @@ export const AdminLogin = () => {
             </div>
           </div>
 
-          {/* Quick Demo Fill Button */}
-          <button
-            type="button"
-            onClick={handleInstantDemoLogin}
-            disabled={loading}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#D6FF00]/15 hover:bg-[#D6FF00]/25 border border-[#D6FF00]/40 text-[#D6FF00] text-xs font-bold tracking-wider uppercase transition-colors flex items-center justify-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>One-Click Instant Controller Login</span>
-          </button>
+          {/* Quick Role Fill Buttons */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+              1-Click Fast Role Sign-In:
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleInstantDemoLogin("controller@atelier.com")}
+                disabled={loading}
+                className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold tracking-wide transition-all text-left flex items-center justify-between"
+              >
+                <span>👑 Super Admin</span>
+                <span className="text-[9px] text-[#D6FF00] font-mono">Full</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleInstantDemoLogin("catalog@atelier.com")}
+                disabled={loading}
+                className="py-2 px-3 rounded-xl bg-[#D6FF00]/10 hover:bg-[#D6FF00]/20 border border-[#D6FF00]/30 text-[#D6FF00] text-[11px] font-bold tracking-wide transition-all text-left flex items-center justify-between"
+              >
+                <span>🏷️ Catalog Mgr</span>
+                <span className="text-[9px] text-gray-400 font-mono">Catalog</span>
+              </button>
+            </div>
+          </div>
 
           {error && (
             <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
