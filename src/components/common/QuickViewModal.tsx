@@ -31,6 +31,20 @@ export const QuickViewModal: React.FC = () => {
     }
   }, [quickViewProduct]);
 
+  useEffect(() => {
+    if (!isQuickViewOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeQuickView();
+    };
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isQuickViewOpen, closeQuickView]);
+
   if (!quickViewProduct) return null;
 
   const product = quickViewProduct;
@@ -93,26 +107,51 @@ export const QuickViewModal: React.FC = () => {
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md"
           />
 
-          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+          <div
+            onClick={closeQuickView}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2.5 sm:p-4 pb-20 sm:pb-4"
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
+              className="relative w-full max-w-4xl max-h-[85vh] sm:max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col"
             >
-              {/* Close Button */}
+              {/* Mobile Sticky Top Header Bar (Always Visible on Phone) */}
+              <div className="md:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-white/95 backdrop-blur-md border-b border-gray-100 shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-[#D6FF00] ring-2 ring-black shrink-0" />
+                  <span className="text-[11px] font-black uppercase tracking-widest text-black truncate">
+                    Quick View • {product.name}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeQuickView}
+                  aria-label="Close Quick View"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#111111] text-white hover:bg-black active:scale-95 transition-all text-[11px] font-black uppercase tracking-wider shadow-sm shrink-0"
+                >
+                  <span>Close</span>
+                  <X className="w-3.5 h-3.5 text-[#D6FF00] stroke-[2.5]" />
+                </button>
+              </div>
+
+              {/* Desktop Floating Close Button */}
               <button
+                type="button"
                 onClick={closeQuickView}
-                className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-black hover:text-white flex items-center justify-center shadow-md transition-colors text-black"
+                aria-label="Close Quick View"
+                className="hidden md:flex absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/95 hover:bg-black hover:text-white items-center justify-center shadow-lg border border-gray-200/80 transition-all text-black"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 stroke-[2.2]" />
               </button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2">
-                {/* Left: Image Studio */}
-                <div className="bg-[#F8F8F8] p-6 flex flex-col justify-between">
+              <div className="overflow-y-auto overscroll-contain flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-2">
+                  {/* Left: Image Studio */}
+                  <div className="bg-[#F8F8F8] p-4 sm:p-6 flex flex-col justify-between">
                   <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-gray-200 shadow-inner">
                     <img
                       src={product.images[selectedImage] || product.images[0]}
@@ -320,9 +359,9 @@ export const QuickViewModal: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400 pt-1">
                       <div className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                         <span>Authenticity Guaranteed • Free 30-Day Returns</span>
                       </div>
                       <Link
@@ -333,8 +372,19 @@ export const QuickViewModal: React.FC = () => {
                         Full Details &rarr;
                       </Link>
                     </div>
+
+                    {/* Mobile Bottom Dismiss Button */}
+                    <button
+                      type="button"
+                      onClick={closeQuickView}
+                      className="md:hidden w-full py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Close Quick View
+                    </button>
                   </div>
                 </div>
+              </div>
               </div>
             </motion.div>
           </div>
