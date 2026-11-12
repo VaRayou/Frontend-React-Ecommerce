@@ -518,7 +518,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={onClose}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-md overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6 pb-20 sm:pb-6 bg-slate-950/90 backdrop-blur-md overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-label="Your receipt"
@@ -529,13 +529,13 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
             className="w-full max-w-md my-auto flex flex-col items-center select-none"
           >
             {/* Top Modal Header Bar */}
-            <div className="w-full flex items-center justify-between px-2 pb-3 text-white">
+            <div className="w-full flex items-center justify-between px-1 sm:px-2 pb-2.5 sm:pb-3 text-white">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-[#D6FF00] shadow-inner">
+                <div className="w-8 h-8 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-[#D6FF00] shadow-inner shrink-0">
                   <Printer className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base sm:text-lg font-black tracking-tight text-white leading-none">
+                  <h2 className="text-sm sm:text-lg font-black tracking-tight text-white leading-none">
                     Your receipt
                   </h2>
                   <span className="text-[10px] text-slate-400 font-mono">
@@ -544,21 +544,22 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <PrinterStatusBadge isPrinting={isPrinting} />
                 <button
                   type="button"
                   onClick={onClose}
                   aria-label="Close receipt modal"
-                  className="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <span>Close</span>
+                  <X className="w-3.5 h-3.5 text-[#D6FF00]" />
                 </button>
               </div>
             </div>
 
             {/* Dark Physical POS Printer Body */}
-            <div className="w-full bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 rounded-3xl border border-slate-700/80 shadow-[0_25px_70px_rgba(0,0,0,0.85)] p-3.5 sm:p-5 relative">
+            <div className="w-full bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 rounded-3xl border border-slate-700/80 shadow-[0_25px_70px_rgba(0,0,0,0.85)] p-3 sm:p-5 relative">
               {/* Hardware Top Bezel & Indicator LEDs */}
               <div className="flex items-center justify-between px-2 pb-3">
                 <div className="flex items-center gap-2">
@@ -603,7 +604,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
                   {/* Thermal Paper Body */}
                   <div
                     id="pos-thermal-receipt-paper"
-                    className="bg-[#fcfcfa] text-slate-900 font-mono px-4 sm:px-6 pt-6 pb-4 text-xs relative max-h-[64vh] overflow-y-auto"
+                    className="bg-[#fcfcfa] text-slate-900 font-mono px-4 sm:px-6 pt-5 sm:pt-6 pb-4 text-xs relative max-h-[48vh] sm:max-h-[62vh] overflow-y-auto overscroll-contain"
                   >
                     {!normalized ? (
                       <div className="py-10 text-center space-y-2 text-slate-500">

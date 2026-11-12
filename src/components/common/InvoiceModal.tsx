@@ -65,6 +65,20 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   onClose,
   order,
 }) => {
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || !order) return null;
 
   const orderNumber =
@@ -187,7 +201,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto print:p-0 print:bg-white print:static">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2.5 sm:p-6 pb-20 sm:pb-6 bg-black/75 backdrop-blur-sm print:p-0 print:bg-white print:static"
+    >
       {/* Print-specific style fallback */}
       <style>{`
         @media print {
@@ -214,29 +231,32 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         }
       `}</style>
 
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh] border border-gray-100 print:max-h-none print:shadow-none print:rounded-none">
-        {/* Modal Top Control Bar (Hidden on print) */}
-        <div className="no-print px-6 py-4 bg-gray-900 text-white flex items-center justify-between border-b border-gray-800">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00]" />
-            <span className="text-xs font-black uppercase tracking-widest text-[#D6FF00]">
-              Tax Invoice &amp; Official Receipt
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[90vh] border border-gray-100 print:max-h-none print:shadow-none print:rounded-none"
+      >
+        {/* Modal Top Control Bar (Always Visible & Sticky on Mobile, Hidden on print) */}
+        <div className="no-print sticky top-0 z-20 px-4 sm:px-6 py-3 sm:py-4 bg-gray-900 text-white flex items-center justify-between gap-2 border-b border-gray-800 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] shrink-0" />
+            <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-[#D6FF00] truncate">
+              Tax Invoice • {invoiceNumber}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#D6FF00] hover:bg-[#c6ef00] text-black font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[#D6FF00] hover:bg-[#c6ef00] text-black font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
               title="Print or Save PDF"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print / Save PDF</span>
+              <Printer className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden xs:inline sm:inline">Print / PDF</span>
             </button>
             <button
               type="button"
               onClick={handlePrint}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               title="Download direct PDF file"
             >
               <Download className="w-3.5 h-3.5" />
@@ -245,15 +265,17 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+              aria-label="Close Tax Invoice"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-black text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <span>Close</span>
+              <X className="w-4 h-4 text-[#D6FF00]" />
             </button>
           </div>
         </div>
 
         {/* Scrollable Document Container */}
-        <div className="overflow-y-auto p-6 sm:p-10 print:p-0">
+        <div className="overflow-y-auto overscroll-contain flex-1 p-4 sm:p-10 print:p-0">
           <div id="atelier-printable-invoice" className="space-y-8 bg-white text-gray-900">
             {/* Header: Company & Invoice Info */}
             <div className="flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-gray-200 pb-8">
@@ -451,6 +473,26 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Mobile Sticky Bottom Action Bar */}
+        <div className="no-print sm:hidden sticky bottom-0 z-20 p-3 bg-white/95 backdrop-blur-md border-t border-gray-100 flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-[#D6FF00] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Print / Save PDF</span>
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="py-2.5 px-4 rounded-xl bg-gray-900 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1"
+          >
+            <span>Close</span>
+            <X className="w-3.5 h-3.5 text-[#D6FF00]" />
+          </button>
         </div>
       </div>
     </div>

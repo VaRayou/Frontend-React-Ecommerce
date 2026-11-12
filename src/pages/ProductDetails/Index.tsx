@@ -14,6 +14,8 @@ import {
   ChevronDown,
   ArrowRight,
   Share2,
+  X,
+  Ruler,
 } from "lucide-react";
 import { REVIEWS } from "../../data/reviews";
 import { useCartStore } from "../../store/useCartStore";
@@ -122,6 +124,7 @@ export const ProductDetails: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [activeAccordion, setActiveAccordion] = useState<string>("details");
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
 
   // Real Reviews state (from MongoDB 'reviews' collection)
   const [reviewsList, setReviewsList] = useState<any[]>([]);
@@ -342,7 +345,7 @@ export const ProductDetails: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-16">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-16 pb-28 md:pb-16">
       {/* Breadcrumb Navigation */}
       <nav className="text-[11px] sm:text-xs text-gray-400 font-semibold uppercase tracking-wider mb-5 sm:mb-8 flex flex-wrap items-center gap-1.5 sm:gap-2">
         <Link to="/" className="hover:text-black transition-colors">Home</Link>
@@ -507,10 +510,11 @@ export const ProductDetails: React.FC = () => {
               <span>Select Size: <strong className="text-black">{selectedSize}</strong></span>
               <button
                 type="button"
-                onClick={() => alert("Standard European luxury sizing. True to size.")}
-                className="text-gray-400 hover:text-black underline text-[11px]"
+                onClick={() => setShowSizeGuide(true)}
+                className="inline-flex items-center gap-1 text-gray-500 hover:text-black underline text-[11px] font-bold cursor-pointer"
               >
-                Size Guide
+                <Ruler className="w-3.5 h-3.5" />
+                <span>Size Guide</span>
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -532,7 +536,7 @@ export const ProductDetails: React.FC = () => {
 
           {/* Actions Bar */}
           <div className="pt-4 border-t border-gray-100 space-y-3">
-            <div className="flex gap-3">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2.5 sm:gap-3">
               {/* Quantity Counter */}
               <div className={`flex items-center border border-gray-200 rounded-xl px-2 py-1 ${isOutOfStock ? "opacity-50 bg-gray-50" : ""}`}>
                 <button
@@ -543,7 +547,7 @@ export const ProductDetails: React.FC = () => {
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                <span className="w-10 text-center text-sm font-extrabold text-black">
+                <span className="w-9 sm:w-10 text-center text-sm font-extrabold text-black">
                   {isOutOfStock ? 0 : Math.min(quantity, stockCount)}
                 </span>
                 <button
@@ -561,14 +565,14 @@ export const ProductDetails: React.FC = () => {
                 type="button"
                 disabled={isOutOfStock}
                 onClick={handleAddToCart}
-                className={`flex-1 py-4 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 min-w-[160px] py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 ${
                   isOutOfStock
                     ? "bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300"
                     : "bg-[#111111] hover:bg-black text-white shadow-md hover:scale-[1.01]"
                 }`}
               >
-                <ShoppingBag className={`w-4 h-4 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`} />
-                <span>
+                <ShoppingBag className={`w-4 h-4 shrink-0 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`} />
+                <span className="truncate">
                   {isOutOfStock
                     ? "Out of Stock"
                     : `Add to Bag • ${formatPrice(product.price * Math.min(quantity, stockCount))}`}
@@ -579,7 +583,7 @@ export const ProductDetails: React.FC = () => {
               <button
                 type="button"
                 onClick={handleWishlistToggle}
-                className={`w-14 h-14 rounded-xl border flex items-center justify-center transition-all shrink-0 ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl border flex items-center justify-center transition-all shrink-0 ${
                   isWishlisted
                     ? "bg-rose-50 border-rose-200 text-rose-500 scale-102"
                     : "border-gray-200 text-gray-600 hover:border-black hover:text-black"
@@ -1010,6 +1014,140 @@ export const ProductDetails: React.FC = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Mobile Sticky Bottom Add-to-Bag Bar (< md) */}
+      <div className="md:hidden fixed bottom-[56px] left-0 right-0 z-30 bg-white/95 backdrop-blur-xl border-t border-gray-200/90 px-3.5 py-2.5 shadow-[0_-6px_24px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-between gap-2.5 max-w-lg mx-auto">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img
+              src={product.images[activeImage] || product.images[0]}
+              alt={product.name}
+              className="w-10 h-12 rounded-lg object-cover border border-gray-200 shrink-0"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-black text-black truncate">{product.name}</p>
+              <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                <span className="font-black text-black">
+                  {formatPrice(product.price * Math.min(quantity, Math.max(1, stockCount)))}
+                </span>
+                <span>•</span>
+                <span className="font-semibold text-gray-600">Sz: {selectedSize}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              disabled={isOutOfStock}
+              onClick={handleAddToCart}
+              className={`px-3.5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                isOutOfStock
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-[#111111] text-white active:scale-95 shadow-sm"
+              }`}
+            >
+              <ShoppingBag className={`w-3.5 h-3.5 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`} />
+              <span>{isOutOfStock ? "Sold Out" : "Add"}</span>
+            </button>
+            {!isOutOfStock && (
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                className="px-3.5 py-2.5 rounded-xl bg-[#D6FF00] text-black text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all shadow-sm"
+              >
+                Buy Now
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Size Guide Modal */}
+      {showSizeGuide && (
+        <div
+          onClick={() => setShowSizeGuide(false)}
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2.5 sm:p-4 pb-20 sm:pb-4 bg-black/70 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+          >
+            <div className="sticky top-0 z-10 px-5 py-3.5 bg-[#111111] text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-[#D6FF00]" />
+                <span className="text-xs font-black uppercase tracking-widest text-[#D6FF00]">
+                  Atelier Paris • Size Guide
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSizeGuide(false)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                <span>Close</span>
+                <X className="w-3.5 h-3.5 text-[#D6FF00]" />
+              </button>
+            </div>
+
+            <div className="p-5 sm:p-6 overflow-y-auto overscroll-contain space-y-4 text-xs text-gray-600">
+              <p className="font-medium text-gray-700 leading-relaxed">
+                All <strong className="text-black">ATELIER PARIS</strong> garments are tailored to standard European luxury proportions. Take your normal size for a signature silhouette, or size up for a relaxed fit.
+              </p>
+
+              <div className="overflow-x-auto rounded-2xl border border-gray-200">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-gray-100 text-[10px] font-black uppercase tracking-wider text-black border-b border-gray-200">
+                      <th className="py-2.5 px-3">Size</th>
+                      <th className="py-2.5 px-3">Chest (cm)</th>
+                      <th className="py-2.5 px-3">Waist (cm)</th>
+                      <th className="py-2.5 px-3">Hips (cm)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 font-medium">
+                    {[
+                      { s: "XS", c: "82 – 86", w: "64 – 68", h: "88 – 92" },
+                      { s: "S", c: "86 – 90", w: "68 – 72", h: "92 – 96" },
+                      { s: "M", c: "90 – 94", w: "72 – 76", h: "96 – 100" },
+                      { s: "L", c: "94 – 100", w: "76 – 82", h: "100 – 106" },
+                      { s: "XL", c: "100 – 106", w: "82 – 88", h: "106 – 112" },
+                    ].map((row) => (
+                      <tr
+                        key={row.s}
+                        onClick={() => {
+                          if (product.sizes.includes(row.s)) {
+                            setSelectedSize(row.s);
+                            setShowSizeGuide(false);
+                          }
+                        }}
+                        className={`transition-colors cursor-pointer ${
+                          selectedSize === row.s
+                            ? "bg-[#D6FF00]/25 font-black text-black"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <td className="py-2.5 px-3 font-black text-black">{row.s}</td>
+                        <td className="py-2.5 px-3">{row.c}</td>
+                        <td className="py-2.5 px-3">{row.w}</td>
+                        <td className="py-2.5 px-3">{row.h}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowSizeGuide(false)}
+                className="w-full py-2.5 rounded-xl bg-[#111111] text-white text-xs font-black uppercase tracking-widest hover:bg-black transition-colors"
+              >
+                Got It • Return to Piece
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
