@@ -1,27 +1,38 @@
 -- ==============================================================================
--- ATELIER HAUTE COUTURE — OFFICIAL REAL ADMIN PROVISIONING SCRIPT
+-- ATELIER HAUTE COUTURE — OFFICIAL REAL ADMIN PROVISIONING SCRIPT (FIXED)
 -- Target: Supabase Cloud PostgreSQL (Project: awcgcpoibputqrtuvrms)
 -- 
+-- Fix: Resolves "violates check constraint profiles_role_check" by aligning
+-- raw_user_meta_data role with the profiles table trigger constraints.
+--
 -- Roles Provisioned:
 -- 1. controller@atelier.com -> Super Administrator (Full Studio Clearance)
 -- 2. catalog@atelier.com    -> Catalog Manager (Products & Inventory Merchandising)
 -- 3. admin@atelier.com      -> Store Controller (Orders, Payments & Operations)
 --
 -- Initial Password: adminpass123
--- (Can be changed anytime inside the Studio via Supabase Auth settings)
 -- ==============================================================================
 
 -- 1. Enable pgcrypto for industry-standard bcrypt password hashing
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. Provision / Update the 3 Official Real Administrator Accounts
+-- 2. Ensure public.profiles accepts official administrator roles
+DO $$
+BEGIN
+  ALTER TABLE IF EXISTS public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+  ALTER TABLE IF EXISTS public.profiles ADD CONSTRAINT profiles_role_check 
+    CHECK (role IN ('customer', 'admin', 'super_admin', 'catalog_manager', 'store_controller', 'Super Administrator', 'Catalog Manager', 'Store Controller'));
+EXCEPTION WHEN OTHERS THEN
+  NULL;
+END $$;
+
+-- 3. Provision / Update the 3 Official Real Administrator Accounts
 DO $$
 DECLARE
   v_user_id uuid;
   v_encrypted_pwd text;
 BEGIN
   -- Generate secure bcrypt hash for 'adminpass123'
-  -- Checks if crypt is in public or extensions schema
   BEGIN
     v_encrypted_pwd := crypt('adminpass123', gen_salt('bf', 10));
   EXCEPTION WHEN undefined_function THEN
@@ -56,7 +67,7 @@ BEGIN
       v_encrypted_pwd,
       now(),
       '{"provider": "email", "providers": ["email"], "role": "super_admin"}'::jsonb,
-      '{"full_name": "Alexander Vance", "role": "Super Administrator"}'::jsonb,
+      '{"full_name": "Alexander Vance", "role": "admin", "title": "Super Administrator"}'::jsonb,
       now(),
       now()
     );
@@ -66,7 +77,7 @@ BEGIN
       encrypted_password = v_encrypted_pwd,
       email_confirmed_at = coalesce(email_confirmed_at, now()),
       raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "super_admin"}'::jsonb,
-      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Alexander Vance", "role": "Super Administrator"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Alexander Vance", "role": "admin", "title": "Super Administrator"}'::jsonb,
       updated_at = now()
     WHERE id = v_user_id;
   END IF;
@@ -102,9 +113,9 @@ BEGIN
 
   -- Sync public profile
   INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (v_user_id, 'controller@atelier.com', 'Alexander Vance', 'super_admin')
+  VALUES (v_user_id, 'controller@atelier.com', 'Alexander Vance', 'admin')
   ON CONFLICT (id) DO UPDATE
-    SET role = 'super_admin', full_name = 'Alexander Vance';
+    SET role = 'admin', full_name = 'Alexander Vance';
 
 
   -- ---------------------------------------------------------------------------
@@ -135,7 +146,7 @@ BEGIN
       v_encrypted_pwd,
       now(),
       '{"provider": "email", "providers": ["email"], "role": "catalog_manager"}'::jsonb,
-      '{"full_name": "Elena Moreau", "role": "Catalog Manager"}'::jsonb,
+      '{"full_name": "Elena Moreau", "role": "admin", "title": "Catalog Manager"}'::jsonb,
       now(),
       now()
     );
@@ -145,7 +156,7 @@ BEGIN
       encrypted_password = v_encrypted_pwd,
       email_confirmed_at = coalesce(email_confirmed_at, now()),
       raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "catalog_manager"}'::jsonb,
-      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Elena Moreau", "role": "Catalog Manager"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Elena Moreau", "role": "admin", "title": "Catalog Manager"}'::jsonb,
       updated_at = now()
     WHERE id = v_user_id;
   END IF;
@@ -181,9 +192,9 @@ BEGIN
 
   -- Sync public profile
   INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (v_user_id, 'catalog@atelier.com', 'Elena Moreau', 'catalog_manager')
+  VALUES (v_user_id, 'catalog@atelier.com', 'Elena Moreau', 'admin')
   ON CONFLICT (id) DO UPDATE
-    SET role = 'catalog_manager', full_name = 'Elena Moreau';
+    SET role = 'admin', full_name = 'Elena Moreau';
 
 
   -- ---------------------------------------------------------------------------
@@ -214,7 +225,7 @@ BEGIN
       v_encrypted_pwd,
       now(),
       '{"provider": "email", "providers": ["email"], "role": "store_controller"}'::jsonb,
-      '{"full_name": "Marcus Thorne", "role": "Store Controller"}'::jsonb,
+      '{"full_name": "Marcus Thorne", "role": "admin", "title": "Store Controller"}'::jsonb,
       now(),
       now()
     );
@@ -224,7 +235,7 @@ BEGIN
       encrypted_password = v_encrypted_pwd,
       email_confirmed_at = coalesce(email_confirmed_at, now()),
       raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "store_controller"}'::jsonb,
-      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Marcus Thorne", "role": "Store Controller"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Marcus Thorne", "role": "admin", "title": "Store Controller"}'::jsonb,
       updated_at = now()
     WHERE id = v_user_id;
   END IF;
@@ -260,20 +271,19 @@ BEGIN
 
   -- Sync public profile
   INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (v_user_id, 'admin@atelier.com', 'Marcus Thorne', 'store_controller')
+  VALUES (v_user_id, 'admin@atelier.com', 'Marcus Thorne', 'admin')
   ON CONFLICT (id) DO UPDATE
-    SET role = 'store_controller', full_name = 'Marcus Thorne';
+    SET role = 'admin', full_name = 'Marcus Thorne';
 
 END $$;
 
--- 3. Verification Query: Confirm all 3 real accounts exist and are confirmed
+-- 4. Verification Query: Confirm all 3 real accounts exist and are confirmed
 SELECT 
   id, 
   email, 
   raw_app_meta_data ->> 'role' AS app_role,
-  raw_user_meta_data ->> 'role' AS user_role,
+  raw_user_meta_data ->> 'title' AS user_title,
   email_confirmed_at,
   created_at
 FROM auth.users
 WHERE email IN ('controller@atelier.com', 'catalog@atelier.com', 'admin@atelier.com');
-

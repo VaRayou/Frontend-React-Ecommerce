@@ -307,11 +307,20 @@ WITH CHECK (bucket_id = 'products' AND public.is_admin());
 
 
 -- ==============================================================================
--- 11. OFFICIAL REAL ADMIN USER PROVISIONING
+-- 11. OFFICIAL REAL ADMIN USER PROVISIONING (FIXED)
 -- Roles: Super Administrator, Catalog Manager, Store Controller
 -- Initial Default Password: adminpass123
 -- ==============================================================================
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+DO $$
+BEGIN
+  ALTER TABLE IF EXISTS public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+  ALTER TABLE IF EXISTS public.profiles ADD CONSTRAINT profiles_role_check 
+    CHECK (role IN ('customer', 'admin', 'super_admin', 'catalog_manager', 'store_controller', 'Super Administrator', 'Catalog Manager', 'Store Controller'));
+EXCEPTION WHEN OTHERS THEN
+  NULL;
+END $$;
 
 DO $$
 DECLARE
@@ -335,7 +344,7 @@ BEGIN
       v_user_id, '00000000-0000-0000-0000-000000000000'::uuid, 'authenticated', 'authenticated',
       'controller@atelier.com', v_encrypted_pwd, now(),
       '{"provider": "email", "providers": ["email"], "role": "super_admin"}'::jsonb,
-      '{"full_name": "Alexander Vance", "role": "Super Administrator"}'::jsonb,
+      '{"full_name": "Alexander Vance", "role": "admin", "title": "Super Administrator"}'::jsonb,
       now(), now()
     );
   ELSE
@@ -344,7 +353,7 @@ BEGIN
       encrypted_password = v_encrypted_pwd,
       email_confirmed_at = coalesce(email_confirmed_at, now()),
       raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "super_admin"}'::jsonb,
-      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Alexander Vance", "role": "Super Administrator"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Alexander Vance", "role": "admin", "title": "Super Administrator"}'::jsonb,
       updated_at = now()
     WHERE id = v_user_id;
   END IF;
@@ -359,8 +368,8 @@ BEGIN
   END IF;
 
   INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (v_user_id, 'controller@atelier.com', 'Alexander Vance', 'super_admin')
-  ON CONFLICT (id) DO UPDATE SET role = 'super_admin', full_name = 'Alexander Vance';
+  VALUES (v_user_id, 'controller@atelier.com', 'Alexander Vance', 'admin')
+  ON CONFLICT (id) DO UPDATE SET role = 'admin', full_name = 'Alexander Vance';
 
   -- 2. CATALOG MANAGER: catalog@atelier.com
   SELECT id INTO v_user_id FROM auth.users WHERE email = 'catalog@atelier.com';
@@ -373,7 +382,7 @@ BEGIN
       v_user_id, '00000000-0000-0000-0000-000000000000'::uuid, 'authenticated', 'authenticated',
       'catalog@atelier.com', v_encrypted_pwd, now(),
       '{"provider": "email", "providers": ["email"], "role": "catalog_manager"}'::jsonb,
-      '{"full_name": "Elena Moreau", "role": "Catalog Manager"}'::jsonb,
+      '{"full_name": "Elena Moreau", "role": "admin", "title": "Catalog Manager"}'::jsonb,
       now(), now()
     );
   ELSE
@@ -382,7 +391,7 @@ BEGIN
       encrypted_password = v_encrypted_pwd,
       email_confirmed_at = coalesce(email_confirmed_at, now()),
       raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "catalog_manager"}'::jsonb,
-      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Elena Moreau", "role": "Catalog Manager"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Elena Moreau", "role": "admin", "title": "Catalog Manager"}'::jsonb,
       updated_at = now()
     WHERE id = v_user_id;
   END IF;
@@ -397,8 +406,8 @@ BEGIN
   END IF;
 
   INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (v_user_id, 'catalog@atelier.com', 'Elena Moreau', 'catalog_manager')
-  ON CONFLICT (id) DO UPDATE SET role = 'catalog_manager', full_name = 'Elena Moreau';
+  VALUES (v_user_id, 'catalog@atelier.com', 'Elena Moreau', 'admin')
+  ON CONFLICT (id) DO UPDATE SET role = 'admin', full_name = 'Elena Moreau';
 
   -- 3. STORE CONTROLLER: admin@atelier.com
   SELECT id INTO v_user_id FROM auth.users WHERE email = 'admin@atelier.com';
@@ -411,7 +420,7 @@ BEGIN
       v_user_id, '00000000-0000-0000-0000-000000000000'::uuid, 'authenticated', 'authenticated',
       'admin@atelier.com', v_encrypted_pwd, now(),
       '{"provider": "email", "providers": ["email"], "role": "store_controller"}'::jsonb,
-      '{"full_name": "Marcus Thorne", "role": "Store Controller"}'::jsonb,
+      '{"full_name": "Marcus Thorne", "role": "admin", "title": "Store Controller"}'::jsonb,
       now(), now()
     );
   ELSE
@@ -420,7 +429,7 @@ BEGIN
       encrypted_password = v_encrypted_pwd,
       email_confirmed_at = coalesce(email_confirmed_at, now()),
       raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "store_controller"}'::jsonb,
-      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Marcus Thorne", "role": "Store Controller"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Marcus Thorne", "role": "admin", "title": "Store Controller"}'::jsonb,
       updated_at = now()
     WHERE id = v_user_id;
   END IF;
@@ -435,7 +444,7 @@ BEGIN
   END IF;
 
   INSERT INTO public.profiles (id, email, full_name, role)
-  VALUES (v_user_id, 'admin@atelier.com', 'Marcus Thorne', 'store_controller')
-  ON CONFLICT (id) DO UPDATE SET role = 'store_controller', full_name = 'Marcus Thorne';
+  VALUES (v_user_id, 'admin@atelier.com', 'Marcus Thorne', 'admin')
+  ON CONFLICT (id) DO UPDATE SET role = 'admin', full_name = 'Marcus Thorne';
 
 END $$;
