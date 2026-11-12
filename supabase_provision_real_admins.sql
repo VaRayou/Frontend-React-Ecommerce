@@ -276,3 +276,4 @@ SELECT
   created_at
 FROM auth.users
 WHERE email IN ('controller@atelier.com', 'catalog@atelier.com', 'admin@atelier.com');
+
