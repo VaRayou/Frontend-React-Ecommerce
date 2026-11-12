@@ -47,24 +47,8 @@ function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
-  // Ensure active Admin Controller session always carries a signed HMAC admin Bearer token
   useEffect(() => {
     if (!isAdminAuthenticated) return;
-    const existingAdminToken = localStorage.getItem("eshopper_admin_token");
-    if (!existingAdminToken) {
-      api
-        .post("/auth/login/", {
-          email: adminUser?.email || "controller@atelier.com",
-          password: "adminpass123",
-          require_admin: true,
-        })
-        .then((res) => {
-          if (res.data?.token) {
-            localStorage.setItem("eshopper_admin_token", res.data.token);
-          }
-        })
-        .catch(() => {});
-    }
 
     // Preload all admin page bundles in background idle time for 0ms transitions
     const preloadAdminChunks = () => {

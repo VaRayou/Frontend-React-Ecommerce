@@ -8,7 +8,7 @@ export const AdminLogin = () => {
   const { adminLogin } = useAdminAuthStore();
 
   const [email, setEmail] = useState("controller@atelier.com");
-  const [password, setPassword] = useState("adminpass123");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

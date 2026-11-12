@@ -124,21 +124,13 @@ const saveProductsStorage = (products) => {
   }
 };
 
-// Ensure an active admin session with Super Admin privileges
+// Retrieves active authenticated session without exposing credentials or auto-authenticating visitors
 export const ensureAdminSession = async () => {
   try {
     const { data } = await supabase.auth.getSession();
     if (data?.session?.user) return data.session;
-
-    const { data: signInData, error } = await supabase.auth.signInWithPassword({
-      email: "controller@atelier.com",
-      password: "adminpass123",
-    });
-    if (!error && signInData?.session) {
-      return signInData.session;
-    }
   } catch (e) {
-    console.warn("[Supabase] ensureAdminSession note:", e.message);
+    console.warn("[Supabase] session verification note:", e.message);
   }
   return null;
 };

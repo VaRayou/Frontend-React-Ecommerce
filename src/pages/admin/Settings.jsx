@@ -50,8 +50,10 @@ export function Settings() {
     stockAlertNotification: storedBranding.stockAlertNotification ?? true,
     telegramBotToken:
       storedBranding.telegramBotToken ||
-      "9048372338:AAHADX6G3fszbnyUTF58AEn0X2BSRbptx8A",
-    telegramChatId: storedBranding.telegramChatId || "1389246582",
+      String(env.VITE_TELEGRAM_BOT_TOKEN || "").trim(),
+    telegramChatId:
+      storedBranding.telegramChatId ||
+      String(env.VITE_TELEGRAM_CHAT_ID || "").trim(),
   });
 
   const [telegramStatus, setTelegramStatus] = useState({

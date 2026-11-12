@@ -445,13 +445,62 @@ export const orderService = {
             ? orderData.shippingAddress
             : { street: String(orderData.shippingAddress || "Phnom Penh") };
 
-      const total = Number(orderData.total || 0);
-      const subtotal = Number(orderData.subtotal ?? total);
+      let total = Number(orderData.total || 0);
+      let subtotal = Number(orderData.subtotal ?? total);
       const shippingFee = Number(
         orderData.shipping_fee ?? orderData.shippingFee ?? 0,
       );
       const tax = Number(orderData.tax || 0);
       const discount = Number(orderData.discount || 0);
+
+      // --- SECURITY LAYER: Anti-Tamper Price & Stock Revalidation ---
+      const rawItems = orderData.items || orderData.order_items || [];
+      if (Array.isArray(rawItems) && rawItems.length > 0) {
+        const itemIds = rawItems
+          .map((i) => i.productId || i.product_id || i.id)
+          .filter(Boolean);
+
+        if (itemIds.length > 0) {
+          try {
+            const { data: dbProducts } = await supabase
+              .from("products")
+              .select("id, price, stock, name")
+              .in("id", itemIds);
+
+            if (Array.isArray(dbProducts) && dbProducts.length > 0) {
+              const priceMap = new Map(
+                dbProducts.map((p) => [String(p.id), Number(p.price || 0)]),
+              );
+
+              let computedSubtotal = 0;
+              for (const item of rawItems) {
+                const id = String(item.productId || item.product_id || item.id || "");
+                const truePrice = priceMap.get(id);
+                if (truePrice !== undefined && truePrice > 0) {
+                  // Protect against client-side price tampering
+                  item.price = truePrice;
+                  computedSubtotal += truePrice * (Number(item.quantity) || 1);
+                } else {
+                  computedSubtotal += Number(item.price || 0) * (Number(item.quantity) || 1);
+                }
+              }
+
+              // Compute verified expected total
+              const expectedTotal = Math.max(0, computedSubtotal + shippingFee + tax - discount);
+              // If discrepancy > $0.50 (tampering or stale price), enforce verified database price
+              if (Math.abs(expectedTotal - total) > 0.50) {
+                console.warn(
+                  `[Security Verification] Client total ${total} superseded by verified database total ${expectedTotal}`
+                );
+                subtotal = computedSubtotal;
+                total = expectedTotal;
+              }
+            }
+          } catch (secErr) {
+            console.warn("[Security Verification] Price validation notice:", secErr.message);
+          }
+        }
+      }
 
       const orderRow = {
         order_number: orderNumber,
@@ -491,7 +540,6 @@ export const orderService = {
       if (orderErr) throw orderErr;
 
       // Insert line items
-      const rawItems = orderData.items || orderData.order_items || [];
       if (Array.isArray(rawItems) && rawItems.length > 0) {
         const itemRows = rawItems.map((item) => ({
           order_id: newOrder.id,

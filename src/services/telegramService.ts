@@ -1,10 +1,7 @@
 const env = (import.meta as any).env || {};
 
-const DEFAULT_BOT_TOKEN =
-  env.VITE_TELEGRAM_BOT_TOKEN ||
-  "9048372338:AAHADX6G3fszbnyUTF58AEn0X2BSRbptx8A";
-
-const DEFAULT_CHAT_ID = env.VITE_TELEGRAM_CHAT_ID || "1389246582";
+const DEFAULT_BOT_TOKEN = String(env.VITE_TELEGRAM_BOT_TOKEN || "").trim();
+const DEFAULT_CHAT_ID = String(env.VITE_TELEGRAM_CHAT_ID || "").trim();
 
 const ADMIN_PRODUCTS_URL =
   typeof window !== "undefined" && window.location.origin.startsWith("http")

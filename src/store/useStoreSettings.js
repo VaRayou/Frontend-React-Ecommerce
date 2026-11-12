@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+const env = import.meta.env || {};
+
 export const useStoreSettings = create(
   persist(
     (set) => ({
@@ -13,8 +15,8 @@ export const useStoreSettings = create(
       currency: "USD ($)",
       orderNotification: true,
       stockAlertNotification: true,
-      telegramBotToken: "9048372338:AAHADX6G3fszbnyUTF58AEn0X2BSRbptx8A",
-      telegramChatId: "1389246582",
+      telegramBotToken: String(env.VITE_TELEGRAM_BOT_TOKEN || "").trim(),
+      telegramChatId: String(env.VITE_TELEGRAM_CHAT_ID || "").trim(),
 
       updateStoreSettings: (updates) =>
         set((state) => ({
