@@ -85,7 +85,7 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
           productId: product.id,
           name: product.name,
           price: Number(product.price) || 0,
-          image: product.image,
+          image: product.image || product.images?.[0] || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80",
           stock: maxStock,
           quantity: 1,
           size: "M",
@@ -179,7 +179,7 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
     try {
       const orderNum = `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       setPendingOrderNumber(orderNum);
-      const res = await khqrService.createKhqrPayment({
+      const res = await khqrService.createPayment({
         amount: total,
         currency: "USD",
         orderNumber: orderNum,
@@ -312,11 +312,11 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
                         <div>
                           <div className="relative h-24 w-full rounded-xl bg-gray-100 overflow-hidden mb-2">
                             <img
-                              src={prod.image}
+                              src={prod.image || prod.images?.[0] || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80"}
                               alt={prod.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                e.target.src = "/user/images/home/product1.jpg";
+                                e.target.src = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80";
                               }}
                             />
                             <span

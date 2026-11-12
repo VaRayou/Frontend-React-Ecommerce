@@ -537,6 +537,15 @@ export const khqrService = {
   },
 
   /**
+   * Alias for createPayment (used by Admin POS Counter Modal)
+   */
+  createKhqrPayment: async (
+    payload: KhqrCreatePayload,
+  ): Promise<KhqrCreateResponse> => {
+    return khqrService.createPayment(payload);
+  },
+
+  /**
    * Real-time verification with the official National Bank of Cambodia (NBC) Bakong Open API
    */
   checkStatus: async (
