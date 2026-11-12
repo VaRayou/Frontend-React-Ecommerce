@@ -13,9 +13,23 @@ const BAKONG_API_URL = (
   "https://api-bakong.nbc.gov.kh"
 ).replace(/\/$/, "");
 
+const ALLOWED_CORS_ORIGINS = new Set([
+  "https://frontend-react-ecommerce-inky.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+]);
+
 export default async function handler(req, res) {
-  // Set permissive CORS headers so browser requests never fail preflight
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin || "";
+  if (ALLOWED_CORS_ORIGINS.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else {
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      "https://frontend-react-ecommerce-inky.vercel.app"
+    );
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
@@ -42,11 +56,13 @@ export default async function handler(req, res) {
     if (action === "generate_deeplink_by_qr" && qr) {
       targetPath = "/v1/generate_deeplink_by_qr";
       upstreamBody = { qr };
-    } else if (!md5) {
-      return res.status(400).json({
-        responseCode: 1,
-        responseMessage: "Missing md5 parameter",
-      });
+    } else {
+      if (!md5 || typeof md5 !== "string" || !/^[a-fA-F0-9]{32}$/.test(md5.trim())) {
+        return res.status(400).json({
+          responseCode: 1,
+          responseMessage: "Invalid or missing 32-character MD5 transaction hash.",
+        });
+      }
     }
 
     const upstreamRes = await fetch(`${BAKONG_API_URL}${targetPath}`, {

@@ -13,6 +13,29 @@ const DEFAULT_BOT_TOKEN =
   process.env.TELEGRAM_BOT_TOKEN ||
   "";
 
+const DEFAULT_CHAT_ID = String(
+  process.env.VITE_TELEGRAM_CHAT_ID ||
+  process.env.TELEGRAM_CHAT_ID ||
+  "1389246582"
+).trim();
+
+const AUTHORIZED_CHAT_IDS = new Set(
+  [
+    DEFAULT_CHAT_ID,
+    ...(process.env.TELEGRAM_AUTHORIZED_CHATS || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  ].filter(Boolean)
+);
+
+const ALLOWED_CORS_ORIGINS = new Set([
+  "https://frontend-react-ecommerce-inky.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+]);
+
 const STOREFRONT_URL = "https://frontend-react-ecommerce-inky.vercel.app";
 
 function escapeHtml(str) {
@@ -427,12 +450,28 @@ async function buildLowStockMessage(sbHeaders) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin || "";
+  if (ALLOWED_CORS_ORIGINS.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else {
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      "https://frontend-react-ecommerce-inky.vercel.app"
+    );
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Telegram-Bot-Api-Secret-Token");
 
   if (req.method === "OPTIONS") {
     return res.status(200).end();
+  }
+
+  // Webhook Secret Token validation (if configured in environment)
+  if (process.env.TELEGRAM_WEBHOOK_SECRET) {
+    const secret = req.headers["x-telegram-bot-api-secret-token"];
+    if (secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+      return res.status(403).json({ error: "Unauthorized webhook token." });
+    }
   }
 
   if (req.method === "GET") {
@@ -455,8 +494,19 @@ export default async function handler(req, res) {
     // 1. Handle Inline Button Callback Queries
     if (update.callback_query) {
       const cb = update.callback_query;
-      const chatId = cb.message?.chat?.id;
+      const chatId = String(cb.message?.chat?.id || cb.from?.id || "");
       const data = String(cb.data || "");
+
+      // Enforce strict administrative authorization gate
+      if (!chatId || !AUTHORIZED_CHAT_IDS.has(chatId)) {
+        console.warn(`[Security Alert] Unauthorized Telegram callback query from chat ${chatId}: ${data}`);
+        await tgApi(botToken, "answerCallbackQuery", {
+          callback_query_id: cb.id,
+          text: "⛔ Access Denied: Unauthorized administrative account.",
+          show_alert: true,
+        });
+        return res.status(403).json({ error: "Unauthorized chat ID." });
+      }
 
       if (data === "cmd:stats" && chatId) {
         await tgApi(botToken, "answerCallbackQuery", {
@@ -643,9 +693,24 @@ export default async function handler(req, res) {
     // 2. Handle Incoming Text Commands (/start, /help, /stats, /orders, /track, /lowstock)
     const msg = update.message || update.channel_post;
     if (msg && msg.chat?.id) {
-      const chatId = msg.chat.id;
+      const chatId = String(msg.chat.id);
       const rawText = String(msg.text || "").trim();
       const text = rawText.toLowerCase();
+
+      // Enforce strict administrative authorization gate
+      if (!AUTHORIZED_CHAT_IDS.has(chatId)) {
+        console.warn(`[Security Alert] Unauthorized Telegram command from chat ${chatId}: ${rawText}`);
+        await tgApi(botToken, "sendMessage", {
+          chat_id: chatId,
+          parse_mode: "HTML",
+          text:
+            `⛔ <b>ACCESS DENIED</b>\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `You do not possess administrative clearance to access Atelier Paris store records.\n` +
+            `Your chat ID (<code>${escapeHtml(chatId)}</code>) has been logged.`,
+        });
+        return res.status(403).json({ error: "Unauthorized chat ID." });
+      }
 
       if (text.startsWith("/stats")) {
         const reply = await buildStatsMessage(sbHeaders);

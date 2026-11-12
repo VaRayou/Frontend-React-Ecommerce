@@ -451,7 +451,7 @@ export const orderService = {
         orderData.shipping_fee ?? orderData.shippingFee ?? 0,
       );
       const tax = Number(orderData.tax || 0);
-      const discount = Number(orderData.discount || 0);
+      let discount = Number(orderData.discount || 0);
 
       // --- SECURITY LAYER: Anti-Tamper Price & Stock Revalidation ---
       const rawItems = orderData.items || orderData.order_items || [];
@@ -488,10 +488,52 @@ export const orderService = {
                 }
               }
 
+              // Verify and sanitize discount/coupon claims against Supabase database
+              let verifiedDiscount = 0;
+              const claimedDiscount = Math.max(0, Number(orderData.discount || 0));
+              const promoCode = String(
+                orderData.promo_code || orderData.promoCode || orderData.couponCode || ""
+              ).trim().toUpperCase();
+
+              if (claimedDiscount > 0) {
+                if (promoCode) {
+                  try {
+                    const { data: dbCoupon } = await supabase
+                      .from("coupons")
+                      .select("*")
+                      .ilike("code", promoCode)
+                      .maybeSingle();
+
+                    if (dbCoupon && dbCoupon.is_active !== false) {
+                      const minSpend = Number(dbCoupon.min_order_value || dbCoupon.min_spend || 0);
+                      if (computedSubtotal >= minSpend) {
+                        const type = dbCoupon.discount_type || dbCoupon.type || "percentage";
+                        const val = Number(dbCoupon.discount_value ?? dbCoupon.value ?? 0);
+                        if (type === "percentage") {
+                          verifiedDiscount = Number(((computedSubtotal * Math.min(100, Math.max(0, val))) / 100).toFixed(2));
+                        } else {
+                          verifiedDiscount = Math.min(computedSubtotal, Math.max(0, val));
+                        }
+                      }
+                    }
+                  } catch (couponErr) {
+                    console.warn("[Security Verification] Coupon revalidation notice:", couponErr.message);
+                  }
+                }
+
+                // If claimed discount exceeds verified discount by > $0.50, override with verified discount
+                if (claimedDiscount > verifiedDiscount + 0.5) {
+                  console.warn(
+                    `[Security Verification] Client claimed discount $${claimedDiscount} superseded by verified database discount $${verifiedDiscount}`,
+                  );
+                  discount = verifiedDiscount;
+                }
+              }
+
               // Compute verified expected total
               const expectedTotal = Math.max(
                 0,
-                computedSubtotal + shippingFee + tax - discount,
+                Number((computedSubtotal + shippingFee + tax - discount).toFixed(2)),
               );
               // If discrepancy > $0.50 (tampering or stale price), enforce verified database price
               if (Math.abs(expectedTotal - total) > 0.5) {
