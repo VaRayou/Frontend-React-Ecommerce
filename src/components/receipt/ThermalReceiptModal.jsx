@@ -447,6 +447,13 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
   };
 
   const handleSystemPrint = () => {
+    const originalTitle = document.title;
+    const receiptDocTitle = `Atelier_POS_Receipt_${normalized?.invoiceNumber || "Receipt"}`;
+    document.title = receiptDocTitle;
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 3000);
+
     const printContent = document.getElementById("pos-thermal-receipt-paper");
     if (!printContent) {
       window.print();
@@ -468,7 +475,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>POS Receipt - ${normalized?.invoiceNumber || "Receipt"}</title>
+          <title>${receiptDocTitle}</title>
           ${styles}
           <style>
             @page {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Plus,
@@ -12,8 +12,11 @@ import {
   ShieldCheck,
   Mail,
   Phone,
+  Crown,
+  ShoppingBag,
 } from "lucide-react";
 import { userService } from "../../services/userService";
+import { orderService } from "../../services/orderService";
 import DataTable from "../../components/admin/DataTable";
 import Modal from "../../components/common/Modal";
 import Input from "../../components/common/Input";
@@ -22,6 +25,7 @@ import Loader from "../../components/common/Loader";
 export function ManageUsers() {
   const cachedUsers = userService.getCachedUsers();
   const [users, setUsers] = useState(cachedUsers);
+  const [orders, setOrders] = useState(() => orderService.getCachedOrders());
   const [loading, setLoading] = useState(cachedUsers.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -50,8 +54,16 @@ export function ManageUsers() {
     if (!silent && users.length === 0) setLoading(true);
     else setIsRefreshing(true);
     try {
-      const list = await userService.getUsers();
-      setUsers(list || []);
+      const [uList, oList] = await Promise.allSettled([
+        userService.getUsers(),
+        orderService.getOrders(),
+      ]);
+      if (uList.status === "fulfilled" && Array.isArray(uList.value)) {
+        setUsers(uList.value);
+      }
+      if (oList.status === "fulfilled" && Array.isArray(oList.value)) {
+        setOrders(oList.value);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -62,7 +74,42 @@ export function ManageUsers() {
 
   useEffect(() => {
     loadUsers(cachedUsers.length > 0);
+
+    const handleSync = () => loadUsers(true);
+    window.addEventListener("atelier_order_updated", handleSync);
+    return () => {
+      window.removeEventListener("atelier_order_updated", handleSync);
+    };
   }, []);
+
+  // Compute live CRM analytics: Lifetime Orders, Total Spend, VIP Tier
+  const enrichedUsers = useMemo(() => {
+    return (users || []).map((u) => {
+      const uEmail = String(u.email || "").trim().toLowerCase();
+      const uId = String(u.id || "").trim();
+
+      const userOrders = (orders || []).filter((o) => {
+        const oEmail = String(o.customerEmail || o.customer_email || "").trim().toLowerCase();
+        const oCustId = String(o.customerId || o.customer_id || "").trim();
+        return (uEmail && oEmail === uEmail) || (uId && oCustId === uId);
+      });
+
+      const totalSpent = userOrders.reduce((sum, o) => {
+        const amt = Number(o.total || 0);
+        const st = String(o.orderStatus || o.status || "").toLowerCase();
+        return st !== "cancelled" ? sum + amt : sum;
+      }, 0);
+
+      const isVip = totalSpent >= 100 || userOrders.length >= 3;
+
+      return {
+        ...u,
+        ordersCount: userOrders.length,
+        totalSpent,
+        isVip,
+      };
+    });
+  }, [users, orders]);
 
   const handleOpenAdd = () => {
     setIsEditing(false);
@@ -156,9 +203,31 @@ export function ManageUsers() {
             {item.name ? item.name.charAt(0).toUpperCase() : "U"}
           </div>
           <div>
-            <strong className="block text-gray-900 text-xs sm:text-sm font-bold">{item.name}</strong>
+            <div className="flex items-center gap-1.5">
+              <strong className="block text-gray-900 text-xs sm:text-sm font-bold">{item.name}</strong>
+              {item.isVip && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-[#D6FF00] text-black">
+                  <Crown className="w-3 h-3" /> VIP
+                </span>
+              )}
+            </div>
             <span className="text-[11px] text-gray-500">{item.email}</span>
           </div>
+        </div>
+      ),
+    },
+    {
+      title: "Lifetime Orders & Spend",
+      key: "totalSpent",
+      render: (item) => (
+        <div>
+          <strong className="block text-gray-950 font-black text-xs sm:text-sm">
+            ${Number(item.totalSpent || 0).toFixed(2)}
+          </strong>
+          <span className="text-[11px] text-gray-500 font-semibold flex items-center gap-1">
+            <ShoppingBag className="w-3 h-3 text-gray-400" />
+            {item.ordersCount || 0} {item.ordersCount === 1 ? "Order" : "Orders"}
+          </span>
         </div>
       ),
     },
@@ -168,18 +237,25 @@ export function ManageUsers() {
       render: (item) => <span className="text-xs text-gray-600 font-mono">{item.phone || "—"}</span>,
     },
     {
-      title: "Role",
+      title: "Role & Tier",
       key: "role",
       render: (item) => (
-        <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-            item.role === "admin"
-              ? "bg-neutral-900 text-[#D6FF00] border border-neutral-900"
-              : "bg-gray-100 text-gray-700 border border-gray-200"
-          }`}
-        >
-          {item.role === "admin" ? "Studio Admin" : "VIP Patron"}
-        </span>
+        <div className="flex flex-col gap-1 items-start">
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+              item.role === "admin"
+                ? "bg-neutral-900 text-[#D6FF00] border border-neutral-900"
+                : "bg-gray-100 text-gray-700 border border-gray-200"
+            }`}
+          >
+            {item.role === "admin" ? "Studio Admin" : "Patron"}
+          </span>
+          {item.isVip && (
+            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+              Gold Tier ($100+)
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -247,7 +323,7 @@ export function ManageUsers() {
 
       <DataTable
         columns={columns}
-        data={users}
+        data={enrichedUsers}
         searchKey="name"
         searchPlaceholder="Search patrons by name or email..."
         itemsPerPage={8}

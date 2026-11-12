@@ -134,6 +134,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
     order.transactionId || `TRX-${orderNumber.slice(-8)}`;
 
   const handlePrint = () => {
+    const safeCustomer = (customerName || "Patron").replace(/[^a-zA-Z0-9]/g, "_");
+    const docTitle = `Atelier_Invoice_${invoiceNumber}_${safeCustomer}`;
+    const originalTitle = document.title;
+    document.title = docTitle;
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 3000);
+
     const printContent = document.getElementById("atelier-printable-invoice");
     if (!printContent) {
       window.print();
@@ -155,7 +163,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>Invoice - ${invoiceNumber}</title>
+          <title>${docTitle}</title>
           ${styles}
           <style>
             @page {
@@ -251,13 +259,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               title="Print or Save PDF"
             >
               <Printer className="w-3.5 h-3.5 shrink-0" />
-              <span className="hidden xs:inline sm:inline">Print / PDF</span>
+              <span>Print / Save PDF</span>
             </button>
             <button
               type="button"
               onClick={handlePrint}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
-              title="Download direct PDF file"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+              title="Download direct PDF file via browser Print to PDF"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download PDF</span>

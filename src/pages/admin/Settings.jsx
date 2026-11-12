@@ -21,6 +21,8 @@ import { useCartStore } from "../../store/useCartStore";
 import { useStoreSettings } from "../../store/useStoreSettings";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
 import { telegramService } from "../../services/telegramService";
+import { supabase } from "../../services/supabase";
+import { ensureAdminSession } from "../../services/productService";
 import api from "../../services/api";
 import Input from "../../components/common/Input";
 
@@ -94,14 +96,30 @@ export function Settings() {
 
   useEffect(() => {
     let active = true;
-    api
-      .get("/coupons/?all=true")
-      .then((res) => {
-        if (active && Array.isArray(res.data)) {
-          setCoupons(res.data);
+    const loadCoupons = async () => {
+      try {
+        await ensureAdminSession();
+        const { data, error } = await supabase
+          .from("coupons")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && Array.isArray(data) && active) {
+          setCoupons(
+            data.map((c) => ({
+              ...c,
+              type: c.discount_type || c.type || "percentage",
+              value: Number(c.discount_value ?? c.value ?? 10),
+              min_spend: Number(c.min_order_value ?? c.min_spend ?? 0),
+            }))
+          );
         }
-      })
-      .catch(() => {});
+      } catch (err) {
+        console.warn("Could not load coupons in settings:", err);
+      }
+    };
+
+    loadCoupons();
     return () => {
       active = false;
     };
@@ -311,15 +329,36 @@ export function Settings() {
     if (!cleanCode) return;
 
     try {
-      const res = await api.post("/coupons/", {
-        ...newCoupon,
+      await ensureAdminSession();
+      const payload = {
         code: cleanCode,
+        description:
+          newCoupon.description.trim() ||
+          `${newCoupon.value}${newCoupon.type === "percentage" ? "%" : "$"} Off Voucher`,
+        discount_type: newCoupon.type,
+        discount_value: Number(newCoupon.value) || 0,
+        min_order_value: Number(newCoupon.min_spend) || 0,
         is_active: true,
-      });
-      setCoupons((prev) => {
-        const filtered = prev.filter((c) => c.code !== cleanCode);
-        return [res.data, ...filtered];
-      });
+      };
+
+      const { data, error } = await supabase
+        .from("coupons")
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCoupons((prev) => [
+        {
+          ...data,
+          type: data.discount_type || data.type,
+          value: data.discount_value || data.value,
+          min_spend: data.min_order_value || data.min_spend,
+        },
+        ...prev.filter((c) => c.code !== cleanCode),
+      ]);
+
       setNewCoupon({
         code: "",
         description: "",
@@ -328,19 +367,24 @@ export function Settings() {
         min_spend: 50,
       });
       showNotification(`Promo code "${cleanCode}" saved to Supabase!`);
-    } catch {
-      showNotification("Failed to create promo code.");
+    } catch (err) {
+      showNotification("Failed creating promo code: " + (err?.message || "Error"));
     }
   };
 
   const handleToggleCoupon = async (coupon) => {
     const nextState = !coupon.is_active;
     try {
-      const res = await api.patch(`/coupons/${coupon.code}/`, {
-        is_active: nextState,
-      });
+      await ensureAdminSession();
+      const { error } = await supabase
+        .from("coupons")
+        .update({ is_active: nextState })
+        .eq("code", coupon.code);
+
+      if (error) throw error;
+
       setCoupons((prev) =>
-        prev.map((c) => (c.code === coupon.code ? res.data : c))
+        prev.map((c) => (c.code === coupon.code ? { ...c, is_active: nextState } : c))
       );
       showNotification(
         `Coupon "${coupon.code}" ${nextState ? "enabled" : "disabled"}`
@@ -352,9 +396,10 @@ export function Settings() {
 
   const handleDeleteCoupon = async (code) => {
     try {
-      await api.delete(`/coupons/${code}/`);
+      await ensureAdminSession();
+      await supabase.from("coupons").delete().eq("code", code);
       setCoupons((prev) => prev.filter((c) => c.code !== code));
-      showNotification(`Coupon "${code}" deleted`);
+      showNotification(`Coupon "${code}" deleted from Supabase`);
     } catch {
       showNotification("Failed deleting coupon.");
     }

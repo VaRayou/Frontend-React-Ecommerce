@@ -361,23 +361,58 @@ export const Orders: React.FC = () => {
                 ))}
               </div>
 
-              {/* Order Footer */}
-              <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between text-xs text-gray-500 gap-2">
-                <div>
-                  <span className="font-semibold text-gray-700">Payment: </span>
-                  <span>{order.paymentMethod || "Bakong KHQR"}</span>
-                  <span className="mx-2">•</span>
-                  <span className="font-semibold text-emerald-600 font-bold">{order.paymentStatus || "Paid"}</span>
+              {/* Order Footer & Actions */}
+              <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div>
+                    <span className="font-semibold text-gray-700">Payment: </span>
+                    <span>{order.paymentMethod || "Bakong KHQR"}</span>
+                    <span className="mx-1.5">•</span>
+                    <span className="font-semibold text-emerald-600 font-bold">{order.paymentStatus || "Paid"}</span>
+                  </div>
+                  <span className="hidden sm:inline text-gray-300">|</span>
+                  <div>
+                    <span className="font-semibold text-gray-700">Destination: </span>
+                    <span>
+                      {typeof order.shippingAddress === "string"
+                        ? order.shippingAddress
+                        : order.shippingAddress?.street
+                        ? `${order.shippingAddress.street}, ${order.shippingAddress.city}`
+                        : "Phnom Penh, Cambodia"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="font-semibold text-gray-700">Destination: </span>
-                  <span>
-                    {typeof order.shippingAddress === "string"
-                      ? order.shippingAddress
-                      : order.shippingAddress?.street
-                      ? `${order.shippingAddress.street}, ${order.shippingAddress.city}`
-                      : "Phnom Penh, Cambodia"}
-                  </span>
+
+                {/* Patron Action Tools */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Link
+                    to={`/track/${encodeURIComponent(order.orderNumber || order.order_number || order.id)}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] font-bold text-[11px] uppercase tracking-wider transition-colors"
+                  >
+                    <Truck className="w-3.5 h-3.5" />
+                    <span>Track Live</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceOrder(order)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Invoice</span>
+                  </button>
+
+                  {(status.toLowerCase() === "processing" || status.toLowerCase() === "pending") && (
+                    <button
+                      type="button"
+                      onClick={() => handleCancelOrder(order)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
+                      title="Cancel order and automatically restore stock"
+                    >
+                      <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Cancel Order</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

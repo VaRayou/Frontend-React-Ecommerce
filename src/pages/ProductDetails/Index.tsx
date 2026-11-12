@@ -449,21 +449,26 @@ export const ProductDetails: React.FC = () => {
               )}
             </div>
 
-            {/* Stock Notice */}
+            {/* Stock Notice & High-Fashion Urgency Pill */}
             {isOutOfStock ? (
-              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs font-bold text-rose-600">
+              <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs font-bold text-rose-600 shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-rose-500" />
                 <span>Out of Stock — Currently Unavailable in Atelier Vault</span>
+              </div>
+            ) : stockCount <= 3 ? (
+              <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/50 text-xs font-black text-amber-950 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                <span>⚡ High Demand: Only {stockCount} {stockCount === 1 ? "piece" : "pieces"} left in studio — order soon</span>
               </div>
             ) : stockCount <= 5 ? (
               <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>Low Stock — Only {stockCount} {stockCount === 1 ? "piece" : "pieces"} left in stock</span>
+                <span>Limited Runway Edition — Only {stockCount} pieces available</span>
               </div>
             ) : (
               <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-emerald-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>In Stock ({stockCount} available) — Ships within 24 hours from Paris Atelier</span>
+                <span>In Stock ({stockCount} available) — Ships within 24 hours from Flagship Atelier</span>
               </div>
             )}
           </div>
