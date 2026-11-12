@@ -18,9 +18,23 @@ BEGIN
     -- Authoritative backend role claim (set exclusively by Supabase backend or Service Role)
     coalesce(auth.jwt() ->> 'role', '') IN ('admin', 'super_admin', 'service_role') OR
     -- Protected app_metadata (CANNOT be edited or forged by the client!)
-    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') IN ('admin', 'super_admin', 'Super Administrator', 'Store Controller') OR
+    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') IN (
+      'admin',
+      'super_admin',
+      'Super Administrator',
+      'Store Controller',
+      'store_controller',
+      'Catalog Manager',
+      'catalog_manager'
+    ) OR
     -- Authoritative administrator email whitelist
-    coalesce(auth.jwt() ->> 'email', '') IN ('controller@atelier.com', 'rayou@atelier.com', 'admin@atelier.com')
+    coalesce(auth.jwt() ->> 'email', '') IN (
+      'controller@atelier.com',
+      'rayou@atelier.com',
+      'admin@atelier.com',
+      'catalog@atelier.com',
+      'manager@atelier.com'
+    )
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -290,3 +304,138 @@ CREATE POLICY "Admin upload image access"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'products' AND public.is_admin());
+
+
+-- ==============================================================================
+-- 11. OFFICIAL REAL ADMIN USER PROVISIONING
+-- Roles: Super Administrator, Catalog Manager, Store Controller
+-- Initial Default Password: adminpass123
+-- ==============================================================================
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+DO $$
+DECLARE
+  v_user_id uuid;
+  v_encrypted_pwd text;
+BEGIN
+  BEGIN
+    v_encrypted_pwd := crypt('adminpass123', gen_salt('bf', 10));
+  EXCEPTION WHEN undefined_function THEN
+    v_encrypted_pwd := extensions.crypt('adminpass123', extensions.gen_salt('bf', 10));
+  END;
+
+  -- 1. SUPER ADMINISTRATOR: controller@atelier.com
+  SELECT id INTO v_user_id FROM auth.users WHERE email = 'controller@atelier.com';
+  IF v_user_id IS NULL THEN
+    v_user_id := gen_random_uuid();
+    INSERT INTO auth.users (
+      id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+      raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+    ) VALUES (
+      v_user_id, '00000000-0000-0000-0000-000000000000'::uuid, 'authenticated', 'authenticated',
+      'controller@atelier.com', v_encrypted_pwd, now(),
+      '{"provider": "email", "providers": ["email"], "role": "super_admin"}'::jsonb,
+      '{"full_name": "Alexander Vance", "role": "Super Administrator"}'::jsonb,
+      now(), now()
+    );
+  ELSE
+    UPDATE auth.users
+    SET 
+      encrypted_password = v_encrypted_pwd,
+      email_confirmed_at = coalesce(email_confirmed_at, now()),
+      raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "super_admin"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Alexander Vance", "role": "Super Administrator"}'::jsonb,
+      updated_at = now()
+    WHERE id = v_user_id;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
+    INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+    VALUES (v_user_id::text, v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'controller@atelier.com'), 'email', v_user_id::text, now(), now(), now());
+  ELSE
+    UPDATE auth.identities
+    SET identity_data = jsonb_build_object('sub', v_user_id::text, 'email', 'controller@atelier.com'), updated_at = now()
+    WHERE user_id = v_user_id AND provider = 'email';
+  END IF;
+
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (v_user_id, 'controller@atelier.com', 'Alexander Vance', 'super_admin')
+  ON CONFLICT (id) DO UPDATE SET role = 'super_admin', full_name = 'Alexander Vance';
+
+  -- 2. CATALOG MANAGER: catalog@atelier.com
+  SELECT id INTO v_user_id FROM auth.users WHERE email = 'catalog@atelier.com';
+  IF v_user_id IS NULL THEN
+    v_user_id := gen_random_uuid();
+    INSERT INTO auth.users (
+      id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+      raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+    ) VALUES (
+      v_user_id, '00000000-0000-0000-0000-000000000000'::uuid, 'authenticated', 'authenticated',
+      'catalog@atelier.com', v_encrypted_pwd, now(),
+      '{"provider": "email", "providers": ["email"], "role": "catalog_manager"}'::jsonb,
+      '{"full_name": "Elena Moreau", "role": "Catalog Manager"}'::jsonb,
+      now(), now()
+    );
+  ELSE
+    UPDATE auth.users
+    SET 
+      encrypted_password = v_encrypted_pwd,
+      email_confirmed_at = coalesce(email_confirmed_at, now()),
+      raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "catalog_manager"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Elena Moreau", "role": "Catalog Manager"}'::jsonb,
+      updated_at = now()
+    WHERE id = v_user_id;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
+    INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+    VALUES (v_user_id::text, v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'catalog@atelier.com'), 'email', v_user_id::text, now(), now(), now());
+  ELSE
+    UPDATE auth.identities
+    SET identity_data = jsonb_build_object('sub', v_user_id::text, 'email', 'catalog@atelier.com'), updated_at = now()
+    WHERE user_id = v_user_id AND provider = 'email';
+  END IF;
+
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (v_user_id, 'catalog@atelier.com', 'Elena Moreau', 'catalog_manager')
+  ON CONFLICT (id) DO UPDATE SET role = 'catalog_manager', full_name = 'Elena Moreau';
+
+  -- 3. STORE CONTROLLER: admin@atelier.com
+  SELECT id INTO v_user_id FROM auth.users WHERE email = 'admin@atelier.com';
+  IF v_user_id IS NULL THEN
+    v_user_id := gen_random_uuid();
+    INSERT INTO auth.users (
+      id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+      raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+    ) VALUES (
+      v_user_id, '00000000-0000-0000-0000-000000000000'::uuid, 'authenticated', 'authenticated',
+      'admin@atelier.com', v_encrypted_pwd, now(),
+      '{"provider": "email", "providers": ["email"], "role": "store_controller"}'::jsonb,
+      '{"full_name": "Marcus Thorne", "role": "Store Controller"}'::jsonb,
+      now(), now()
+    );
+  ELSE
+    UPDATE auth.users
+    SET 
+      encrypted_password = v_encrypted_pwd,
+      email_confirmed_at = coalesce(email_confirmed_at, now()),
+      raw_app_meta_data = raw_app_meta_data || '{"provider": "email", "providers": ["email"], "role": "store_controller"}'::jsonb,
+      raw_user_meta_data = raw_user_meta_data || '{"full_name": "Marcus Thorne", "role": "Store Controller"}'::jsonb,
+      updated_at = now()
+    WHERE id = v_user_id;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
+    INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+    VALUES (v_user_id::text, v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'admin@atelier.com'), 'email', v_user_id::text, now(), now(), now());
+  ELSE
+    UPDATE auth.identities
+    SET identity_data = jsonb_build_object('sub', v_user_id::text, 'email', 'admin@atelier.com'), updated_at = now()
+    WHERE user_id = v_user_id AND provider = 'email';
+  END IF;
+
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (v_user_id, 'admin@atelier.com', 'Marcus Thorne', 'store_controller')
+  ON CONFLICT (id) DO UPDATE SET role = 'store_controller', full_name = 'Marcus Thorne';
+
+END $$;

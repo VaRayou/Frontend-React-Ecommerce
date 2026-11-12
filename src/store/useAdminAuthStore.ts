@@ -16,14 +16,13 @@ interface AdminAuthState {
   adminUser: AdminUser | null;
   adminLogin: (
     email: string,
-    password?: string,
-    role?: AdminUser["role"]
+    password: string
   ) => Promise<{ success: boolean; message?: string }>;
   adminLogout: () => void;
   updateAdminProfile: (data: Partial<AdminUser>) => void;
 }
 
-const ALLOWED_ADMIN_EMAILS = new Set([
+const AUTHORIZED_ADMIN_EMAILS = new Set([
   "controller@atelier.com",
   "admin@atelier.com",
   "rayou@atelier.com",
@@ -37,21 +36,52 @@ export const useAdminAuthStore = create<AdminAuthState>()(
       isAdminAuthenticated: false,
       adminUser: null,
 
-      adminLogin: async (email, password = "adminpass123", requestedRole?: AdminUser["role"]) => {
+      adminLogin: async (email: string, password: string) => {
         const cleanEmail = email.trim().toLowerCase();
 
-        // 1. Authenticate with Supabase Auth (0ms Cold Start, True JWT)
+        if (!cleanEmail || !password) {
+          return {
+            success: false,
+            message: "Please enter your administrator email and password.",
+          };
+        }
+
+        // Authenticate strictly with Supabase Cloud Auth (0ms Cold Start, Signed Cryptographic JWT)
         try {
           const { data, error } = await supabase.auth.signInWithPassword({
             email: cleanEmail,
             password,
           });
 
-          if (!error && data?.user) {
+          if (error) {
+            return {
+              success: false,
+              message: error.message || "Invalid administrator credentials.",
+            };
+          }
+
+          if (data?.user) {
             const u = data.user;
-            // Determine authoritative RBAC role from tamper-proof app_metadata claims
-            let resolvedRole: AdminUser["role"] = "Store Controller";
             const rawRole = String((u as any).app_metadata?.role || "").toLowerCase();
+
+            // Verify that this account possesses official administrative clearance
+            const isAuthorizedEmail = AUTHORIZED_ADMIN_EMAILS.has(cleanEmail);
+            const isAuthorizedRole =
+              rawRole.includes("admin") ||
+              rawRole.includes("controller") ||
+              rawRole.includes("catalog");
+
+            if (!isAuthorizedEmail && !isAuthorizedRole) {
+              await supabase.auth.signOut();
+              return {
+                success: false,
+                message:
+                  "Access Denied: This account does not possess official administrative clearance.",
+              };
+            }
+
+            // Determine authoritative RBAC role
+            let resolvedRole: AdminUser["role"] = "Store Controller";
             if (
               rawRole.includes("super") ||
               cleanEmail === "controller@atelier.com" ||
@@ -64,72 +94,46 @@ export const useAdminAuthStore = create<AdminAuthState>()(
               cleanEmail === "manager@atelier.com"
             ) {
               resolvedRole = "Catalog Manager";
-            } else if (requestedRole) {
-              resolvedRole = requestedRole;
+            } else if (
+              rawRole.includes("controller") ||
+              cleanEmail === "admin@atelier.com"
+            ) {
+              resolvedRole = "Store Controller";
             }
 
-            const user: AdminUser = {
+            const adminUserObj: AdminUser = {
               id: String(u.id),
-              name: u.user_metadata?.full_name || cleanEmail.split("@")[0].toUpperCase(),
+              name:
+                u.user_metadata?.full_name ||
+                (resolvedRole === "Super Administrator"
+                  ? "Alexander Vance (Super Admin)"
+                  : resolvedRole === "Catalog Manager"
+                  ? "Elena Moreau (Catalog Manager)"
+                  : "Marcus Thorne (Store Controller)"),
               email: u.email || cleanEmail,
               role: resolvedRole,
               avatar:
                 u.user_metadata?.avatar_url ||
-                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+                (resolvedRole === "Catalog Manager"
+                  ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+                  : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"),
               lastLogin: new Date().toISOString(),
             };
-            set({ isAdminAuthenticated: true, adminUser: user });
+
+            set({ isAdminAuthenticated: true, adminUser: adminUserObj });
             return { success: true };
           }
-        } catch (supaErr: any) {
-          console.warn("[Supabase] Admin sign-in notice:", supaErr.message);
-        }
-
-        // 2. Controller fallback credentials for instant access
-        if (
-          ALLOWED_ADMIN_EMAILS.has(cleanEmail) &&
-          (password === "adminpass123" || password === "admin123")
-        ) {
-          // Attempt sign in with default controller credentials in Supabase
-          try {
-            await supabase.auth.signInWithPassword({
-              email: "controller@atelier.com",
-              password: "adminpass123",
-            });
-          } catch {}
-
-          let resolvedRole: AdminUser["role"] = "Store Controller";
-          let adminName = "Atelier Administrator";
-
-          if (cleanEmail === "controller@atelier.com" || cleanEmail === "rayou@atelier.com") {
-            resolvedRole = "Super Administrator";
-            adminName = "Alexander Vance (Super Admin)";
-          } else if (cleanEmail === "catalog@atelier.com" || cleanEmail === "manager@atelier.com") {
-            resolvedRole = "Catalog Manager";
-            adminName = "Elena Moreau (Catalog Manager)";
-          } else {
-            resolvedRole = requestedRole || "Store Controller";
-            adminName = "Marcus Thorne (Store Controller)";
-          }
-
-          const user: AdminUser = {
-            id: cleanEmail === "catalog@atelier.com" ? "adm-catalog-01" : "adm-01",
-            name: adminName,
-            email: cleanEmail,
-            role: resolvedRole,
-            avatar:
-              cleanEmail === "catalog@atelier.com"
-                ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
-                : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-            lastLogin: new Date().toISOString(),
+        } catch (err: any) {
+          console.error("[Supabase Auth] Login error:", err);
+          return {
+            success: false,
+            message: err.message || "Failed to reach Supabase authentication server.",
           };
-          set({ isAdminAuthenticated: true, adminUser: user });
-          return { success: true };
         }
 
         return {
           success: false,
-          message: "Access Denied: Invalid administrator email or security password.",
+          message: "Access Denied: Invalid administrator email or password.",
         };
       },
 
@@ -141,15 +145,13 @@ export const useAdminAuthStore = create<AdminAuthState>()(
         set({ isAdminAuthenticated: false, adminUser: null });
       },
 
-      updateAdminProfile: (data) => {
+      updateAdminProfile: (data) =>
         set((state) => ({
           adminUser: state.adminUser ? { ...state.adminUser, ...data } : null,
-        }));
-      },
+        })),
     }),
     {
-      name: "atelier_admin_auth_v3",
+      name: "atelier_admin_auth",
     }
   )
 );
-export default useAdminAuthStore;
