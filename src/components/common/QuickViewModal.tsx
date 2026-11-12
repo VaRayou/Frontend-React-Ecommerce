@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, Heart, Check, Plus, Minus, ArrowRight, ShieldCheck } from "lucide-react";
+import { X, Star, Heart, Check, Plus, Minus, ArrowRight, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useUIStore } from "../../store/useUIStore";
 import { useCartStore } from "../../store/useCartStore";
@@ -152,16 +152,47 @@ export const QuickViewModal: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2">
                   {/* Left: Image Studio */}
                   <div className="bg-[#F8F8F8] p-4 sm:p-6 flex flex-col justify-between">
-                  <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-gray-200 shadow-inner">
+                  <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-gray-200 shadow-inner group">
                     <img
                       src={product.images[selectedImage] || product.images[0]}
                       alt={product.name}
                       className="w-full h-full object-cover transition-all duration-300"
                     />
                     {product.badge && (
-                      <span className="absolute top-4 left-4 px-3 py-1 bg-[#111111] text-[#D6FF00] font-black text-[11px] tracking-wider uppercase rounded-full">
+                      <span className="absolute top-4 left-4 px-3 py-1 bg-[#111111] text-[#D6FF00] font-black text-[11px] tracking-wider uppercase rounded-full z-10">
                         {product.badge}
                       </span>
+                    )}
+
+                    {/* Navigation Arrows for QuickView */}
+                    {product.images && product.images.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+                          }}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-black backdrop-blur-md flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95 cursor-pointer z-10"
+                          aria-label="Previous photo"
+                        >
+                          <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedImage((prev) => (prev + 1) % product.images.length);
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-black backdrop-blur-md flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95 cursor-pointer z-10"
+                          aria-label="Next photo"
+                        >
+                          <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                        </button>
+                      </>
                     )}
                   </div>
 

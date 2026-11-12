@@ -12,6 +12,8 @@ import {
   Plus,
   Minus,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ArrowRight,
   Share2,
   X,
@@ -142,8 +144,47 @@ export const ProductDetails: React.FC = () => {
 
   const { addToCart } = useCartStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
-  const { showToast, openCartDrawer } = useUIStore();
+  const { showToast, openCartDrawer, closeCartDrawer } = useUIStore();
   const { formatPrice } = useCurrencyStore();
+
+  // Mobile Touch Swipe State for Gallery
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || !product?.images || product.images.length <= 1) return;
+    const diff = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        // swipe right -> previous photo
+        setActiveImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+      } else {
+        // swipe left -> next photo
+        setActiveImage((prev) => (prev + 1) % product.images.length);
+      }
+    }
+    setTouchStartX(null);
+  };
+
+  // Keyboard Arrow Left/Right Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      if (!product?.images || product.images.length <= 1) return;
+      if (e.key === "ArrowLeft") {
+        setActiveImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+      } else if (e.key === "ArrowRight") {
+        setActiveImage((prev) => (prev + 1) % product.images.length);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [product?.images]);
 
   // Restock Waitlist state ("Notify Me When Back in Stock")
   const [waitlistContact, setWaitlistContact] = useState("");
@@ -197,35 +238,45 @@ export const ProductDetails: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [id, product]);
 
-  const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      showToast("Please sign in or create an account to purchase this product", "info");
-      navigate("/login", { state: { from: location.pathname } });
-      return;
+  const handleAddToCart = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
     if (isOutOfStock) {
       showToast(`"${product.name}" is currently out of stock`, "error");
       return;
     }
-    const safeQty = Math.min(quantity, stockCount);
+    const safeQty = Math.min(quantity, Math.max(1, stockCount));
     addToCart(product, safeQty, selectedSize, product.colors[selectedColor]);
     showToast(`Added ${safeQty}x "${product.name}" to bag`, "success", product.images[0]);
     openCartDrawer();
   };
 
-  const handleBuyNow = () => {
-    if (!isAuthenticated) {
-      showToast("Please sign in or create an account to purchase this product", "info");
-      navigate("/login", { state: { from: location.pathname } });
-      return;
+  const handleBuyNow = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
     if (isOutOfStock) {
       showToast(`"${product.name}" is currently out of stock`, "error");
       return;
     }
-    const safeQty = Math.min(quantity, stockCount);
+    const safeQty = Math.min(quantity, Math.max(1, stockCount));
+
+    // 1. Add item to cart store
     addToCart(product, safeQty, selectedSize, product.colors[selectedColor]);
-    navigate("/checkout");
+
+    // 2. Ensure cart drawer is closed so checkout screen is unblocked
+    closeCartDrawer();
+
+    // 3. Direct route to checkout or login with guaranteed post-login redirect to checkout
+    if (isAuthenticated) {
+      navigate("/checkout");
+    } else {
+      showToast(`Added to bag! Sign in to complete your instant checkout`, "info", product.images[0]);
+      navigate("/login", { state: { from: "/checkout" } });
+    }
   };
 
   const handleWishlistToggle = () => {
@@ -398,24 +449,81 @@ export const ProductDetails: React.FC = () => {
           )}
 
           {/* Large Main Image */}
-          <div className="relative aspect-[3/4] w-full rounded-3xl overflow-hidden bg-[#ECECEC] shadow-inner group">
+          <div
+            className="relative aspect-[3/4] w-full rounded-3xl overflow-hidden bg-[#ECECEC] shadow-inner group select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <img
               src={product.images[activeImage] || product.images[0]}
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             />
             {isOutOfStock ? (
-              <span className="absolute top-5 left-5 px-3.5 py-1.5 rounded-full bg-rose-600 text-white font-black text-xs tracking-wider uppercase shadow-md">
+              <span className="absolute top-5 left-5 px-3.5 py-1.5 rounded-full bg-rose-600 text-white font-black text-xs tracking-wider uppercase shadow-md z-10">
                 Out of Stock
               </span>
             ) : (
               product.badge && (
-                <span className="absolute top-5 left-5 px-3.5 py-1 rounded-full bg-black text-[#D6FF00] font-black text-xs tracking-wider uppercase shadow-md">
+                <span className="absolute top-5 left-5 px-3.5 py-1 rounded-full bg-black text-[#D6FF00] font-black text-xs tracking-wider uppercase shadow-md z-10">
                   {product.badge}
                 </span>
               )
             )}
-            <span className="absolute bottom-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-white text-[11px] font-semibold">
+
+            {/* Left and Right Navigation Arrows (Visible whenever product has > 1 image) */}
+            {product.images && product.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+                  }}
+                  className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/90 hover:bg-white text-black backdrop-blur-md flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-90 cursor-pointer z-20 border border-black/5"
+                  aria-label="Previous photo"
+                  title="Previous photo"
+                >
+                  <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveImage((prev) => (prev + 1) % product.images.length);
+                  }}
+                  className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/90 hover:bg-white text-black backdrop-blur-md flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-90 cursor-pointer z-20 border border-black/5"
+                  aria-label="Next photo"
+                  title="Next photo"
+                >
+                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+                </button>
+
+                {/* Mobile & Desktop Slide Indicator Dots */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/45 backdrop-blur-md z-10">
+                  {product.images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setActiveImage(idx);
+                      }}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        activeImage === idx ? "w-5 bg-[#D6FF00]" : "w-1.5 bg-white/70 hover:bg-white"
+                      }`}
+                      aria-label={`Go to photo ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            <span className="absolute bottom-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-white text-[11px] font-semibold z-10">
               {activeImage + 1} / {product.images.length}
             </span>
           </div>
@@ -1057,27 +1165,28 @@ export const ProductDetails: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               disabled={isOutOfStock}
               onClick={handleAddToCart}
-              className={`px-3.5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
                 isOutOfStock
                   ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-[#111111] text-white active:scale-95 shadow-sm"
+                  : "bg-[#111111] hover:bg-black text-white active:scale-95 shadow-sm"
               }`}
             >
               <ShoppingBag className={`w-3.5 h-3.5 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`} />
-              <span>{isOutOfStock ? "Sold Out" : "Add"}</span>
+              <span>{isOutOfStock ? "Sold Out" : "Add to Bag"}</span>
             </button>
             {!isOutOfStock && (
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="px-3.5 py-2.5 rounded-xl bg-[#D6FF00] text-black text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all shadow-sm"
+                className="px-3.5 py-2.5 rounded-xl bg-[#D6FF00] hover:bg-[#c6ef00] text-black text-xs font-black uppercase tracking-wider active:scale-95 transition-all shadow-md cursor-pointer flex items-center gap-1"
               >
-                Buy Now
+                <span>Instant Buy</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
