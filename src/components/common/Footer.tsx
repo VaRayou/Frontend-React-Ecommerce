@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2, Copy, Check, Globe, ShieldCheck } from "lucide-react";
-import api from "../../services/api";
 import { useUIStore } from "../../store/useUIStore";
+import { telegramService } from "../../services/telegramService";
 
 export const Footer: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -14,12 +14,23 @@ export const Footer: React.FC = () => {
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !email.includes("@")) return;
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !cleanEmail.includes("@")) return;
     setSubmitting(true);
     try {
-      const res = await api.post("/newsletter/", { email: email.trim() });
-      if (res.data?.promoCode) {
-        setPromoCode(res.data.promoCode);
+      const subs = JSON.parse(localStorage.getItem("atelier_newsletter_subscribers") || "[]");
+      if (!subs.includes(cleanEmail)) {
+        subs.push(cleanEmail);
+        localStorage.setItem("atelier_newsletter_subscribers", JSON.stringify(subs.slice(0, 500)));
+        telegramService
+          .sendMessage(
+            `📬 <b>NEW NEWSLETTER SUBSCRIBER</b>\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `✉️ <b>Email:</b> <code>${cleanEmail}</code>\n` +
+              `🏷️ <b>Granted Promo:</b> <code>ATELIER20</code> (20% off)\n` +
+              `🕒 <b>Time:</b> ${new Date().toLocaleTimeString()} ICT`
+          )
+          .catch(() => {});
       }
       setSubscribed(true);
       setEmail("");

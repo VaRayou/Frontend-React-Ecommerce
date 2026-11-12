@@ -730,6 +730,78 @@ export const telegramService = {
       outCount: outOfStockItems.length,
     };
   },
+
+  /**
+   * Sends an instant Telegram alert when a patron submits an inquiry via the Contact Concierge.
+   */
+  sendContactInquiry: async (inquiry: {
+    name: string;
+    email: string;
+    phone?: string;
+    subject?: string;
+    message: string;
+  }): Promise<{ ok: boolean; description?: string }> => {
+    const msg =
+      `🛎️ <b>NEW CLIENT CONCIERGE INQUIRY</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 <b>Patron:</b> ${escapeHtml(inquiry.name)}\n` +
+      `✉️ <b>Email:</b> <code>${escapeHtml(inquiry.email)}</code>\n` +
+      (inquiry.phone ? `📞 <b>Phone:</b> <code>${escapeHtml(inquiry.phone)}</code>\n` : "") +
+      `🏷️ <b>Subject:</b> <b>${escapeHtml(inquiry.subject || "General Inquiry")}</b>\n` +
+      `🕒 <b>Received:</b> ${formatCambodiaTimestamp()}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `💬 <b>Client Message:</b>\n` +
+      `<i>"${escapeHtml(inquiry.message)}"</i>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `⚡ <i>Reply directly to the client via email or phone.</i>`;
+
+    const replyMarkup = {
+      inline_keyboard: [
+        [
+          { text: "✉️ Email Client", url: `mailto:${encodeURIComponent(inquiry.email)}?subject=Re:%20${encodeURIComponent(inquiry.subject || "Atelier Inquiry")}` },
+          { text: "🛍️ View Boutique", url: ADMIN_ORDERS_URL },
+        ],
+      ],
+    };
+
+    return await telegramService.sendMessage(msg, undefined, undefined, replyMarkup);
+  },
+
+  /**
+   * Sends an instant Telegram alert when a customer joins the restock waitlist for a sold-out item.
+   */
+  sendWaitlistAlert: async (data: {
+    productName: string;
+    productId?: string | number;
+    contact: string;
+    customerName?: string;
+  }): Promise<{ ok: boolean; description?: string }> => {
+    const isEmail = data.contact.includes("@");
+    const sku = String(data.productId || "").slice(-6).toUpperCase();
+
+    const msg =
+      `📦 <b>RESTOCK WAITLIST REQUEST RECEIVED</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👗 <b>Product:</b> <b>${escapeHtml(data.productName)}</b>\n` +
+      (sku ? `🏷️ <b>SKU/ID:</b> <code>#${sku}</code>\n` : "") +
+      `👤 <b>Requested By:</b> ${escapeHtml(data.customerName || "Interested Patron")}\n` +
+      (isEmail
+        ? `✉️ <b>Contact Email:</b> <code>${escapeHtml(data.contact)}</code>\n`
+        : `📞 <b>Contact Phone:</b> <code>${escapeHtml(data.contact)}</code>\n`) +
+      `🕒 <b>Requested At:</b> ${formatCambodiaTimestamp()}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `💡 <i>High demand detected. Consider restocking this piece in the Atelier catalog.</i>`;
+
+    const replyMarkup = {
+      inline_keyboard: [
+        [
+          { text: "📦 Restock in Admin", url: ADMIN_PRODUCTS_URL },
+        ],
+      ],
+    };
+
+    return await telegramService.sendMessage(msg, undefined, undefined, replyMarkup);
+  },
 };
 
 export default telegramService;

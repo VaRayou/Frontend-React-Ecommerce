@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, Send, CheckCircle2, ChevronDown, Clock } from "lucide-react";
 import { useUIStore } from "../../store/useUIStore";
 import { useAuthStore } from "../../store/useAuthStore";
-import api from "../../services/api";
+import { telegramService } from "../../services/telegramService";
 
 const FAQS = [
   {
@@ -51,7 +51,23 @@ export const Contact: React.FC = () => {
     if (!formData.name || !formData.email || !formData.message) return;
     setSubmitting(true);
     try {
-      await api.post("/contact/", formData);
+      // 1. Send live Telegram concierge alert to store staff
+      await telegramService.sendContactInquiry({
+        name: formData.name,
+        email: formData.email,
+        phone: user?.phone,
+        subject: formData.subject,
+        message: formData.message,
+      });
+
+      // 2. Persist locally for audit
+      const existingInquiries = JSON.parse(localStorage.getItem("atelier_contact_inquiries") || "[]");
+      existingInquiries.unshift({
+        id: `inq-${Date.now()}`,
+        ...formData,
+        createdAt: new Date().toISOString(),
+      });
+      localStorage.setItem("atelier_contact_inquiries", JSON.stringify(existingInquiries.slice(0, 50)));
     } catch (err) {
       console.warn("Contact inquiry sync notice:", err);
     } finally {

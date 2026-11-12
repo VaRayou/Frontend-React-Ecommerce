@@ -27,7 +27,7 @@ import { ProductCard } from "../../components/product/ProductCard";
 import { productService, ensureAdminSession } from "../../services/productService";
 import { supabase } from "../../services/supabase";
 import { Product } from "../../types";
-import api from "../../services/api";
+import { telegramService } from "../../services/telegramService";
 
 export const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -152,14 +152,29 @@ export const ProductDetails: React.FC = () => {
 
   const handleJoinWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!waitlistContact.trim()) return;
+    if (!waitlistContact.trim() || !product) return;
     setJoiningWaitlist(true);
     try {
-      const isEmail = waitlistContact.includes("@");
-      await api.post(`/products/${product.id}/waitlist/`, {
-        email: isEmail ? waitlistContact.trim() : "",
-        phone: !isEmail ? waitlistContact.trim() : "",
+      // 1. Send instant Telegram alert to boutique manager
+      await telegramService.sendWaitlistAlert({
+        productName: product.name,
+        productId: product.id,
+        contact: waitlistContact.trim(),
+        customerName: user?.name || "Interested Patron",
       });
+
+      // 2. Persist in local storage audit
+      const existingWaitlist = JSON.parse(localStorage.getItem("atelier_waitlist_entries") || "[]");
+      existingWaitlist.unshift({
+        id: `wait-${Date.now()}`,
+        productId: product.id,
+        productName: product.name,
+        contact: waitlistContact.trim(),
+        customerName: user?.name || "",
+        createdAt: new Date().toISOString(),
+      });
+      localStorage.setItem("atelier_waitlist_entries", JSON.stringify(existingWaitlist.slice(0, 100)));
+
       setWaitlistJoined(true);
       setWaitlistContact("");
       showToast("You're on the restock waitlist! We'll alert you as soon as it returns.", "success");

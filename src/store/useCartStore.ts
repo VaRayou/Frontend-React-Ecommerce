@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CartItem, Product } from "../types";
 import { supabase } from "../services/supabase";
-import api from "../services/api";
+import { productService } from "../services/productService";
 
 interface CartState {
   items: CartItem[];
@@ -225,13 +225,13 @@ export const useCartStore = create<CartState>()(
         if (currentItems.length === 0) return { valid: true, adjustments: [] };
 
         try {
-          const res = await api.get("/products/");
-          if (!Array.isArray(res.data)) return { valid: true, adjustments: [] };
+          const liveProducts = await productService.getProducts();
+          if (!Array.isArray(liveProducts)) return { valid: true, adjustments: [] };
 
           const liveMap = new Map<string, any>();
-          for (const p of res.data) {
+          for (const p of liveProducts) {
             if (p.id) liveMap.set(String(p.id), p);
-            if (p._id) liveMap.set(String(p._id), p);
+            if ((p as any)._id) liveMap.set(String((p as any)._id), p);
           }
 
           const adjustments: string[] = [];

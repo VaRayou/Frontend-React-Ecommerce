@@ -32,6 +32,8 @@ import {
 import { productService } from "../../services/productService";
 import { categoryService } from "../../services/categoryService";
 import { telegramService } from "../../services/telegramService";
+import { supabase } from "../../services/supabase";
+import { soundEffects } from "../../utils/soundEffects";
 import DataTable from "../../components/admin/DataTable";
 import Modal from "../../components/common/Modal";
 import Input from "../../components/common/Input";
@@ -316,7 +318,49 @@ export function ManageProducts() {
   };
 
   useEffect(() => {
+    let active = true;
     loadData(cachedProds.length > 0);
+
+    const handleSync = () => {
+      if (active) loadData(true);
+    };
+    window.addEventListener("atelier_products_updated", handleSync);
+    window.addEventListener("storage", handleSync);
+
+    // Live Supabase Realtime WebSocket subscription for instant inventory & catalog sync
+    const productsChannel = supabase
+      .channel("admin_products_realtime_feed")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products" },
+        (payload) => {
+          if (!active) return;
+          if (payload.eventType === "INSERT") {
+            soundEffects.playOrderChime();
+            showNotification(`✨ New piece added to catalog: "${payload.new?.name || "Product"}"`);
+          } else if (payload.eventType === "UPDATE") {
+            const pName = payload.new?.name || "Product";
+            const stock = payload.new?.stock;
+            if (stock !== undefined && Number(stock) <= 5) {
+              soundEffects.playOrderChime();
+            }
+            showNotification(
+              `📦 Inventory Synced: "${pName}" (${stock !== undefined ? stock + " units" : "Updated"})`
+            );
+          } else if (payload.eventType === "DELETE") {
+            showNotification(`🗑 Product removed from cloud database`);
+          }
+          loadData(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      window.removeEventListener("atelier_products_updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+      supabase.removeChannel(productsChannel);
+    };
   }, []);
 
   const handleToggleColorPreset = (preset) => {
