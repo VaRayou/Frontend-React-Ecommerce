@@ -22,6 +22,12 @@ import {
   Check,
   Download,
   Send,
+  Palette,
+  Scissors,
+  ShieldCheck,
+  Heart,
+  ShoppingBag,
+  Star,
 } from "lucide-react";
 import { productService } from "../../services/productService";
 import { categoryService } from "../../services/categoryService";
@@ -69,6 +75,63 @@ const PRESET_IMAGES = [
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80";
 
+const LUXURY_PALETTES = [
+  { name: "Obsidian Black", hex: "#111111" },
+  { name: "Chalk Ecru", hex: "#F3EDE2" },
+  { name: "Slate Anthracite", hex: "#334155" },
+  { name: "Camel Tan", hex: "#C19A6B" },
+  { name: "Royal Navy", hex: "#1E293B" },
+  { name: "Olive Drab", hex: "#556B2F" },
+  { name: "Bordeaux Crimson", hex: "#7F1D1D" },
+  { name: "Studio Lime", hex: "#D6FF00" },
+  { name: "Pure White", hex: "#FFFFFF" },
+];
+
+const SIZE_PRESETS = {
+  apparel: ["XS", "S", "M", "L", "XL", "XXL"],
+  footwear: ["38", "39", "40", "41", "42", "43", "44"],
+  accessories: ["One Size"],
+};
+
+const BADGE_OPTIONS = [
+  { value: "NONE", label: "No Badge", pill: "bg-gray-100 text-gray-700 hover:bg-gray-200" },
+  { value: "HOT", label: "⚡ HOT", pill: "bg-[#D6FF00] text-black font-black hover:bg-[#c6ef00]" },
+  { value: "NEW", label: "✨ NEW", pill: "bg-black text-[#D6FF00] font-black hover:bg-neutral-800" },
+  { value: "SALE", label: "🏷️ SALE", pill: "bg-rose-500 text-white font-black hover:bg-rose-600" },
+  { value: "LIMITED", label: "👑 LIMITED", pill: "bg-amber-400 text-black font-black hover:bg-amber-500" },
+  { value: "BEST SELLER", label: "⭐ BEST SELLER", pill: "bg-neutral-900 text-white font-black hover:bg-black" },
+];
+
+const INITIAL_PRODUCT_FORM = {
+  name: "",
+  subtitle: "",
+  category: "Women",
+  brand: "ATELIER",
+  price: "",
+  originalPrice: "",
+  discount: "",
+  stock: "15",
+  image: "",
+  images: [],
+  status: "Active",
+  badge: "NEW",
+  colors: [
+    { name: "Obsidian Black", hex: "#111111" },
+    { name: "Chalk Ecru", hex: "#F3EDE2" },
+  ],
+  sizes: ["XS", "S", "M", "L", "XL"],
+  material: "Virgin Wool & Mulberry Silk",
+  details: [
+    "Bespoke Italian architectural tailoring",
+    "Refined tactile hand-finished seams",
+    "Sustainable natural fiber composition",
+  ],
+  description: "",
+  isFeatured: true,
+  isRecommended: true,
+  isNewArrival: true,
+};
+
 export function ManageProducts() {
   const cachedProds = productService.getCachedProducts();
   const cachedCats = categoryService.getCachedCategories();
@@ -87,20 +150,11 @@ export function ManageProducts() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Form state
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    category: "Women",
-    brand: "ATELIER",
-    price: "",
-    originalPrice: "",
-    stock: "15",
-    image: "",
-    images: [],
-    status: "Active",
-    isFeatured: true,
-    isRecommended: true,
-  });
+  const [formData, setFormData] = useState(INITIAL_PRODUCT_FORM);
+  const [customColorName, setCustomColorName] = useState("");
+  const [customColorHex, setCustomColorHex] = useState("#111111");
+  const [customSizeInput, setCustomSizeInput] = useState("");
+  const [customDetailInput, setCustomDetailInput] = useState("");
 
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -265,24 +319,114 @@ export function ManageProducts() {
     loadData(cachedProds.length > 0);
   }, []);
 
+  const handleToggleColorPreset = (preset) => {
+    setFormData((prev) => {
+      const exists = (prev.colors || []).some(
+        (c) => c.hex.toLowerCase() === preset.hex.toLowerCase() || c.name.toLowerCase() === preset.name.toLowerCase()
+      );
+      if (exists) {
+        return {
+          ...prev,
+          colors: (prev.colors || []).filter(
+            (c) => c.hex.toLowerCase() !== preset.hex.toLowerCase() && c.name.toLowerCase() !== preset.name.toLowerCase()
+          ),
+        };
+      } else {
+        return {
+          ...prev,
+          colors: [...(prev.colors || []), preset],
+        };
+      }
+    });
+  };
+
+  const handleAddCustomColor = () => {
+    const cleanName = customColorName.trim();
+    if (!cleanName) return;
+    setFormData((prev) => ({
+      ...prev,
+      colors: [...(prev.colors || []), { name: cleanName, hex: customColorHex }],
+    }));
+    setCustomColorName("");
+    setCustomColorHex("#111111");
+  };
+
+  const handleRemoveColor = (idx) => {
+    setFormData((prev) => ({
+      ...prev,
+      colors: (prev.colors || []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleToggleSize = (size) => {
+    setFormData((prev) => {
+      const exists = (prev.sizes || []).includes(size);
+      if (exists) {
+        return {
+          ...prev,
+          sizes: (prev.sizes || []).filter((s) => s !== size),
+        };
+      } else {
+        return {
+          ...prev,
+          sizes: [...(prev.sizes || []), size],
+        };
+      }
+    });
+  };
+
+  const handleApplySizePreset = (presetKey) => {
+    if (SIZE_PRESETS[presetKey]) {
+      setFormData((prev) => ({
+        ...prev,
+        sizes: [...SIZE_PRESETS[presetKey]],
+      }));
+    }
+  };
+
+  const handleAddCustomSize = (e) => {
+    if (e) e.preventDefault();
+    const clean = customSizeInput.trim().toUpperCase();
+    if (!clean) return;
+    if (!(formData.sizes || []).includes(clean)) {
+      setFormData((prev) => ({
+        ...prev,
+        sizes: [...(prev.sizes || []), clean],
+      }));
+    }
+    setCustomSizeInput("");
+  };
+
+  const handleAddDetail = (e) => {
+    if (e) e.preventDefault();
+    const clean = customDetailInput.trim();
+    if (!clean) return;
+    setFormData((prev) => ({
+      ...prev,
+      details: [...(prev.details || []), clean],
+    }));
+    setCustomDetailInput("");
+  };
+
+  const handleRemoveDetail = (idx) => {
+    setFormData((prev) => ({
+      ...prev,
+      details: (prev.details || []).filter((_, i) => i !== idx),
+    }));
+  };
+
   const handleOpenAdd = () => {
     setIsEditing(false);
     setSelectedProduct(null);
     setFormData({
-      name: "",
-      description: "",
+      ...INITIAL_PRODUCT_FORM,
       category: categories[0]?.name || "Women",
-      brand: "ATELIER",
-      price: "",
-      originalPrice: "",
-      stock: "15",
-      image: "",
-      images: [],
-      status: "Active",
-      isFeatured: true,
-      isRecommended: true,
     });
     setImageTab("upload");
+    setCustomColorName("");
+    setCustomColorHex("#111111");
+    setCustomSizeInput("");
+    setCustomDetailInput("");
     setErrors({});
     setIsAddEditModalOpen(true);
   };
@@ -298,11 +442,12 @@ export function ManageProducts() {
 
     setFormData({
       name: product.name || "",
-      description: product.description || "",
+      subtitle: product.subtitle || "",
       category: product.category || categories[0]?.name || "Women",
       brand: product.brand || "ATELIER",
       price: product.price !== undefined ? String(product.price) : "",
       originalPrice: product.originalPrice !== undefined ? String(product.originalPrice) : "",
+      discount: product.discount || "",
       stock:
         product.stock !== undefined
           ? String(product.stock)
@@ -312,10 +457,33 @@ export function ManageProducts() {
       image: product.image || existingImgs[0] || "",
       images: existingImgs,
       status: product.status || "Active",
+      badge: product.badge || "NONE",
+      colors:
+        Array.isArray(product.colors) && product.colors.length > 0
+          ? product.colors
+          : [
+              { name: "Obsidian Black", hex: "#111111" },
+              { name: "Chalk Ecru", hex: "#F3EDE2" },
+            ],
+      sizes:
+        Array.isArray(product.sizes) && product.sizes.length > 0
+          ? product.sizes
+          : ["XS", "S", "M", "L", "XL"],
+      material: product.material || "Virgin Wool & Mulberry Silk",
+      details:
+        Array.isArray(product.details) && product.details.length > 0
+          ? product.details
+          : ["Bespoke Italian architectural tailoring", "Refined tactile hand-finished seams"],
+      description: product.description || "",
       isFeatured: product.isFeatured !== undefined ? Boolean(product.isFeatured) : true,
       isRecommended: product.isRecommended !== undefined ? Boolean(product.isRecommended) : true,
+      isNewArrival: product.isNewArrival !== undefined ? Boolean(product.isNewArrival) : true,
     });
     setImageTab(product.image ? "url" : "upload");
+    setCustomColorName("");
+    setCustomColorHex("#111111");
+    setCustomSizeInput("");
+    setCustomDetailInput("");
     setErrors({});
     setIsAddEditModalOpen(true);
   };
@@ -444,14 +612,26 @@ export function ManageProducts() {
         ? [formData.image]
         : [DEFAULT_IMAGE];
 
+      const numPrice = Number(formData.price) || 0;
+      const numOrig = formData.originalPrice ? Number(formData.originalPrice) : numPrice;
+      const computedDiscount =
+        numOrig > numPrice && numPrice > 0
+          ? `${Math.round(((numOrig - numPrice) / numOrig) * 100)}% OFF`
+          : formData.discount || "";
+
       const payload = {
         ...formData,
-        price: Number(formData.price),
-        originalPrice: formData.originalPrice ? Number(formData.originalPrice) : Number(formData.price),
+        price: numPrice,
+        originalPrice: numOrig,
+        discount: computedDiscount,
         stock: Number(formData.stock),
         quantity: Number(formData.stock),
         image: finalImages[0] || DEFAULT_IMAGE,
         images: finalImages,
+        badge: formData.badge && formData.badge !== "NONE" ? formData.badge : null,
+        isFeatured: Boolean(formData.isFeatured),
+        isRecommended: Boolean(formData.isRecommended),
+        isNewArrival: Boolean(formData.isNewArrival),
       };
 
       if (isEditing && selectedProduct) {
@@ -524,12 +704,34 @@ export function ManageProducts() {
             }}
           />
           <div className="min-w-0">
-            <div className="font-bold text-gray-900 text-xs sm:text-sm truncate max-w-xs sm:max-w-sm">
-              {item.name}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-bold text-gray-900 text-xs sm:text-sm truncate max-w-xs sm:max-w-sm">
+                {item.name}
+              </span>
+              {item.badge && (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-[#D6FF00] text-black">
+                  {item.badge}
+                </span>
+              )}
             </div>
+            {item.subtitle && (
+              <div className="text-[10px] text-gray-400 truncate">{item.subtitle}</div>
+            )}
             <div className="text-[11px] text-gray-500 flex items-center gap-1.5 mt-0.5">
               <span>Brand:</span>
               <strong className="text-gray-700 font-semibold">{item.brand || "ATELIER"}</strong>
+              {Array.isArray(item.colors) && item.colors.length > 0 && (
+                <div className="flex items-center gap-1 ml-1.5">
+                  {item.colors.slice(0, 3).map((c, i) => (
+                    <span
+                      key={i}
+                      className="w-2 h-2 rounded-full border border-gray-300"
+                      style={{ backgroundColor: c.hex }}
+                      title={c.name}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -958,7 +1160,7 @@ export function ManageProducts() {
       <Modal
         isOpen={isAddEditModalOpen}
         onClose={() => setIsAddEditModalOpen(false)}
-        maxWidth={840}
+        maxWidth={1080}
         title={
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
@@ -1015,6 +1217,7 @@ export function ManageProducts() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Column: Product Identity & Details */}
             <div className="lg:col-span-7 space-y-4">
+              {/* 1. Core Product Specifications Card */}
               <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-4">
                 <div className="flex items-center justify-between border-b border-gray-200 pb-2.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-900">
@@ -1030,6 +1233,13 @@ export function ManageProducts() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   error={errors.name}
                   required
+                />
+
+                <Input
+                  label="Silhouette Subtitle / Tagline"
+                  placeholder="e.g. Oversized Tailored Wool Silhouette or SS26 Runway Capsule"
+                  value={formData.subtitle}
+                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                 />
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1076,7 +1286,7 @@ export function ManageProducts() {
                     }}
                     className="w-full px-3 py-2 text-xs sm:text-sm bg-white rounded-xl border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-black/15 font-semibold"
                   >
-                    <option value="Active">🟢 Active (Visible & In Stock)</option>
+                    <option value="Active">🟢 Active (Visible &amp; In Stock)</option>
                     <option value="Out of Stock">🔴 Out of Stock (Sold Out)</option>
                     <option value="Inactive">⚪ Inactive (Draft / Archived)</option>
                   </select>
@@ -1086,12 +1296,52 @@ export function ManageProducts() {
                   label="Product Description"
                   placeholder="Describe material composition, garment silhouette, tailor specifications..."
                   type="textarea"
-                  rows={3}
+                  rows={2}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
 
-                <div className="pt-1 flex items-center gap-6">
+                <Input
+                  label="Fabrication &amp; Material Composition"
+                  placeholder="e.g. 100% Organic Virgin Wool &amp; Mulberry Silk Blend"
+                  value={formData.material}
+                  onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                />
+              </div>
+
+              {/* 2. Storefront Badges & Placements Card */}
+              <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-black" />
+                    <span>Storefront Badges &amp; Placements</span>
+                  </span>
+                  <span className="text-[11px] text-gray-500 font-semibold">Home Page Sync</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1.5">
+                    Storefront Card Badge
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BADGE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, badge: opt.value })}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                          formData.badge === opt.value
+                            ? "border-black ring-2 ring-black/20 scale-102 " + opt.pill
+                            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-gray-200 flex flex-wrap items-center gap-4">
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -1099,7 +1349,17 @@ export function ManageProducts() {
                       onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
                       className="w-4 h-4 rounded text-black focus:ring-black accent-black"
                     />
-                    <span className="text-xs font-bold text-gray-700">⭐ Featured Runway</span>
+                    <span className="text-xs font-bold text-gray-800">⭐ Hero Spotlight Carousel</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.isNewArrival}
+                      onChange={(e) => setFormData({ ...formData, isNewArrival: e.target.checked })}
+                      className="w-4 h-4 rounded text-black focus:ring-black accent-black"
+                    />
+                    <span className="text-xs font-bold text-gray-800">✨ Home "New Arrivals" Section</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -1109,8 +1369,236 @@ export function ManageProducts() {
                       onChange={(e) => setFormData({ ...formData, isRecommended: e.target.checked })}
                       className="w-4 h-4 rounded text-black focus:ring-black accent-black"
                     />
-                    <span className="text-xs font-bold text-gray-700">🔥 Best Seller</span>
+                    <span className="text-xs font-bold text-gray-800">🔥 Best Seller Recommendation</span>
                   </label>
+                </div>
+              </div>
+
+              {/* 3. Garment Color Swatches & Palette Builder */}
+              <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-black" />
+                    <span>Garment Color Swatches</span>
+                  </span>
+                  <span className="text-[11px] text-gray-500 font-semibold">Home Card Dots</span>
+                </div>
+
+                {/* Selected Color Chips */}
+                <div className="flex flex-wrap gap-2">
+                  {(formData.colors || []).map((col, idx) => (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white border border-gray-300 text-xs font-bold text-gray-900 shadow-2xs"
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full border border-gray-300 shadow-2xs"
+                        style={{ backgroundColor: col.hex }}
+                      />
+                      <span>{col.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveColor(idx)}
+                        className="text-gray-400 hover:text-rose-600 transition-colors ml-0.5 cursor-pointer"
+                        title="Remove color"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {(!formData.colors || formData.colors.length === 0) && (
+                    <span className="text-xs text-gray-400 italic">No colors selected (default will apply)</span>
+                  )}
+                </div>
+
+                {/* Quick Luxury Presets */}
+                <div>
+                  <span className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Click to Toggle Luxury Staples:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {LUXURY_PALETTES.map((preset) => {
+                      const isSelected = (formData.colors || []).some(
+                        (c) => c.hex.toLowerCase() === preset.hex.toLowerCase()
+                      );
+                      return (
+                        <button
+                          key={preset.hex}
+                          type="button"
+                          onClick={() => handleToggleColorPreset(preset)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-black text-[#D6FF00] border-black shadow-xs font-bold"
+                              : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                          }`}
+                        >
+                          <span
+                            className="w-2.5 h-2.5 rounded-full border border-gray-400/50"
+                            style={{ backgroundColor: preset.hex }}
+                          />
+                          <span>{preset.name}</span>
+                          {isSelected && <Check className="w-3 h-3 text-[#D6FF00]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Custom Color Input */}
+                <div className="pt-2 border-t border-gray-200 flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={customColorHex}
+                    onChange={(e) => setCustomColorHex(e.target.value)}
+                    className="w-8 h-8 rounded-lg cursor-pointer border border-gray-300 p-0.5 bg-white shrink-0"
+                    title="Pick custom hex color"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Custom Color Name (e.g. Desert Sand)..."
+                    value={customColorName}
+                    onChange={(e) => setCustomColorName(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-xs bg-white rounded-xl border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-black/15 font-semibold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomColor}
+                    className="px-3.5 py-1.5 rounded-xl bg-black text-[#D6FF00] font-bold text-xs uppercase cursor-pointer"
+                  >
+                    Add Color
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Size Variants & Presets Card */}
+              <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+                    <Scissors className="w-3.5 h-3.5 text-black" />
+                    <span>Size Variants</span>
+                  </span>
+                  <span className="text-[11px] text-gray-500 font-semibold">Storefront Quick Add</span>
+                </div>
+
+                {/* Active Sizes */}
+                <div className="flex flex-wrap gap-1.5">
+                  {(formData.sizes || []).map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => handleToggleSize(sz)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black text-[#D6FF00] text-xs font-black shadow-xs cursor-pointer hover:bg-neutral-800"
+                      title="Click to remove size"
+                    >
+                      <span>{sz}</span>
+                      <X className="w-3 h-3 text-[#D6FF00]" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Presets */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleApplySizePreset("apparel")}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-gray-300 text-xs font-bold text-gray-700 hover:border-black cursor-pointer"
+                  >
+                    Apparel (XS–XXL)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplySizePreset("footwear")}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-gray-300 text-xs font-bold text-gray-700 hover:border-black cursor-pointer"
+                  >
+                    Footwear (38–44)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplySizePreset("accessories")}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-gray-300 text-xs font-bold text-gray-700 hover:border-black cursor-pointer"
+                  >
+                    One Size
+                  </button>
+                </div>
+
+                {/* Custom Size Input */}
+                <div className="pt-2 border-t border-gray-200 flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add custom size (e.g. 3XL, 45, 100ml)..."
+                    value={customSizeInput}
+                    onChange={(e) => setCustomSizeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddCustomSize();
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs bg-white rounded-xl border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-black/15 font-semibold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomSize}
+                    className="px-3.5 py-1.5 rounded-xl bg-black text-[#D6FF00] font-bold text-xs uppercase cursor-pointer"
+                  >
+                    Add Size
+                  </button>
+                </div>
+              </div>
+
+              {/* 5. Craftsmanship & Atelier Details Card */}
+              <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200 space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-black" />
+                    <span>Craftsmanship &amp; Atelier Details</span>
+                  </span>
+                  <span className="text-[11px] text-gray-500 font-semibold">Quick View &amp; Accordion</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {(formData.details || []).map((det, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-800"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+                        <span className="truncate font-medium">{det}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDetail(idx)}
+                        className="text-gray-400 hover:text-rose-600 transition-colors cursor-pointer shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2 border-t border-gray-200 flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add craftsmanship specification..."
+                    value={customDetailInput}
+                    onChange={(e) => setCustomDetailInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddDetail();
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs bg-white rounded-xl border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-black/15 font-semibold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddDetail}
+                    className="px-3.5 py-1.5 rounded-xl bg-black text-[#D6FF00] font-bold text-xs uppercase cursor-pointer"
+                  >
+                    Add Bullet
+                  </button>
                 </div>
               </div>
             </div>
@@ -1365,6 +1853,129 @@ export function ManageProducts() {
                   </div>
                 )}
               </div>
+
+              {/* 3. Live Home Page Storefront Card Preview */}
+              <div className="p-4 rounded-2xl bg-gradient-to-b from-gray-950 to-neutral-900 text-white border border-gray-800 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-gray-800">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#D6FF00]" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#D6FF00]">
+                      Live Home Page Card Preview
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-mono">1:1 Storefront Sync</span>
+                </div>
+
+                <div className="bg-white rounded-2xl p-3 text-gray-900 shadow-xl max-w-xs mx-auto border border-gray-100">
+                  {/* Product Image Frame */}
+                  <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-gray-100">
+                    <img
+                      src={formData.image || (Array.isArray(formData.images) && formData.images[0]) || DEFAULT_IMAGE}
+                      alt={formData.name || "Preview"}
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* Badge Overlay */}
+                    {formData.badge && formData.badge !== "NONE" && (
+                      <span
+                        className={`absolute top-2 left-2 px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shadow-sm ${
+                          formData.badge === "HOT" || formData.badge === "NEW"
+                            ? "bg-[#D6FF00] text-black"
+                            : formData.badge === "SALE"
+                            ? "bg-rose-500 text-white"
+                            : "bg-black text-[#D6FF00]"
+                        }`}
+                      >
+                        {formData.badge}
+                      </span>
+                    )}
+
+                    {/* Multi-angle dots preview */}
+                    {Array.isArray(formData.images) && formData.images.length > 1 && (
+                      <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/50">
+                        {formData.images.slice(0, 4).map((_, i) => (
+                          <span
+                            key={i}
+                            className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-[#D6FF00] w-3" : "bg-white/60"}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Heart icon */}
+                    <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/85 flex items-center justify-center text-gray-600 shadow-xs">
+                      <Heart className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+
+                  {/* Card Details */}
+                  <div className="pt-2.5 space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                      <span className="truncate">{formData.category || "Collection"}</span>
+                      {/* Color Dots */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {(formData.colors || []).slice(0, 4).map((c, i) => (
+                          <span
+                            key={i}
+                            className="w-2.5 h-2.5 rounded-full border border-gray-300 shadow-2xs"
+                            style={{ backgroundColor: c.hex }}
+                            title={c.name}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="font-extrabold text-xs text-gray-950 truncate">
+                      {formData.name || "Untitled Runway Piece"}
+                    </div>
+
+                    {formData.subtitle && (
+                      <div className="text-[10px] text-gray-500 truncate leading-tight">
+                        {formData.subtitle}
+                      </div>
+                    )}
+
+                    {/* Price and Discount */}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-sm font-black text-black">
+                          ${Number(formData.price || 0).toFixed(2)}
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-[10px] line-through text-gray-400 font-semibold">
+                            ${Number(formData.originalPrice).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      {hasDiscount && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-[#D6FF00] text-black uppercase">
+                          {discountPercent}% OFF
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Stock Urgency Pill */}
+                    <div className="pt-1">
+                      {Number(formData.stock) <= 0 || formData.status === "Out of Stock" ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-[10px] font-bold text-rose-600">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          Out of Stock
+                        </span>
+                      ) : Number(formData.stock) <= 3 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/50 text-[10px] font-black text-amber-950">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                          ⚡ Only {formData.stock} left in studio
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          In Stock ({formData.stock} available)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </form>
@@ -1408,9 +2019,19 @@ export function ManageProducts() {
               <div className="font-mono text-[11px] text-gray-400">
                 DATABASE ID: #{String(selectedProduct.id || selectedProduct._id)}
               </div>
-              <h3 className="text-lg font-black text-gray-950">
-                {selectedProduct.name}
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-black text-gray-950">
+                  {selectedProduct.name}
+                </h3>
+                {selectedProduct.badge && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#D6FF00] text-black">
+                    {selectedProduct.badge}
+                  </span>
+                )}
+              </div>
+              {selectedProduct.subtitle && (
+                <p className="text-xs text-gray-500 font-medium">{selectedProduct.subtitle}</p>
+              )}
 
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                 <div>
@@ -1437,6 +2058,40 @@ export function ManageProducts() {
                   </strong>
                 </div>
               </div>
+
+              {/* Colors & Sizes in Inspect Modal */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-400 text-[11px] font-bold">Colors:</span>
+                  <div className="flex items-center gap-1">
+                    {(selectedProduct.colors || []).map((c, i) => (
+                      <span
+                        key={i}
+                        className="w-3 h-3 rounded-full border border-gray-300"
+                        style={{ backgroundColor: c.hex }}
+                        title={c.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-400 text-[11px] font-bold">Sizes:</span>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {(selectedProduct.sizes || []).map((s, i) => (
+                      <span key={i} className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 text-[10px] font-bold">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {selectedProduct.material && (
+                <div className="text-[11px] text-gray-600">
+                  <strong className="text-gray-800">Material:</strong> {selectedProduct.material}
+                </div>
+              )}
 
               <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 leading-relaxed">
                 {selectedProduct.description || "No editorial description available."}

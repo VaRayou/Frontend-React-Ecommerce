@@ -57,6 +57,7 @@ export const formatProductForDisplay = (p) => {
     price: Number(p.price || 0),
     originalPrice: Number(p.original_price ?? p.originalPrice ?? p.price ?? 0),
     discount: p.discount || "",
+    badge: p.badge || null,
     image: mainImg,
     images: Array.isArray(p.images) && p.images.length > 0 ? p.images : [mainImg],
     colors:
@@ -309,9 +310,10 @@ export const productService = {
             ? productData.details
             : ["Premium craftsmanship", "Refined tactile finish"],
         material: productData.material || "Virgin Wool & Silk Blend",
+        badge: productData.badge && productData.badge !== "NONE" ? productData.badge : null,
         is_featured: Boolean(productData.isFeatured ?? true),
         is_recommended: Boolean(productData.isRecommended ?? true),
-        is_latest: true,
+        is_latest: Boolean(productData.isNewArrival ?? productData.is_latest ?? true),
       };
 
       const { data, error } = await supabase
@@ -380,6 +382,7 @@ export const productService = {
       if (updatedFields.price !== undefined) patch.price = Number(updatedFields.price);
       if (updatedFields.originalPrice !== undefined) patch.original_price = Number(updatedFields.originalPrice);
       if (updatedFields.discount !== undefined) patch.discount = updatedFields.discount;
+      if (updatedFields.badge !== undefined) patch.badge = updatedFields.badge && updatedFields.badge !== "NONE" ? updatedFields.badge : null;
 
       if (updatedFields.stock !== undefined) {
         const s = Number(updatedFields.stock);
@@ -391,11 +394,14 @@ export const productService = {
 
       if (updatedFields.image !== undefined) patch.image = updatedFields.image;
       if (updatedFields.images !== undefined) patch.images = updatedFields.images;
+      if (updatedFields.colors !== undefined) patch.colors = updatedFields.colors;
+      if (updatedFields.sizes !== undefined) patch.sizes = updatedFields.sizes;
       if (updatedFields.description !== undefined) patch.description = updatedFields.description;
       if (updatedFields.details !== undefined) patch.details = updatedFields.details;
       if (updatedFields.material !== undefined) patch.material = updatedFields.material;
       if (updatedFields.isFeatured !== undefined) patch.is_featured = Boolean(updatedFields.isFeatured);
       if (updatedFields.isRecommended !== undefined) patch.is_recommended = Boolean(updatedFields.isRecommended);
+      if (updatedFields.isNewArrival !== undefined) patch.is_latest = Boolean(updatedFields.isNewArrival);
 
       const { data, error } = await supabase
         .from("products")
