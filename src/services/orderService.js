@@ -75,15 +75,15 @@ export const normalizeOrder = (order, idx = 0) => {
     (String(orderStatus).toLowerCase() === "pending"
       ? "Pending"
       : String(orderStatus).toLowerCase() === "cancelled"
-      ? "Cancelled"
-      : "Paid");
+        ? "Cancelled"
+        : "Paid");
   const paymentStatus =
     String(orderStatus).toLowerCase() === "cancelled"
       ? "Cancelled"
       : String(orderStatus).toLowerCase() === "pending" &&
-        String(paymentMethod).toLowerCase().includes("cash")
-      ? "Pending"
-      : rawPayStatus;
+          String(paymentMethod).toLowerCase().includes("cash")
+        ? "Pending"
+        : rawPayStatus;
 
   // Order Items normalization
   const rawItems = order.order_items || order.items || [];
@@ -181,13 +181,11 @@ export const normalizeOrder = (order, idx = 0) => {
 export const isOrderPaid = (order) => {
   if (!order) return false;
   const ordStatus = String(
-    order.orderStatus || order.order_status || order.status || ""
+    order.orderStatus || order.order_status || order.status || "",
   )
     .trim()
     .toLowerCase();
-  const payStatus = String(
-    order.paymentStatus || order.payment_status || ""
-  )
+  const payStatus = String(order.paymentStatus || order.payment_status || "")
     .trim()
     .toLowerCase();
 
@@ -225,7 +223,7 @@ export const calculateOrderFinancials = (orders = []) => {
   for (const o of list) {
     const amt = Number(o?.total || 0);
     const ordStatus = String(
-      o?.orderStatus || o?.order_status || o?.status || "Pending"
+      o?.orderStatus || o?.order_status || o?.status || "Pending",
     )
       .trim()
       .toLowerCase();
@@ -283,7 +281,7 @@ const addDeletedOrderIds = (ids) => {
   try {
     localStorage.setItem(
       DELETED_ORDERS_KEY,
-      JSON.stringify(Array.from(current))
+      JSON.stringify(Array.from(current)),
     );
   } catch {}
 };
@@ -351,7 +349,7 @@ export const orderService = {
               o &&
               o.notes !== "DELETED" &&
               !deletedIds.has(String(o.id)) &&
-              !deletedIds.has(String(o.orderNumber))
+              !deletedIds.has(String(o.orderNumber)),
           );
         saveOrdersStorage(normalized);
         return normalized;
@@ -474,30 +472,39 @@ export const orderService = {
 
               let computedSubtotal = 0;
               for (const item of rawItems) {
-                const id = String(item.productId || item.product_id || item.id || "");
+                const id = String(
+                  item.productId || item.product_id || item.id || "",
+                );
                 const truePrice = priceMap.get(id);
                 if (truePrice !== undefined && truePrice > 0) {
                   // Protect against client-side price tampering
                   item.price = truePrice;
                   computedSubtotal += truePrice * (Number(item.quantity) || 1);
                 } else {
-                  computedSubtotal += Number(item.price || 0) * (Number(item.quantity) || 1);
+                  computedSubtotal +=
+                    Number(item.price || 0) * (Number(item.quantity) || 1);
                 }
               }
 
               // Compute verified expected total
-              const expectedTotal = Math.max(0, computedSubtotal + shippingFee + tax - discount);
+              const expectedTotal = Math.max(
+                0,
+                computedSubtotal + shippingFee + tax - discount,
+              );
               // If discrepancy > $0.50 (tampering or stale price), enforce verified database price
-              if (Math.abs(expectedTotal - total) > 0.50) {
+              if (Math.abs(expectedTotal - total) > 0.5) {
                 console.warn(
-                  `[Security Verification] Client total ${total} superseded by verified database total ${expectedTotal}`
+                  `[Security Verification] Client total ${total} superseded by verified database total ${expectedTotal}`,
                 );
                 subtotal = computedSubtotal;
                 total = expectedTotal;
               }
             }
           } catch (secErr) {
-            console.warn("[Security Verification] Price validation notice:", secErr.message);
+            console.warn(
+              "[Security Verification] Price validation notice:",
+              secErr.message,
+            );
           }
         }
       }
@@ -660,10 +667,10 @@ export const orderService = {
         sLower === "delivered"
           ? { payment_status: "Paid" }
           : sLower === "pending"
-          ? { payment_status: "Pending" }
-          : sLower === "cancelled"
-          ? { payment_status: "Cancelled" }
-          : {};
+            ? { payment_status: "Pending" }
+            : sLower === "cancelled"
+              ? { payment_status: "Cancelled" }
+              : {};
 
       let query = supabase.from("orders").update({
         order_status: newStatus,
@@ -685,7 +692,9 @@ export const orderService = {
       if (sLower === "cancelled" && Array.isArray(data?.order_items)) {
         await Promise.allSettled(
           data.order_items.map(async (item) => {
-            const rawProdId = String(item.product_id || item.productId || "").trim();
+            const rawProdId = String(
+              item.product_id || item.productId || "",
+            ).trim();
             if (!rawProdId || !rawProdId.includes("-")) return;
             const returnQty = Math.max(1, Number(item.quantity || 1));
 
@@ -703,7 +712,7 @@ export const orderService = {
                 .update({ stock: restoredStock, status: "Active" })
                 .eq("id", rawProdId);
             }
-          })
+          }),
         );
         // Refresh cached catalog immediately
         productService.getProducts().catch(() => {});

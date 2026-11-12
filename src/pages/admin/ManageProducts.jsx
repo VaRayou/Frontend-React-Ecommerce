@@ -2145,6 +2145,7 @@ export function ManageProducts() {
                 <Link
                   to={`/shop/${selectedProduct.id || selectedProduct._id}`}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-black underline underline-offset-4"
                 >
                   <span>Open Product in Customer Store</span>

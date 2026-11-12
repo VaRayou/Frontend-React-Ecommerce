@@ -12,6 +12,7 @@ import {
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminHeader from "../components/admin/AdminHeader";
 import { useAdminAuthStore } from "../store/useAdminAuthStore";
+import { supabase } from "../services/supabase";
 import api from "../services/api";
 import "../styles/admin.css";
 
@@ -47,8 +48,52 @@ function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isValidAdmin, setIsValidAdmin] = useState(true);
+
+  // Cryptographic session verification: ensure genuine active Supabase Auth session
   useEffect(() => {
-    if (!isAdminAuthenticated) return;
+    let active = true;
+
+    const verifyAdminSession = async () => {
+      if (!isAdminAuthenticated) {
+        if (active) setIsVerifying(false);
+        return;
+      }
+
+      try {
+        const { data } = await supabase.auth.getSession();
+        const user = data?.session?.user;
+        const email = user?.email?.toLowerCase() || "";
+        const role = String(user?.user_metadata?.role || "").toLowerCase();
+
+        const isAuthorized =
+          Boolean(user) &&
+          (role.includes("admin") ||
+            role.includes("controller") ||
+            email === "controller@atelier.com" ||
+            email === "rayou@atelier.com" ||
+            email === "admin@atelier.com");
+
+        if (active) {
+          if (!isAuthorized) {
+            // Detected local storage spoofing or expired JWT token
+            console.warn("[Security Alert] Unauthorized or expired admin session. Revoking access.");
+            useAdminAuthStore.getState().adminLogout();
+            setIsValidAdmin(false);
+          } else {
+            setIsValidAdmin(true);
+          }
+          setIsVerifying(false);
+        }
+      } catch (e) {
+        if (active) {
+          setIsVerifying(false);
+        }
+      }
+    };
+
+    verifyAdminSession();
 
     // Preload all admin page bundles in background idle time for 0ms transitions
     const preloadAdminChunks = () => {
@@ -68,9 +113,13 @@ function AdminLayout() {
         setTimeout(preloadAdminChunks, 150);
       }
     }
-  }, [isAdminAuthenticated, adminUser?.email]);
 
-  if (!isAdminAuthenticated) {
+    return () => {
+      active = false;
+    };
+  }, [isAdminAuthenticated, adminUser?.email, location.pathname]);
+
+  if (!isAdminAuthenticated || (!isVerifying && !isValidAdmin)) {
     return <Navigate to="/admin/login" replace />;
   }
 
