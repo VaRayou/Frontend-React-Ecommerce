@@ -111,7 +111,7 @@ export function AdminHeader({ onToggleMobile, onToggleCollapse, isCollapsed }) {
             </span>
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] tracking-wider uppercase border border-emerald-200/60">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>MongoDB Online</span>
+              <span>Supabase Live</span>
             </span>
           </div>
           <span className="text-[11px] text-gray-500 hidden md:block">

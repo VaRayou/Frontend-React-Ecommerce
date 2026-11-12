@@ -229,14 +229,13 @@ export function ManageOrders() {
     }
   };
 
-  const handleSyncMongo = async () => {
+  const handleSyncSupabase = async () => {
     try {
       setIsRefreshing(true);
-      await orderService.syncMongoDB();
-      showNotification("Orders & Payments synchronized with MongoDB (django_lab)");
       await loadOrders(true);
+      showNotification("Orders & Payments synchronized with Supabase Live");
     } catch {
-      alert("Failed syncing with MongoDB");
+      alert("Failed syncing with Supabase");
     } finally {
       setIsRefreshing(false);
     }
@@ -482,7 +481,7 @@ export function ManageOrders() {
             <span>•</span>
             <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              MongoDB Online
+              Supabase Live
             </span>
           </div>
           <h1 className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight">
@@ -508,13 +507,13 @@ export function ManageOrders() {
 
             <button
               type="button"
-              onClick={handleSyncMongo}
+              onClick={handleSyncSupabase}
               disabled={isRefreshing}
               className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer disabled:opacity-50"
-              title="Force Synchronize with MongoDB"
+              title="Force Synchronize with Supabase Cloud"
             >
               <Database className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="truncate">Sync MongoDB</span>
+              <span className="truncate">Sync Supabase</span>
             </button>
 
             <button

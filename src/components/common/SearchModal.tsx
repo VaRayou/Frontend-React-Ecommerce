@@ -23,7 +23,7 @@ export const SearchModal: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Load live catalog from MongoDB / SQLite backend when modal opens
+  // Load live catalog from Supabase PostgreSQL backend when modal opens
   useEffect(() => {
     if (!isSearchModalOpen) return;
     const loadCatalog = async () => {
@@ -137,7 +137,7 @@ export const SearchModal: React.FC = () => {
                     <div className="mt-6 pt-5 border-t border-gray-100">
                       <div className="flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                         <span>Featured Pieces ({products.length})</span>
-                        <span className="text-[10px] text-emerald-600 font-bold">Live MongoDB Catalog</span>
+                        <span className="text-[10px] text-emerald-600 font-bold">Live Supabase Catalog</span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                         {products.slice(0, 4).map((p) => {
@@ -178,7 +178,7 @@ export const SearchModal: React.FC = () => {
                   <div className="flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-widest">
                     <span>Matching Live Catalog ({results.length})</span>
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                      MongoDB Online
+                      Supabase Live
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -225,7 +225,7 @@ export function ManageProducts() {
         escapeCell(Number(p.rating || 5.0).toFixed(1)),
         escapeCell(p.reviewsCount || p.reviews_count || 0),
         escapeCell(p.image || (p.images && p.images[0]) || ""),
-        escapeCell(p.source || "mongodb"),
+        escapeCell(p.source || "supabase"),
       ].join(",");
     });
 
@@ -664,7 +664,7 @@ export function ManageProducts() {
   ];
 
   if (loading && products.length === 0) {
-    return <Loader message="Connecting to MongoDB catalog..." />;
+    return <Loader message="Connecting to Supabase catalog..." />;
   }
 
   return (
@@ -691,7 +691,7 @@ export function ManageProducts() {
             Product Catalog Management
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Manage your boutique inventory, pricing, computer image uploads, and MongoDB records.
+            Manage your boutique inventory, pricing, computer image uploads, and Supabase records.
           </p>
         </div>
 
@@ -971,7 +971,7 @@ export function ManageProducts() {
               <p className="text-xs text-gray-500 font-normal">
                 {isEditing
                   ? "Update product specifications, media asset, and inventory stock"
-                  : "Upload image from computer, configure price, and publish to MongoDB"}
+                  : "Upload image from computer, configure price, and publish to Supabase"}
               </p>
             </div>
           </div>
@@ -994,7 +994,7 @@ export function ManageProducts() {
               {saving ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Saving to MongoDB...</span>
+                  <span>Saving to Supabase...</span>
                 </>
               ) : isEditing ? (
                 <>
@@ -1494,7 +1494,7 @@ export function ManageProducts() {
               <strong className="text-gray-950 font-bold">&ldquo;{selectedProduct?.name}&rdquo;</strong>?
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              This action cannot be undone. The product will be removed from the MongoDB database catalog and will no longer appear on the customer storefront.
+              This action cannot be undone. The product will be removed from the Supabase database catalog and will no longer appear on the customer storefront.
             </p>
           </div>
         </div>

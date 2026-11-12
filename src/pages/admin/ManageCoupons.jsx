@@ -354,7 +354,7 @@ export function ManageCoupons() {
   ];
 
   if (loading && coupons.length === 0) {
-    return <Loader message="Loading promotional vouchers from MongoDB..." />;
+    return <Loader message="Loading promotional vouchers from Supabase..." />;
   }
 
   return (
@@ -380,11 +380,11 @@ export function ManageCoupons() {
             Manage Coupons &amp; Vouchers
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Create and manage promotional discount codes stored in MongoDB{" "}
+            Create and manage promotional discount codes stored in Supabase{" "}
             <code className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-800 font-mono text-xs">
               coupons
             </code>{" "}
-            collection ({activeCount} active).
+            table ({activeCount} active).
           </p>
         </div>
 

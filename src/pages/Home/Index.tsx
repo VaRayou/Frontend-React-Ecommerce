@@ -891,7 +891,7 @@ export const Home: React.FC = () => {
       </motion.section>
 
       {/* =====================================================================
-          8. REAL CLIENT REVIEWS / TESTIMONIALS (FROM MONGODB)
+          8. REAL CLIENT REVIEWS / TESTIMONIALS (FROM SUPABASE)
           ===================================================================== */}
       <motion.section
         initial={{ opacity: 0, y: 32 }}
@@ -916,7 +916,7 @@ export const Home: React.FC = () => {
             <span>
               {realReviews.length > 0
                 ? `${(realReviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / realReviews.length).toFixed(1)} / 5.0 Average Rating across ${realReviews.length} ${realReviews.length === 1 ? "Real Customer Review" : "Real Customer Reviews"}`
-                : "100% Authentic Customer Reviews from MongoDB"}
+                : "100% Authentic Customer Reviews from Verified Patrons"}
             </span>
           </div>
         </div>

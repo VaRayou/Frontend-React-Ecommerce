@@ -327,7 +327,7 @@ export function Settings() {
         value: 15,
         min_spend: 50,
       });
-      showNotification(`Promo code "${cleanCode}" saved to MongoDB!`);
+      showNotification(`Promo code "${cleanCode}" saved to Supabase!`);
     } catch {
       showNotification("Failed to create promo code.");
     }

@@ -204,7 +204,7 @@ function AdminLayout() {
               &copy; {new Date().getFullYear()} <strong>ATELIER PARIS STUDIO</strong> • Commercial Management Controller.
             </span>
             <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600 }}>
-              ● Django REST API & MongoDB Database Synchronized
+              ● Supabase Cloud PostgreSQL & Realtime Synchronized
             </span>
           </div>
         </footer>

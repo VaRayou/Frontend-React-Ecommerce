@@ -339,15 +339,15 @@ function Dashboard() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs sm:text-sm font-bold flex-wrap">
-              <span>MongoDB Database Engine Active</span>
+              <span>Supabase Cloud PostgreSQL Active</span>
               <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[#D6FF00] text-black text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
                 SYNCED
               </span>
             </div>
             <p className="text-[10px] sm:text-[11px] text-gray-400 mt-0.5 truncate">
-              Collection:{" "}
-              <strong className="text-white">django_lab.products</strong> •
-              Atlas &amp; Render Cloud
+              Database:{" "}
+              <strong className="text-white">Supabase PostgreSQL</strong> •
+              Realtime WebSockets &amp; Storage
             </p>
           </div>
         </div>
@@ -386,7 +386,7 @@ function Dashboard() {
               Catalog Products
             </div>
             <span className="block text-[10px] sm:text-[11px] font-bold text-emerald-600 mt-1 truncate">
-              MongoDB Active
+              Supabase Live
             </span>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#111111] text-[#D6FF00] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -490,7 +490,7 @@ function Dashboard() {
                   Commercial Revenue Performance
                 </h3>
                 <p className="text-[10px] sm:text-[11px] text-gray-400 truncate">
-                  Monthly settled volume + live MongoDB order ledger
+                  Monthly settled volume + live Supabase order ledger
                 </p>
               </div>
             </div>
@@ -769,7 +769,7 @@ function Dashboard() {
               Recent Patron Orders
             </h3>
             <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
-              Latest transactions recorded in MongoDB
+              Latest transactions recorded in Supabase Live
             </p>
           </div>
           <Link

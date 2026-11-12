@@ -126,7 +126,7 @@ export const ProductDetails: React.FC = () => {
   const [activeAccordion, setActiveAccordion] = useState<string>("details");
   const [showSizeGuide, setShowSizeGuide] = useState(false);
 
-  // Real Reviews state (from MongoDB 'reviews' collection)
+  // Real Reviews state (from Supabase 'reviews' table)
   const [reviewsList, setReviewsList] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [newReviewAuthor, setNewReviewAuthor] = useState(user?.name || "");
