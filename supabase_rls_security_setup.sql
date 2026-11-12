@@ -360,7 +360,7 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
     INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-    VALUES (v_user_id::text, v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'controller@atelier.com'), 'email', v_user_id::text, now(), now(), now());
+    VALUES (gen_random_uuid(), v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'controller@atelier.com'), 'email', v_user_id::text, now(), now(), now());
   ELSE
     UPDATE auth.identities
     SET identity_data = jsonb_build_object('sub', v_user_id::text, 'email', 'controller@atelier.com'), updated_at = now()
@@ -398,7 +398,7 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
     INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-    VALUES (v_user_id::text, v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'catalog@atelier.com'), 'email', v_user_id::text, now(), now(), now());
+    VALUES (gen_random_uuid(), v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'catalog@atelier.com'), 'email', v_user_id::text, now(), now(), now());
   ELSE
     UPDATE auth.identities
     SET identity_data = jsonb_build_object('sub', v_user_id::text, 'email', 'catalog@atelier.com'), updated_at = now()
@@ -436,7 +436,7 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
     INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-    VALUES (v_user_id::text, v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'admin@atelier.com'), 'email', v_user_id::text, now(), now(), now());
+    VALUES (gen_random_uuid(), v_user_id, jsonb_build_object('sub', v_user_id::text, 'email', 'admin@atelier.com'), 'email', v_user_id::text, now(), now(), now());
   ELSE
     UPDATE auth.identities
     SET identity_data = jsonb_build_object('sub', v_user_id::text, 'email', 'admin@atelier.com'), updated_at = now()

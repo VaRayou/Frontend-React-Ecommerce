@@ -2,15 +2,16 @@
 -- ATELIER HAUTE COUTURE — OFFICIAL REAL ADMIN PROVISIONING SCRIPT (FIXED)
 -- Target: Supabase Cloud PostgreSQL (Project: awcgcpoibputqrtuvrms)
 -- 
--- Fix: Resolves "violates check constraint profiles_role_check" by aligning
--- raw_user_meta_data role with the profiles table trigger constraints.
+-- Fixes Applied:
+-- 1. Relaxed profiles_role_check constraint.
+-- 2. Fixed auth.identities.id type: passed uuid (gen_random_uuid()) instead of text.
 --
 -- Roles Provisioned:
 -- 1. controller@atelier.com -> Super Administrator (Full Studio Clearance)
 -- 2. catalog@atelier.com    -> Catalog Manager (Products & Inventory Merchandising)
 -- 3. admin@atelier.com      -> Store Controller (Orders, Payments & Operations)
 --
--- Initial Password: adminpass123
+-- Initial Default Password: adminpass123
 -- ==============================================================================
 
 -- 1. Enable pgcrypto for industry-standard bcrypt password hashing
@@ -82,7 +83,7 @@ BEGIN
     WHERE id = v_user_id;
   END IF;
 
-  -- Link email identity for controller@atelier.com
+  -- Link email identity for controller@atelier.com (using gen_random_uuid() for uuid id)
   IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
     INSERT INTO auth.identities (
       id,
@@ -94,7 +95,7 @@ BEGIN
       created_at,
       updated_at
     ) VALUES (
-      v_user_id::text,
+      gen_random_uuid(),
       v_user_id,
       jsonb_build_object('sub', v_user_id::text, 'email', 'controller@atelier.com'),
       'email',
@@ -161,7 +162,7 @@ BEGIN
     WHERE id = v_user_id;
   END IF;
 
-  -- Link email identity for catalog@atelier.com
+  -- Link email identity for catalog@atelier.com (using gen_random_uuid() for uuid id)
   IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
     INSERT INTO auth.identities (
       id,
@@ -173,7 +174,7 @@ BEGIN
       created_at,
       updated_at
     ) VALUES (
-      v_user_id::text,
+      gen_random_uuid(),
       v_user_id,
       jsonb_build_object('sub', v_user_id::text, 'email', 'catalog@atelier.com'),
       'email',
@@ -240,7 +241,7 @@ BEGIN
     WHERE id = v_user_id;
   END IF;
 
-  -- Link email identity for admin@atelier.com
+  -- Link email identity for admin@atelier.com (using gen_random_uuid() for uuid id)
   IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id AND provider = 'email') THEN
     INSERT INTO auth.identities (
       id,
@@ -252,7 +253,7 @@ BEGIN
       created_at,
       updated_at
     ) VALUES (
-      v_user_id::text,
+      gen_random_uuid(),
       v_user_id,
       jsonb_build_object('sub', v_user_id::text, 'email', 'admin@atelier.com'),
       'email',
