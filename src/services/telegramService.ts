@@ -21,6 +21,11 @@ const WEBHOOK_BASE_URL =
     ? window.location.origin
     : "https://frontend-react-ecommerce-inky.vercel.app";
 
+const TRACK_ORDER_URL =
+  typeof window !== "undefined" && window.location.origin.startsWith("http")
+    ? `${window.location.origin}/track`
+    : "https://frontend-react-ecommerce-inky.vercel.app/track";
+
 export interface TelegramConfig {
   botToken: string;
   chatId: string;
@@ -283,6 +288,7 @@ export const telegramService = {
           commands: [
             { command: "stats", description: "Live revenue, order & stock KPIs" },
             { command: "orders", description: "Manage latest 5 orders with 1-tap actions" },
+            { command: "track", description: "Track live order status by Order ID, phone, or email" },
             { command: "lowstock", description: "Audit low-stock & out-of-stock SKUs" },
             { command: "help", description: "Show interactive merchant command menu" },
           ],
@@ -460,7 +466,28 @@ export const telegramService = {
       `<b>Settled At:</b> ${formatCambodiaTimestamp()}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━`;
 
-    const res = await telegramService.sendMessage(msg);
+    const safeRef = String(params.orderNumber || "").slice(0, 48);
+    const replyMarkup = {
+      inline_keyboard: [
+        [
+          {
+            text: "🔍 Track in Telegram",
+            callback_data: `track:${safeRef}`,
+          },
+          {
+            text: "🌐 Live Web Tracker",
+            url: `${TRACK_ORDER_URL}/${encodeURIComponent(params.orderNumber)}`,
+          },
+        ],
+      ],
+    };
+
+    const res = await telegramService.sendMessage(
+      msg,
+      undefined,
+      undefined,
+      replyMarkup
+    );
     return res.ok;
   },
 
@@ -493,7 +520,28 @@ export const telegramService = {
       `<b>Updated At:</b> ${formatCambodiaTimestamp()}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━`;
 
-    const res = await telegramService.sendMessage(msg);
+    const safeRef = String(orderNumber || "").slice(0, 48);
+    const replyMarkup = {
+      inline_keyboard: [
+        [
+          {
+            text: "🔍 Track in Telegram",
+            callback_data: `track:${safeRef}`,
+          },
+          {
+            text: "🌐 Live Web Tracker",
+            url: `${TRACK_ORDER_URL}/${encodeURIComponent(orderNumber)}`,
+          },
+        ],
+      ],
+    };
+
+    const res = await telegramService.sendMessage(
+      msg,
+      undefined,
+      undefined,
+      replyMarkup
+    );
     return res.ok;
   },
 

@@ -172,8 +172,9 @@ async function buildOrdersMessage(sbHeaders) {
   const actionRows = list.slice(0, 3).map((o) => {
     const num = o.order_number || o.id;
     return [
-      { text: `🚚 Ship ${num}`, callback_data: `ship:${num}` },
-      { text: `✅ Deliver ${num}`, callback_data: `deliver:${num}` },
+      { text: `🔍 Track ${num}`, callback_data: `track:${num}` },
+      { text: `🚚 Ship`, callback_data: `ship:${num}` },
+      { text: `✅ Deliver`, callback_data: `deliver:${num}` },
     ];
   });
 
@@ -188,8 +189,156 @@ async function buildOrdersMessage(sbHeaders) {
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       lines.join("\n\n") +
       `\n━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `Tap a button below to update order status in real time:`,
+      `Tap a button below to track or update order status in real time:`,
     reply_markup: { inline_keyboard: actionRows },
+  };
+}
+
+async function buildTrackOrderMessage(sbHeaders, rawQuery) {
+  const cleanQuery = String(rawQuery || "").trim();
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order=created_at.desc&limit=50`,
+    { headers: sbHeaders }
+  );
+  const orders = res.ok ? await res.json() : [];
+  const list = Array.isArray(orders) ? orders : [];
+
+  if (!cleanQuery) {
+    const recentButtons = list.slice(0, 4).map((o) => {
+      const num = o.order_number || o.id;
+      const status = o.order_status || "Processing";
+      return [
+        {
+          text: `🔍 Track ${num} (${status})`,
+          callback_data: `track:${num}`,
+        },
+      ];
+    });
+    recentButtons.push([
+      {
+        text: "🌐 Open Web Order Tracker",
+        url: `${STOREFRONT_URL}/track`,
+      },
+    ]);
+
+    return {
+      text:
+        `🚚 <b>ATELIER LIVE ORDER TRACKER</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Send <code>/track ORDER_ID</code> (e.g. <code>/track ATL-2026-2592</code>), customer email, or phone number to inspect real-time dispatch milestones.\n\n` +
+        `Or tap one of the recent orders below:`,
+      reply_markup: { inline_keyboard: recentButtons },
+    };
+  }
+
+  const qLower = cleanQuery.toLowerCase();
+  const match = list.find((o) => {
+    const ordNum = String(o.order_number || o.id || "").toLowerCase();
+    const email = String(o.customer_email || "").toLowerCase();
+    const phone = String(o.customer_phone || "").toLowerCase();
+    return (
+      ordNum === qLower ||
+      ordNum.includes(qLower) ||
+      email === qLower ||
+      (qLower.length >= 5 && phone.includes(qLower))
+    );
+  });
+
+  if (!match) {
+    return {
+      text:
+        `⚠️ <b>ORDER NOT FOUND</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `No dispatch record found matching <code>${escapeHtml(cleanQuery)}</code>.\n` +
+        `Try <code>/orders</code> to view recent order references.`,
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "🛍 View Recent Orders", callback_data: "cmd:orders" },
+            { text: "🌐 Web Tracker", url: `${STOREFRONT_URL}/track` },
+          ],
+        ],
+      },
+    };
+  }
+
+  const ordNum = match.order_number || match.id;
+  const status = String(match.order_status || "Processing");
+  const sLower = status.toLowerCase();
+  const isCancelled = sLower === "cancelled";
+  const step =
+    sLower === "delivered"
+      ? 5
+      : sLower === "out for delivery"
+      ? 4
+      : sLower === "shipped" || sLower === "in transit"
+      ? 4
+      : sLower === "processing" || sLower === "paid"
+      ? 3
+      : 2;
+
+  const timelineText = isCancelled
+    ? `❌ <b>ORDER CANCELLED</b> — Dispatch halted`
+    : `${step >= 1 ? "🟢" : "⚪"} 1. Order Placed\n` +
+      `${step >= 2 ? "🟢" : "⚪"} 2. Bakong KHQR Verified\n` +
+      `${step >= 3 ? "🟢" : "⚪"} 3. Quality Runway Packing\n` +
+      `${step >= 4 ? "🚚" : "⚪"} 4. In Transit with Courier\n` +
+      `${step >= 5 ? "✅" : "⚪"} 5. Delivered to Patron`;
+
+  const items = Array.isArray(match.order_items) ? match.order_items : [];
+  const itemLines = items.slice(0, 6).map((it) => {
+    const name = escapeHtml(it.product_name || it.name || "Atelier Piece");
+    const qty = Number(it.quantity || 1);
+    const sz = it.size ? ` [${escapeHtml(it.size)}]` : "";
+    return `  • ${name}${sz} ×${qty} — $${(Number(it.price || 0) * qty).toFixed(2)}`;
+  });
+
+  const addrObj = match.shipping_address;
+  const addressStr =
+    typeof addrObj === "string"
+      ? addrObj
+      : addrObj && typeof addrObj === "object"
+      ? [addrObj.street, addrObj.city, addrObj.country].filter(Boolean).join(", ")
+      : "Phnom Penh, Cambodia";
+
+  const totalUsd = Number(match.total || 0);
+  const totalKhr = Math.round(totalUsd * 4100);
+  const awb = `AWB-882-${String(ordNum).replace(/\D/g, "") || "90218"}`;
+
+  const text =
+    `🚚 <b>LIVE DISPATCH TRACKING: <code>${escapeHtml(ordNum)}</code></b>\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `<b>Current Status:</b> <b>${escapeHtml(status.toUpperCase())}</b>\n` +
+    `<b>Courier AWB:</b> <code>${escapeHtml(awb)}</code>\n` +
+    `<b>Patron:</b> ${escapeHtml(match.customer_name || "Patron Client")}\n` +
+    `<b>Destination:</b> ${escapeHtml(addressStr || "Phnom Penh, Cambodia")}\n` +
+    `<b>Payment:</b> ${escapeHtml(match.payment_method || "Bakong KHQR")} (<b>${escapeHtml(
+      match.payment_status || "Paid"
+    )}</b>)\n` +
+    `<b>Total:</b> <b>$${totalUsd.toFixed(2)} USD</b> (៛ ${totalKhr.toLocaleString()} KHR)\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `<b>Dispatch Milestones:</b>\n${timelineText}\n` +
+    (itemLines.length > 0
+      ? `━━━━━━━━━━━━━━━━━━━━━━\n<b>Package Contents (${items.length}):</b>\n${itemLines.join("\n")}`
+      : "");
+
+  return {
+    text,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "🚚 Mark Shipped", callback_data: `ship:${ordNum}` },
+          { text: "✅ Mark Delivered", callback_data: `deliver:${ordNum}` },
+        ],
+        [
+          { text: "🔄 Refresh Status", callback_data: `track:${ordNum}` },
+          {
+            text: "🌐 Open Web Tracker",
+            url: `${STOREFRONT_URL}/track/${encodeURIComponent(ordNum)}`,
+          },
+        ],
+      ],
+    },
   };
 }
 
@@ -264,7 +413,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       service: "Atelier Paris Two-Way Interactive Telegram Bot Webhook",
-      commands: ["/start", "/stats", "/orders", "/lowstock", "/help"],
+      commands: ["/start", "/stats", "/orders", "/track", "/lowstock", "/help"],
     });
   }
 
@@ -317,6 +466,26 @@ export default async function handler(req, res) {
           text: "Scanning inventory radar...",
         });
         const msg = await buildLowStockMessage(sbHeaders);
+        await tgApi(botToken, "sendMessage", {
+          chat_id: chatId,
+          text: msg.text,
+          parse_mode: "HTML",
+          reply_markup: msg.reply_markup,
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if ((data === "cmd:track" || data.startsWith("track:")) && chatId) {
+        const orderQuery = data.startsWith("track:")
+          ? data.slice("track:".length)
+          : "";
+        await tgApi(botToken, "answerCallbackQuery", {
+          callback_query_id: cb.id,
+          text: orderQuery
+            ? `Tracking order ${orderQuery}...`
+            : "Opening live order tracker...",
+        });
+        const msg = await buildTrackOrderMessage(sbHeaders, orderQuery);
         await tgApi(botToken, "sendMessage", {
           chat_id: chatId,
           text: msg.text,
@@ -441,11 +610,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // 2. Handle Incoming Text Commands (/start, /help, /stats, /orders, /lowstock)
+    // 2. Handle Incoming Text Commands (/start, /help, /stats, /orders, /track, /lowstock)
     const msg = update.message || update.channel_post;
     if (msg && msg.chat?.id) {
       const chatId = msg.chat.id;
-      const text = String(msg.text || "").trim().toLowerCase();
+      const rawText = String(msg.text || "").trim();
+      const text = rawText.toLowerCase();
 
       if (text.startsWith("/stats")) {
         const reply = await buildStatsMessage(sbHeaders);
@@ -460,6 +630,25 @@ export default async function handler(req, res) {
 
       if (text.startsWith("/orders")) {
         const reply = await buildOrdersMessage(sbHeaders);
+        await tgApi(botToken, "sendMessage", {
+          chat_id: chatId,
+          text: reply.text,
+          parse_mode: "HTML",
+          reply_markup: reply.reply_markup,
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (
+        text.startsWith("/track") ||
+        text.startsWith("atl-") ||
+        text.startsWith("ord-") ||
+        text.startsWith("pos-")
+      ) {
+        const queryArg = text.startsWith("/track")
+          ? rawText.replace(/^\/track(@\S+)?/i, "").trim()
+          : rawText;
+        const reply = await buildTrackOrderMessage(sbHeaders, queryArg);
         await tgApi(botToken, "sendMessage", {
           chat_id: chatId,
           text: reply.text,
@@ -488,6 +677,7 @@ export default async function handler(req, res) {
           `<b>Available Bot Commands:</b>\n` +
           `• /stats — Live revenue, order &amp; KHQR summary\n` +
           `• /orders — View &amp; update recent patron orders\n` +
+          `• /track <code>&lt;ORDER_ID&gt;</code> — Live 5-stage order tracking\n` +
           `• /lowstock — View &amp; restock low-inventory pieces\n` +
           `• /help — Show this interactive command menu`;
 
@@ -502,10 +692,17 @@ export default async function handler(req, res) {
                 { text: "🛍 Recent Orders", callback_data: "cmd:orders" },
               ],
               [
+                { text: "🚚 Track an Order", callback_data: "cmd:track" },
                 { text: "⚠️ Low-Stock Radar", callback_data: "cmd:lowstock" },
+              ],
+              [
                 {
                   text: "🌐 Admin Portal",
                   url: `${STOREFRONT_URL}/admin/dashboard`,
+                },
+                {
+                  text: "🔍 Web Tracker",
+                  url: `${STOREFRONT_URL}/track`,
                 },
               ],
             ],
@@ -521,3 +718,4 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: false, error: err.message });
   }
 }
+

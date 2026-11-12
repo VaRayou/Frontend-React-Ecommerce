@@ -201,6 +201,7 @@ export function Settings() {
       `<b>Interactive Commands:</b>\n` +
       `• <code>/stats</code> — Live revenue &amp; order KPIs\n` +
       `• <code>/orders</code> — Manage latest 5 orders\n` +
+      `• <code>/track ORDER_ID</code> — 5-stage live order tracker\n` +
       `• <code>/lowstock</code> — Audit low-stock SKUs`;
 
     await telegramService
@@ -218,6 +219,7 @@ export function Settings() {
             { text: "🛍 Latest 5 Orders", callback_data: "cmd:orders" },
           ],
           [
+            { text: "🚚 Track an Order", callback_data: "cmd:track" },
             { text: "⚠️ Low-Stock Audit", callback_data: "cmd:lowstock" },
           ],
         ],

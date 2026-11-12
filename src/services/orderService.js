@@ -393,25 +393,36 @@ export const orderService = {
   },
 
   /**
-   * Updates an order status (Admin)
+   * Updates an order status by UUID id or order_number
    */
   updateOrderStatus: async (id, newStatus) => {
     try {
       await ensureAdminSession();
       const cleanId = String(id).trim();
+      const isUUID = cleanId.includes("-") && cleanId.length > 20;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
-        .update({ order_status: newStatus })
-        .eq("id", cleanId)
-        .select("*, order_items(*)")
-        .single();
+        .update({
+          order_status: newStatus,
+          ...(newStatus === "Delivered" ? { payment_status: "Paid" } : {}),
+        });
+
+      if (isUUID) {
+        query = query.eq("id", cleanId);
+      } else {
+        query = query.eq("order_number", cleanId);
+      }
+
+      const { data, error } = await query.select("*, order_items(*)").single();
 
       if (error) throw error;
       const normalized = normalizeOrder(data);
 
       const current = getOrdersStorage();
-      const updated = current.map((o) => (o.id === cleanId ? normalized : o));
+      const updated = current.map((o) =>
+        o.id === cleanId || o.orderNumber === cleanId ? normalized : o
+      );
       saveOrdersStorage(updated);
       window.dispatchEvent(new Event("atelier_order_updated"));
 
