@@ -610,7 +610,7 @@ export const ProductDetails: React.FC = () => {
                 <button
                   key={color.name}
                   onClick={() => setSelectedColor(idx)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-90 ${
                     selectedColor === idx
                       ? "ring-2 ring-black ring-offset-2 scale-110 shadow-xs"
                       : "opacity-80 hover:opacity-100"
@@ -650,7 +650,7 @@ export const ProductDetails: React.FC = () => {
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
-                  className={`min-w-12 h-10 px-3.5 rounded-xl text-xs font-bold transition-all border ${
+                  className={`min-w-12 h-10 px-3.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 select-none ${
                     selectedSize === size
                       ? "bg-black text-white border-black shadow-xs"
                       : "bg-white text-black border-gray-200 hover:border-black"
@@ -671,18 +671,20 @@ export const ProductDetails: React.FC = () => {
                   type="button"
                   disabled={isOutOfStock || quantity <= 1}
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-black transition-colors cursor-pointer active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed select-none"
+                  aria-label="Decrease quantity"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                <span className="w-9 sm:w-10 text-center text-sm font-extrabold text-black">
+                <span className="w-9 sm:w-10 text-center text-sm font-extrabold text-black select-none">
                   {isOutOfStock ? 0 : Math.min(quantity, stockCount)}
                 </span>
                 <button
                   type="button"
                   disabled={isOutOfStock || quantity >= stockCount}
                   onClick={() => setQuantity(Math.min(stockCount, quantity + 1))}
-                  className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-black transition-colors cursor-pointer active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed select-none"
+                  aria-label="Increase quantity"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -693,11 +695,12 @@ export const ProductDetails: React.FC = () => {
                 type="button"
                 disabled={isOutOfStock}
                 onClick={handleAddToCart}
-                className={`flex-1 min-w-[160px] py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 min-w-[160px] py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-150 flex items-center justify-center gap-2 select-none ${
                   isOutOfStock
                     ? "bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300"
-                    : "bg-[#111111] hover:bg-black text-white shadow-md hover:scale-[1.01]"
+                    : "bg-[#111111] hover:bg-black active:scale-[0.98] text-white shadow-md hover:shadow-lg cursor-pointer hover:scale-[1.01]"
                 }`}
+                aria-label="Add product to bag"
               >
                 <ShoppingBag className={`w-4 h-4 shrink-0 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`} />
                 <span className="truncate">
@@ -711,12 +714,13 @@ export const ProductDetails: React.FC = () => {
               <button
                 type="button"
                 onClick={handleWishlistToggle}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl border flex items-center justify-center transition-all shrink-0 ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl border flex items-center justify-center transition-all duration-150 shrink-0 cursor-pointer active:scale-95 ${
                   isWishlisted
                     ? "bg-rose-50 border-rose-200 text-rose-500 scale-102"
                     : "border-gray-200 text-gray-600 hover:border-black hover:text-black"
                 }`}
                 title={isWishlisted ? "In Wishlist" : "Save to Wishlist"}
+                aria-label="Toggle wishlist"
               >
                 <Heart className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`} />
               </button>
@@ -727,11 +731,12 @@ export const ProductDetails: React.FC = () => {
               type="button"
               disabled={isOutOfStock}
               onClick={handleBuyNow}
-              className={`w-full py-4 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 group ${
+              className={`w-full py-4 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-150 flex items-center justify-center gap-2 group select-none ${
                 isOutOfStock
                   ? "bg-rose-50 text-rose-400 border border-rose-200 cursor-not-allowed"
-                  : "bg-[#D6FF00] hover:bg-[#c6ef00] text-black shadow-md hover:scale-[1.01]"
+                  : "bg-[#D6FF00] hover:bg-[#c6ef00] active:scale-[0.98] text-black shadow-md hover:shadow-lg cursor-pointer hover:scale-[1.01]"
               }`}
+              aria-label="Instant Buy Now direct checkout"
             >
               <span>{isOutOfStock ? "Sold Out — Temporarily Unavailable" : "Instant Buy Now"}</span>
               {!isOutOfStock && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}

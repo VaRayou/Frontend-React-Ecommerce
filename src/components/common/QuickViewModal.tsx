@@ -316,7 +316,7 @@ export const QuickViewModal: React.FC = () => {
                           <button
                             key={size}
                             onClick={() => setSelectedSize(size)}
-                            className={`min-w-10 h-9 px-3 rounded-xl text-xs font-bold transition-all border ${
+                            className={`min-w-10 h-9 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 select-none ${
                               selectedSize === size
                                 ? "bg-black text-white border-black"
                                 : "bg-white text-black border-gray-200 hover:border-black"
@@ -338,18 +338,20 @@ export const QuickViewModal: React.FC = () => {
                           type="button"
                           disabled={isOutOfStock || quantity <= 1}
                           onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-black transition-colors cursor-pointer active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed select-none"
+                          aria-label="Decrease quantity"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <span className="w-8 text-center text-sm font-bold text-black">
+                        <span className="w-8 text-center text-sm font-bold text-black select-none">
                           {isOutOfStock ? 0 : Math.min(quantity, stockCount)}
                         </span>
                         <button
                           type="button"
                           disabled={isOutOfStock || quantity >= stockCount}
                           onClick={() => setQuantity(Math.min(stockCount, quantity + 1))}
-                          className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-black transition-colors cursor-pointer active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed select-none"
+                          aria-label="Increase quantity"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -360,11 +362,12 @@ export const QuickViewModal: React.FC = () => {
                         type="button"
                         disabled={isOutOfStock}
                         onClick={handleAddToCart}
-                        className={`flex-1 py-3.5 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 group ${
+                        className={`flex-1 py-3.5 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-150 flex items-center justify-center gap-2 group select-none ${
                           isOutOfStock
                             ? "bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300"
-                            : "bg-[#111111] hover:bg-black text-white shadow-md hover:shadow-lg"
+                            : "bg-[#111111] hover:bg-black active:scale-[0.98] text-white shadow-md hover:shadow-lg cursor-pointer hover:scale-[1.01]"
                         }`}
+                        aria-label="Add to bag"
                       >
                         <span>
                           {isOutOfStock
@@ -378,13 +381,15 @@ export const QuickViewModal: React.FC = () => {
 
                       {/* Wishlist Button */}
                       <button
+                        type="button"
                         onClick={handleWishlistToggle}
-                        className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-colors shrink-0 ${
+                        className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all duration-150 shrink-0 cursor-pointer active:scale-95 ${
                           isWishlisted
                             ? "bg-rose-50 border-rose-200 text-rose-500"
                             : "border-gray-200 text-gray-600 hover:border-black hover:text-black"
                         }`}
                         title={isWishlisted ? "In wishlist" : "Add to wishlist"}
+                        aria-label="Toggle wishlist"
                       >
                         <Heart className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`} />
                       </button>
