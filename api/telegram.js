@@ -29,12 +29,22 @@ const AUTHORIZED_CHAT_IDS = new Set(
   ].filter(Boolean)
 );
 
-const ALLOWED_CORS_ORIGINS = new Set([
-  "https://frontend-react-ecommerce-inky.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://127.0.0.1:5173",
-]);
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  try {
+    const url = new URL(origin);
+    const host = url.hostname;
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host.endsWith(".vercel.app") ||
+      host === "frontend-react-ecommerce-inky.vercel.app"
+    ) {
+      return true;
+    }
+  } catch {}
+  return false;
+}
 
 const STOREFRONT_URL = "https://frontend-react-ecommerce-inky.vercel.app";
 
@@ -451,14 +461,15 @@ async function buildLowStockMessage(sbHeaders) {
 
 export default async function handler(req, res) {
   const origin = req.headers.origin || "";
-  if (ALLOWED_CORS_ORIGINS.has(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  if (isAllowedOrigin(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
   } else {
     res.setHeader(
       "Access-Control-Allow-Origin",
       "https://frontend-react-ecommerce-inky.vercel.app"
     );
   }
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Telegram-Bot-Api-Secret-Token");
 

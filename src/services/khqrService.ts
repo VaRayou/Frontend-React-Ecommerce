@@ -372,34 +372,13 @@ async function callBakongOpenApi(
   payload: Record<string, any>,
 ): Promise<any | null> {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const action = cleanPath.includes("deeplink")
+    ? "generate_deeplink_by_qr"
+    : "check_transaction_by_md5";
 
-  // 1. Try Same-Origin Rewrite Proxy (/bakong-api/...) -> Zero CORS preflight in browser
+  // 1. Primary: Vercel Serverless Backend Proxy (/api/bakong pinned to sin1 Singapore region)
+  // Holds authenticated credentials securely server-side and eliminates all browser CORS blocks
   try {
-    const proxyRes = await fetch(`/bakong-api${cleanPath}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${BAKONG_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const contentType = proxyRes.headers.get("content-type") || "";
-    if (proxyRes.ok && contentType.includes("application/json")) {
-      const json = await proxyRes.json();
-      if (json && typeof json.responseCode === "number") {
-        return json;
-      }
-    }
-  } catch (e) {
-    console.warn("[Bakong /bakong-api proxy note]:", e);
-  }
-
-  // 2. Try Vercel Serverless Proxy (/api/bakong pinned to sin1 Singapore region)
-  try {
-    const action = cleanPath.includes("deeplink")
-      ? "generate_deeplink_by_qr"
-      : "check_transaction_by_md5";
     const fnRes = await fetch("/api/bakong", {
       method: "POST",
       headers: {
@@ -419,27 +398,51 @@ async function callBakongOpenApi(
     console.warn("[Bakong /api/bakong serverless note]:", e);
   }
 
-  // 3. Direct NBC Bakong API fallback (for non-browser or permissive environments)
+  // 2. Secondary fallback: Same-Origin Rewrite Proxy (/bakong-api/...)
   try {
-    const directRes = await fetch(
-      `${BAKONG_API_URL.replace(/\/$/, "")}${cleanPath}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${BAKONG_API_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+    const proxyRes = await fetch(`/bakong-api${cleanPath}`, {
+      method: "POST",
+      headers: {
+        ...(BAKONG_API_TOKEN ? { Authorization: `Bearer ${BAKONG_API_TOKEN}` } : {}),
+        "Content-Type": "application/json",
       },
-    );
-    if (directRes.ok) {
-      const directJson = await directRes.json();
-      if (directJson && typeof directJson.responseCode === "number") {
-        return directJson;
+      body: JSON.stringify(payload),
+    });
+
+    const contentType = proxyRes.headers.get("content-type") || "";
+    if (proxyRes.ok && contentType.includes("application/json")) {
+      const json = await proxyRes.json();
+      if (json && typeof json.responseCode === "number") {
+        return json;
       }
     }
   } catch (e) {
-    console.warn("[Bakong Direct API note]:", e);
+    console.warn("[Bakong /bakong-api proxy note]:", e);
+  }
+
+  // 3. Direct NBC Bakong API fallback (when token is configured)
+  if (BAKONG_API_TOKEN) {
+    try {
+      const directRes = await fetch(
+        `${BAKONG_API_URL.replace(/\/$/, "")}${cleanPath}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${BAKONG_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+      if (directRes.ok) {
+        const directJson = await directRes.json();
+        if (directJson && typeof directJson.responseCode === "number") {
+          return directJson;
+        }
+      }
+    } catch (e) {
+      console.warn("[Bakong Direct API note]:", e);
+    }
   }
 
   return null;
@@ -643,10 +646,25 @@ export const khqrService = {
       return cached.result;
     }
 
+    // Resolve valid 32-character hex MD5 if order number or id was passed
+    let cleanMd5 = md5Str;
+    if (!/^[a-fA-F0-9]{32}$/.test(cleanMd5)) {
+      try {
+        const { data: dbRow } = await supabase
+          .from("payments")
+          .select("md5_hash")
+          .or(`order_number.eq.${cleanMd5},id.eq.${cleanMd5}`)
+          .maybeSingle();
+        if (dbRow?.md5_hash && /^[a-fA-F0-9]{32}$/.test(dbRow.md5_hash.trim())) {
+          cleanMd5 = dbRow.md5_hash.trim();
+        }
+      } catch {}
+    }
+
     // 2. Query official NBC Bakong Open API via CORS-safe proxy
     try {
       const resJson = await callBakongOpenApi("/v1/check_transaction_by_md5", {
-        md5: md5Str,
+        md5: cleanMd5,
       });
 
       if (resJson) {
@@ -674,7 +692,7 @@ export const khqrService = {
                 transaction_id: txnId,
                 paid_at: paidAtIso,
               })
-              .eq("md5_hash", md5Str)
+              .or(`md5_hash.eq.${cleanMd5},md5_hash.eq.${md5Str}`)
               .select("*")
               .maybeSingle();
 
@@ -698,6 +716,7 @@ export const khqrService = {
             message: "Payment verified on NBC Bakong network.",
           };
           checkStatusCache[md5Str] = { timestamp: now, result: paidResult };
+          checkStatusCache[cleanMd5] = { timestamp: now, result: paidResult };
           return paidResult;
         }
 
