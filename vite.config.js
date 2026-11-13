@@ -26,6 +26,12 @@ export default defineConfig({
           if (id.includes('react-router') || id.includes('@remix-run')) {
             return 'vendor-router'
           }
+          if (id.includes('bakong-khqr') || id.includes('qrcode')) {
+            return 'vendor-payment'
+          }
+          if (id.includes('zod') || id.includes('react-hook-form') || id.includes('@hookform')) {
+            return 'vendor-forms'
+          }
           return 'vendor-core'
         },
       },

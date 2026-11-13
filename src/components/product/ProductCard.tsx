@@ -80,6 +80,10 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, in
 
   const displayImgIndex = isHovered && images.length > 1 && activeImgIdx === 0 ? 1 : activeImgIdx;
 
+  const prefetchProductDetails = () => {
+    import("../../pages/ProductDetails/Index").catch(() => {});
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18 }}
@@ -87,7 +91,11 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, in
       viewport={{ once: true, margin: "-30px" }}
       transition={{ duration: 0.34, delay: Math.min((index % 4) * 0.045, 0.16), ease: [0.16, 1, 0.3, 1] }}
       className="group relative flex flex-col bg-white p-2.5 sm:p-3 rounded-3xl border border-gray-200/70 hover:border-black/20 shadow-2xs hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.12)] hover:-translate-y-1.5 transition-all duration-300 transform-gpu"
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        prefetchProductDetails();
+      }}
+      onTouchStart={prefetchProductDetails}
       onMouseLeave={() => {
         setIsHovered(false);
         setActiveImgIdx(0);

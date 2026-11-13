@@ -152,23 +152,97 @@ export const ensureAdminSession = async () => {
   return null;
 };
 
+// Client-side image compression helper to downscale raw smartphone photos before uploading to Supabase
+const compressImageForUpload = (file) => {
+  return new Promise((resolve) => {
+    if (
+      !file ||
+      !file.type ||
+      !file.type.startsWith("image/") ||
+      file.type === "image/svg+xml" ||
+      file.type === "image/gif"
+    ) {
+      return resolve(file);
+    }
+
+    // Skip compression if already under 500 KB
+    if (file.size < 500 * 1024) {
+      return resolve(file);
+    }
+
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        try {
+          const MAX_SIZE = 1600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_SIZE || height > MAX_SIZE) {
+            if (width > height) {
+              height = Math.round((height * MAX_SIZE) / width);
+              width = MAX_SIZE;
+            } else {
+              width = Math.round((width * MAX_SIZE) / height);
+              height = MAX_SIZE;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(file);
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to modern WebP format with 85% luxury fidelity
+          const targetType = "image/webp";
+          canvas.toBlob(
+            (blob) => {
+              if (blob && blob.size < file.size) {
+                const cleanName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+                const optimizedFile = new File([blob], cleanName, { type: targetType });
+                resolve(optimizedFile);
+              } else {
+                resolve(file);
+              }
+            },
+            targetType,
+            0.85
+          );
+        } catch {
+          resolve(file);
+        }
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+};
+
 export const productService = {
   // Synchronously returns the latest cached Supabase products for instant 0ms first-frame
   getCachedProducts: () => {
     return getProductsStorage();
   },
 
-  // Upload product image
+  // Upload product image with automatic client-side compression
   uploadImage: async (file) => {
     try {
       await ensureAdminSession();
-      const fileExt = file.name.split(".").pop();
+      const fileToUpload = await compressImageForUpload(file);
+      const fileExt = fileToUpload.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
       const filePath = `uploads/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from("products")
-        .upload(filePath, file, { cacheControl: "3600", upsert: true });
+        .upload(filePath, fileToUpload, { cacheControl: "31536000", upsert: true });
 
       if (!error && data?.path) {
         const { data: urlData } = supabase.storage.from("products").getPublicUrl(data.path);

@@ -47,6 +47,14 @@ export const CartDrawer: React.FC = () => {
   const progress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_GOAL) * 100));
   const amountRemaining = Math.max(0, FREE_SHIPPING_GOAL - subtotal);
 
+  const prefetchCart = () => {
+    import("../../pages/Cart/Index").catch(() => {});
+  };
+
+  const prefetchCheckout = () => {
+    import("../../pages/Checkout/Index").catch(() => {});
+  };
+
   return (
     <AnimatePresence>
       {isCartDrawerOpen && (
@@ -260,12 +268,16 @@ export const CartDrawer: React.FC = () => {
                   <Link
                     to="/cart"
                     onClick={closeCartDrawer}
+                    onMouseEnter={prefetchCart}
+                    onTouchStart={prefetchCart}
                     className="w-full py-3 text-center border border-black text-black text-xs font-bold tracking-wider uppercase rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center cursor-pointer active:scale-95 touch-manipulation"
                   >
                     View Bag
                   </Link>
                   <button
                     type="button"
+                    onMouseEnter={prefetchCheckout}
+                    onTouchStart={prefetchCheckout}
                     onClick={() => {
                       closeCartDrawer();
                       if (!isAuthenticated) {
