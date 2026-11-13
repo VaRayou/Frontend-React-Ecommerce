@@ -14,7 +14,7 @@ interface ProductCardProps {
   index?: number;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) => {
+export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, index = 0 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const [selectedColor, setSelectedColor] = useState(0);
@@ -282,5 +282,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
       </div>
     </motion.div>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";
 

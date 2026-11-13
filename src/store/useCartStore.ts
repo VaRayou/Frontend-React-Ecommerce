@@ -289,7 +289,7 @@ export const useCartStore = create<CartState>()(
         if (initialItems.length === 0) return { valid: true, adjustments: [] };
 
         try {
-          const liveProducts = await productService.getProducts();
+          const liveProducts = await productService.getProducts({ forceRefresh: true });
 
           // If cart was modified during the network fetch, abandon this sync to prevent stale overwrites
           if (startVersion !== _cartMutationVersion) {

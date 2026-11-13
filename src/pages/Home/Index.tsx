@@ -43,7 +43,7 @@ const HERO_SLIDES = [
     subtitle:
       "Sculptural tailoring, double-faced virgin wool, and timeless essentials crafted between Paris and Milan for the modern wardrobe.",
     image:
-      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2400&q=85",
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=80",
     ctaPrimary: { label: "Shop Runway Collection", link: "/shop" },
     ctaSecondary: { label: "Explore Curated Worlds", link: "/categories" },
   },
@@ -55,7 +55,7 @@ const HERO_SLIDES = [
     subtitle:
       "Minimalist silhouettes in organic silk, brushed mohair, and full-grain Tuscan calfskin. Engineered to outlast seasonal trends.",
     image:
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2400&q=85",
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1600&q=80",
     ctaPrimary: { label: "Discover Women's Edit", link: "/shop?category=women" },
     ctaSecondary: { label: "View Men's Tailoring", link: "/shop?category=men" },
   },
@@ -67,7 +67,7 @@ const HERO_SLIDES = [
     subtitle:
       "Hand-stitched leather goods and architectural footwear with instant NBC Bakong KHQR dual-currency checkout and white-glove delivery.",
     image:
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=2400&q=85",
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80",
     ctaPrimary: { label: "Explore Leather & Bags", link: "/shop?category=bags" },
     ctaSecondary: { label: "Track Your Order", link: "/track-order" },
   },
@@ -222,6 +222,8 @@ export const Home: React.FC = () => {
               <img
                 src={heroBackgroundImg}
                 alt={spotlightProduct?.name || currentSlide.season}
+                fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-cover object-center"
               />
             </motion.div>

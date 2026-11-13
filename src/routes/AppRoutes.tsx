@@ -3,23 +3,53 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "../layouts/MainLayout";
 import Loader from "../components/common/Loader";
 
-// High-Fashion Customer Storefront Pages (Eagerly loaded for 0ms instant navigation)
+// Primary Landing & Catalog Pages (Eagerly loaded for instant 0ms initial navigation)
 import { Home } from "../pages/Home/Index";
 import { Shop } from "../pages/shop/Index";
-import { ProductDetails } from "../pages/ProductDetails/Index";
-import { Categories } from "../pages/Categories/Index";
-import { Cart } from "../pages/Cart/Index";
-import { Checkout } from "../pages/Checkout/Index";
-import { Wishlist } from "../pages/Wishlist/Index";
-import { Login } from "../pages/Login/Index";
-import { Register } from "../pages/Register/Index";
-import { Profile } from "../pages/Profile/Index";
-import { Orders } from "../pages/Orders/Index";
-import { TrackOrder } from "../pages/TrackOrder/Index";
-import { InvoicePage } from "../pages/Invoice/Index";
-import { About } from "../pages/About/Index";
-import { Contact } from "../pages/Contact/Index";
-import { NotFound } from "../pages/NotFound/Index";
+
+// Lazy-loaded Customer Secondary Pages (Loaded on demand to keep initial JS bundle ultra-lean)
+const ProductDetails = lazy(() =>
+  import("../pages/ProductDetails/Index").then((m) => ({ default: m.ProductDetails || m.default }))
+);
+const Categories = lazy(() =>
+  import("../pages/Categories/Index").then((m) => ({ default: m.Categories || m.default }))
+);
+const Cart = lazy(() =>
+  import("../pages/Cart/Index").then((m) => ({ default: m.Cart || m.default }))
+);
+const Checkout = lazy(() =>
+  import("../pages/Checkout/Index").then((m) => ({ default: m.Checkout || m.default }))
+);
+const Wishlist = lazy(() =>
+  import("../pages/Wishlist/Index").then((m) => ({ default: m.Wishlist || m.default }))
+);
+const Login = lazy(() =>
+  import("../pages/Login/Index").then((m) => ({ default: m.Login || m.default }))
+);
+const Register = lazy(() =>
+  import("../pages/Register/Index").then((m) => ({ default: m.Register || m.default }))
+);
+const Profile = lazy(() =>
+  import("../pages/Profile/Index").then((m) => ({ default: m.Profile || m.default }))
+);
+const Orders = lazy(() =>
+  import("../pages/Orders/Index").then((m) => ({ default: m.Orders || m.default }))
+);
+const TrackOrder = lazy(() =>
+  import("../pages/TrackOrder/Index").then((m) => ({ default: m.TrackOrder || m.default }))
+);
+const InvoicePage = lazy(() =>
+  import("../pages/Invoice/Index").then((m) => ({ default: m.InvoicePage || m.default }))
+);
+const About = lazy(() =>
+  import("../pages/About/Index").then((m) => ({ default: m.About || m.default }))
+);
+const Contact = lazy(() =>
+  import("../pages/Contact/Index").then((m) => ({ default: m.Contact || m.default }))
+);
+const NotFound = lazy(() =>
+  import("../pages/NotFound/Index").then((m) => ({ default: m.NotFound || m.default }))
+);
 
 // Lazy-loaded Admin Management Portal Pages
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));

@@ -91,8 +91,22 @@ export const formatProductForDisplay = (p) => {
 };
 
 let _memoryProducts = null;
+let _cachedBaseProducts = null;
+let _lastBaseProductsFetchTime = 0;
+let _inFlightBaseProductsPromise = null;
+const BASE_PRODUCTS_CACHE_TTL = 30000; // 30 seconds
+
+export const invalidateProductsCache = () => {
+  _cachedBaseProducts = null;
+  _lastBaseProductsFetchTime = 0;
+  _inFlightBaseProductsPromise = null;
+  _memoryProducts = null;
+};
 
 const getProductsStorage = () => {
+  if (_cachedBaseProducts && _cachedBaseProducts.length > 0) {
+    return _cachedBaseProducts;
+  }
   if (_memoryProducts && _memoryProducts.length > 0) {
     return _memoryProducts;
   }
@@ -107,6 +121,7 @@ const getProductsStorage = () => {
       : [];
     if (valid.length > 0) {
       _memoryProducts = valid;
+      _cachedBaseProducts = valid;
       return valid;
     }
     return [];
@@ -117,6 +132,8 @@ const getProductsStorage = () => {
 
 const saveProductsStorage = (products) => {
   _memoryProducts = products;
+  _cachedBaseProducts = products;
+  _lastBaseProductsFetchTime = Date.now();
   try {
     localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
   } catch {
@@ -170,57 +187,90 @@ export const productService = {
     });
   },
 
-  // Get all products directly from Supabase
-  getProducts: async ({ category, search, minPrice, maxPrice, sortBy } = {}) => {
-    try {
-      const hasCategoryFilter = Boolean(category && category.toLowerCase() !== "all");
+  // Get all products directly from Supabase (with in-flight deduplication & fast SWR caching)
+  getProducts: async ({ category, search, minPrice, maxPrice, sortBy, forceRefresh = false } = {}) => {
+    const isBaseCatalogQuery =
+      !category && !search && minPrice === undefined && maxPrice === undefined && !sortBy;
 
-      // Build Supabase Query (include both Active and Out of Stock items)
-      let query = hasCategoryFilter
-        ? supabase.from("products").select("*, categories:category_id!inner(id, name, slug)")
-        : supabase.from("products").select("*, categories:category_id(id, name, slug)");
-
-      if (hasCategoryFilter) {
-        query = query.ilike("categories.name", `%${category.trim()}%`);
-      }
-
-      if (search && search.trim() !== "") {
-        query = query.ilike("name", `%${search.trim()}%`);
-      }
-
-      if (minPrice !== undefined && minPrice !== "") {
-        query = query.gte("price", Number(minPrice));
-      }
-
-      if (maxPrice !== undefined && maxPrice !== "") {
-        query = query.lte("price", Number(maxPrice));
-      }
-
-      if (sortBy === "price-asc") {
-        query = query.order("price", { ascending: true });
-      } else if (sortBy === "price-desc") {
-        query = query.order("price", { ascending: false });
-      } else if (sortBy === "newest") {
-        query = query.order("created_at", { ascending: false });
-      } else {
-        query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
-      }
-
-      const { data, error } = await query;
-      if (error) {
-        console.warn("[Supabase] Products query error:", error.message);
-      } else if (Array.isArray(data)) {
-        const formatted = data.map(formatProductForDisplay);
-        if (!category && !search && !minPrice && !maxPrice && formatted.length > 0) {
-          saveProductsStorage(formatted);
-        }
-        return formatted;
-      }
-      return getProductsStorage();
-    } catch (err) {
-      console.warn("[Supabase] getProducts exception:", err.message);
-      return getProductsStorage();
+    // Return instant memory cache if fresh and not forcing live refresh
+    if (
+      isBaseCatalogQuery &&
+      !forceRefresh &&
+      _cachedBaseProducts &&
+      _cachedBaseProducts.length > 0 &&
+      Date.now() - _lastBaseProductsFetchTime < BASE_PRODUCTS_CACHE_TTL
+    ) {
+      return _cachedBaseProducts;
     }
+
+    // Reuse in-flight network promise to eliminate duplicate simultaneous queries
+    if (isBaseCatalogQuery && !forceRefresh && _inFlightBaseProductsPromise) {
+      return _inFlightBaseProductsPromise;
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        const hasCategoryFilter = Boolean(category && category.toLowerCase() !== "all");
+
+        // Build Supabase Query (include both Active and Out of Stock items)
+        let query = hasCategoryFilter
+          ? supabase.from("products").select("*, categories:category_id!inner(id, name, slug)")
+          : supabase.from("products").select("*, categories:category_id(id, name, slug)");
+
+        if (hasCategoryFilter) {
+          query = query.ilike("categories.name", `%${category.trim()}%`);
+        }
+
+        if (search && search.trim() !== "") {
+          query = query.ilike("name", `%${search.trim()}%`);
+        }
+
+        if (minPrice !== undefined && minPrice !== "") {
+          query = query.gte("price", Number(minPrice));
+        }
+
+        if (maxPrice !== undefined && maxPrice !== "") {
+          query = query.lte("price", Number(maxPrice));
+        }
+
+        if (sortBy === "price-asc") {
+          query = query.order("price", { ascending: true });
+        } else if (sortBy === "price-desc") {
+          query = query.order("price", { ascending: false });
+        } else if (sortBy === "newest") {
+          query = query.order("created_at", { ascending: false });
+        } else {
+          query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
+        }
+
+        const { data, error } = await query;
+        if (error) {
+          console.warn("[Supabase] Products query error:", error.message);
+        } else if (Array.isArray(data)) {
+          const formatted = data.map(formatProductForDisplay);
+          if (isBaseCatalogQuery && formatted.length > 0) {
+            _cachedBaseProducts = formatted;
+            _lastBaseProductsFetchTime = Date.now();
+            saveProductsStorage(formatted);
+          }
+          return formatted;
+        }
+        return getProductsStorage();
+      } catch (err) {
+        console.warn("[Supabase] getProducts exception:", err.message);
+        return getProductsStorage();
+      } finally {
+        if (isBaseCatalogQuery) {
+          _inFlightBaseProductsPromise = null;
+        }
+      }
+    })();
+
+    if (isBaseCatalogQuery && !forceRefresh) {
+      _inFlightBaseProductsPromise = fetchPromise;
+    }
+
+    return fetchPromise;
   },
 
   // Get single product details directly from Supabase
