@@ -232,7 +232,8 @@ export function ManageOrders() {
   const handleSyncSupabase = async () => {
     try {
       setIsRefreshing(true);
-      await loadOrders(true);
+      orderService.clearTombstones();
+      await loadOrders(false);
       showNotification("Orders & Payments synchronized with Supabase Live");
     } catch {
       alert("Failed syncing with Supabase");

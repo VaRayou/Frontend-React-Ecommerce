@@ -131,6 +131,42 @@ export function ManagePayments() {
     }
   };
 
+  const handleConfirmPaid = async (payment) => {
+    const targetKey = payment.md5_hash || payment.order_number || payment.id;
+    if (!targetKey) return;
+    if (
+      !window.confirm(
+        `Mark KHQR transaction #${payment.order_number || targetKey} as PAID in Supabase and settle order?`
+      )
+    ) {
+      return;
+    }
+
+    setVerifyingId(targetKey);
+    try {
+      const res = await khqrService.verifyPayment(targetKey, undefined, true);
+      if (res.is_paid || res.success) {
+        soundEffects.playOrderChime();
+        showNotification(
+          `Payment #${payment.order_number || ""} marked as PAID and settled!`
+        );
+        await loadPayments(true);
+      }
+    } catch {
+      showNotification("Could not confirm payment in Supabase.");
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  const handleResetFilterTombstones = async () => {
+    khqrService.clearTombstones();
+    setStatusFilter("all");
+    setSearchQuery("");
+    showNotification("Reset all filters & reloaded ledger from Supabase Cloud");
+    await loadPayments(false);
+  };
+
   const confirmDeletePayment = async () => {
     if (!paymentToDelete) return;
     setIsDeleting(true);
@@ -300,6 +336,15 @@ export function ManagePayments() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={handleResetFilterTombstones}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer shadow-2xs"
+            title="Reset local storage filters and show all transactions from Supabase"
+          >
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Reset Filter / Show All</span>
+          </button>
           {pendingPayments.length > 0 && (
             <button
               type="button"
@@ -440,19 +485,30 @@ export function ManagePayments() {
           />
         </div>
 
-        <div className="grid grid-cols-3 sm:flex items-center gap-2">
-          {["all", "PAID", "PENDING"].map((st) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 items-center gap-2">
+          {[
+            { id: "all", label: "All", count: payments.length },
+            { id: "PAID", label: "Paid", count: paidPayments.length },
+            { id: "PENDING", label: "Pending", count: pendingPayments.length },
+            {
+              id: "EXPIRED",
+              label: "Expired",
+              count: payments.filter(
+                (p) => String(p.status || "").toUpperCase() === "EXPIRED"
+              ).length,
+            },
+          ].map(({ id, label, count }) => (
             <button
-              key={st}
+              key={id}
               type="button"
-              onClick={() => setStatusFilter(st)}
+              onClick={() => setStatusFilter(id)}
               className={`px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors text-center ${
-                statusFilter === st
+                statusFilter === id
                   ? "bg-black text-[#D6FF00]"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {st === "all" ? "All" : st}
+              {label} ({count})
             </button>
           ))}
         </div>
@@ -470,6 +526,7 @@ export function ManagePayments() {
             <div className="block md:hidden divide-y divide-gray-100">
               {filteredPayments.map((pay, idx) => {
                 const isPaid = String(pay.status || "").toUpperCase() === "PAID";
+                const isExpired = String(pay.status || "").toUpperCase() === "EXPIRED";
                 const keyId = pay.md5_hash || pay.order_number || idx;
                 const amt = Number(pay.amount || 0);
                 return (
@@ -486,6 +543,11 @@ export function ManagePayments() {
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                           <span>PAID</span>
+                        </span>
+                      ) : isExpired ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-gray-100 text-gray-600 border border-gray-200">
+                          <Clock className="w-3 h-3 text-gray-400" />
+                          <span>EXPIRED</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200">
@@ -555,23 +617,36 @@ export function ManagePayments() {
                     {/* Action Buttons */}
                     <div
                       className={`grid ${
-                        !isPaid ? "grid-cols-3" : "grid-cols-2"
-                      } gap-2 pt-2 border-t border-gray-100`}
+                        !isPaid ? "grid-cols-4" : "grid-cols-2"
+                      } gap-1.5 pt-2 border-t border-gray-100`}
                     >
                       {!isPaid && (
-                        <button
-                          type="button"
-                          disabled={verifyingId === keyId}
-                          onClick={() => handleVerifyPayment(pay)}
-                          className="py-2 px-2.5 rounded-xl bg-[#E1232E] hover:bg-[#c51b25] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                        >
-                          <RefreshCw
-                            className={`w-3.5 h-3.5 shrink-0 ${
-                              verifyingId === keyId ? "animate-spin" : ""
-                            }`}
-                          />
-                          <span className="truncate">Verify API</span>
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            disabled={verifyingId === keyId}
+                            onClick={() => handleVerifyPayment(pay)}
+                            className="py-2 px-1.5 rounded-xl bg-[#E1232E] hover:bg-[#c51b25] text-white font-bold text-[10px] flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                            title="Verify with NBC Bakong API"
+                          >
+                            <RefreshCw
+                              className={`w-3 h-3 shrink-0 ${
+                                verifyingId === keyId ? "animate-spin" : ""
+                              }`}
+                            />
+                            <span className="truncate">Verify</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={verifyingId === keyId}
+                            onClick={() => handleConfirmPaid(pay)}
+                            className="py-2 px-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                            title="Mark transaction as Paid & settle order"
+                          >
+                            <CheckCircle2 className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Mark Paid</span>
+                          </button>
+                        </>
                       )}
                       <button
                         type="button"
@@ -595,7 +670,7 @@ export function ManagePayments() {
                             ],
                           })
                         }
-                        className="py-2 px-2.5 rounded-xl bg-neutral-900 hover:bg-black text-[#D6FF00] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="py-2 px-2 rounded-xl bg-neutral-900 hover:bg-black text-[#D6FF00] font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <Receipt className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">Receipt</span>
@@ -603,7 +678,7 @@ export function ManagePayments() {
                       <button
                         type="button"
                         onClick={() => setPaymentToDelete(pay)}
-                        className="py-2 px-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        className="py-2 px-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold text-[11px] flex items-center justify-center gap-1 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">Delete</span>
@@ -631,6 +706,7 @@ export function ManagePayments() {
                 <tbody className="divide-y divide-gray-100 text-xs">
                   {filteredPayments.map((pay, idx) => {
                     const isPaid = String(pay.status || "").toUpperCase() === "PAID";
+                    const isExpired = String(pay.status || "").toUpperCase() === "EXPIRED";
                     const keyId = pay.md5_hash || pay.order_number || idx;
                     const amt = Number(pay.amount || 0);
                     return (
@@ -684,6 +760,11 @@ export function ManagePayments() {
                               <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                               <span>PAID</span>
                             </span>
+                          ) : isExpired ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-gray-100 text-gray-600 border border-gray-200">
+                              <Clock className="w-3 h-3 text-gray-400" />
+                              <span>EXPIRED</span>
+                            </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200">
                               <Clock className="w-3 h-3 text-amber-500" />
@@ -694,20 +775,32 @@ export function ManagePayments() {
                         <td className="py-3.5 px-4 text-right">
                           <div className="inline-flex items-center justify-end gap-1.5">
                             {!isPaid && (
-                              <button
-                                type="button"
-                                disabled={verifyingId === keyId}
-                                onClick={() => handleVerifyPayment(pay)}
-                                className="px-2.5 py-1.5 rounded-lg bg-[#E1232E] hover:bg-[#c51b25] text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                                title="Check live settlement status on NBC Bakong API"
-                              >
-                                <RefreshCw
-                                  className={`w-3 h-3 ${
-                                    verifyingId === keyId ? "animate-spin" : ""
-                                  }`}
-                                />
-                                <span>Verify API</span>
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={verifyingId === keyId}
+                                  onClick={() => handleVerifyPayment(pay)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#E1232E] hover:bg-[#c51b25] text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                  title="Check live settlement status on NBC Bakong API"
+                                >
+                                  <RefreshCw
+                                    className={`w-3 h-3 ${
+                                      verifyingId === keyId ? "animate-spin" : ""
+                                    }`}
+                                  />
+                                  <span>Verify API</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={verifyingId === keyId}
+                                  onClick={() => handleConfirmPaid(pay)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                  title="Manually confirm transaction as Paid and settle order"
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Mark Paid</span>
+                                </button>
+                              </>
                             )}
                             <button
                               type="button"

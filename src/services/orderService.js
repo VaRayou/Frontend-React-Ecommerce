@@ -327,7 +327,7 @@ export const orderService = {
   },
 
   /**
-   * Retrieves all customer orders directly from Supabase
+   * Retrieves all customer orders directly from Supabase (with /api/orders fallback)
    */
   getOrders: async () => {
     try {
@@ -338,9 +338,7 @@ export const orderService = {
         .neq("notes", "DELETED")
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.warn("[Supabase] getOrders note:", error.message);
-      } else if (Array.isArray(data)) {
+      if (!error && Array.isArray(data) && data.length > 0) {
         const deletedIds = getDeletedOrderIds();
         const normalized = data
           .map(normalizeOrder)
@@ -354,6 +352,31 @@ export const orderService = {
         saveOrdersStorage(normalized);
         return normalized;
       }
+
+      // If direct Supabase returns 0 rows (e.g. anon JWT or session dropped), query /api/orders
+      try {
+        const apiRes = await fetch("/api/orders");
+        if (apiRes.ok) {
+          const apiJson = await apiRes.json();
+          if (apiJson?.success && Array.isArray(apiJson.orders) && apiJson.orders.length > 0) {
+            const deletedIds = getDeletedOrderIds();
+            const normalized = apiJson.orders
+              .map(normalizeOrder)
+              .filter(
+                (o) =>
+                  o &&
+                  o.notes !== "DELETED" &&
+                  !deletedIds.has(String(o.id)) &&
+                  !deletedIds.has(String(o.orderNumber)),
+              );
+            saveOrdersStorage(normalized);
+            return normalized;
+          }
+        }
+      } catch (apiErr) {
+        console.warn("[Supabase] /api/orders fallback note:", apiErr.message);
+      }
+
       return getOrdersStorage();
     } catch (err) {
       console.warn("[Supabase] getOrders exception:", err.message);
@@ -582,6 +605,42 @@ export const orderService = {
         notes: orderData.notes || "",
       };
 
+      // 1. Primary execution path: /api/orders serverless endpoint
+      // Operates with server admin clearance, guaranteeing zero RLS 401 blocks for guest/patron checkouts
+      try {
+        const apiRes = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...orderRow,
+            items: rawItems,
+            transactionId: orderData.transactionId || "",
+          }),
+        });
+        if (apiRes.ok) {
+          const apiJson = await apiRes.json();
+          if (apiJson?.success && apiJson?.order) {
+            const normalized = normalizeOrder(apiJson.order);
+            const current = getOrdersStorage();
+            saveOrdersStorage([
+              normalized,
+              ...current.filter((o) => o.id !== normalized.id && o.orderNumber !== normalized.orderNumber),
+            ]);
+            window.dispatchEvent(new Event("atelier_order_updated"));
+            telegramService
+              .sendOrderAlert({
+                ...normalized,
+                transactionId: orderData.transactionId || "",
+              })
+              .catch(() => {});
+            return normalized;
+          }
+        }
+      } catch (apiErr) {
+        console.warn("[orderService] /api/orders primary route note:", apiErr.message);
+      }
+
+      // 2. Direct Supabase client insertion fallback (local / offline)
       const { data: newOrder, error: orderErr } = await supabase
         .from("orders")
         .insert([orderRow])
@@ -950,5 +1009,17 @@ export const orderService = {
       window.dispatchEvent(new Event("atelier_order_updated"));
       return true;
     }
+  },
+
+  /**
+   * Clears any local storage tombstones to unhide orders that were filtered locally
+   */
+  clearTombstones: () => {
+    try {
+      localStorage.removeItem(DELETED_ORDERS_KEY);
+      localStorage.removeItem(ORDERS_STORAGE_KEY);
+      _memoryOrders = null;
+      window.dispatchEvent(new Event("atelier_order_updated"));
+    } catch {}
   },
 };

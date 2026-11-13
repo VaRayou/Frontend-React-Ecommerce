@@ -269,7 +269,7 @@ export const Checkout: React.FC = () => {
 
     // Sync order to backend / controller database
     try {
-      await orderService.createOrder({
+      const persisted = await orderService.createOrder({
         orderNumber,
         customerName: data.fullName,
         customerEmail: data.email,
@@ -283,7 +283,12 @@ export const Checkout: React.FC = () => {
         paymentMethod: paymentMethod,
         paymentStatus: paymentStatus,
         orderStatus: "Processing",
+        transactionId: transactionId || undefined,
       });
+      if (persisted?.orderNumber) {
+        newOrder.orderNumber = persisted.orderNumber;
+        setPlacedOrder(newOrder);
+      }
     } catch (e) {
       console.warn("Order sync note:", e);
     }

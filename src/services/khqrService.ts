@@ -841,14 +841,28 @@ export const khqrService = {
     const txn = transactionId || `MANUAL-${Date.now()}`;
     try {
       await ensureAdminSession();
-      await supabase
+      const { data: updatedPay } = await supabase
         .from("payments")
         .update({
           status: "PAID",
           transaction_id: txn,
           paid_at: new Date().toISOString(),
         })
-        .eq("md5_hash", md5Str);
+        .or(`md5_hash.eq.${md5Str},order_number.eq.${md5Str},id.eq.${md5Str}`)
+        .select("*")
+        .maybeSingle();
+
+      // If associated order exists in orders table, synchronize its payment status to 'Paid'
+      const targetOrderNum = updatedPay?.order_number || (md5Str.startsWith("ATL-") ? md5Str : null);
+      if (targetOrderNum) {
+        try {
+          await supabase
+            .from("orders")
+            .update({ payment_status: "Paid" })
+            .eq("order_number", targetOrderNum);
+          window.dispatchEvent(new Event("atelier_order_updated"));
+        } catch {}
+      }
     } catch {}
 
     const paidResult: KhqrStatusResponse = {
@@ -882,10 +896,8 @@ export const khqrService = {
       if (!error && Array.isArray(data)) {
         const deletedSet = getDeletedPaymentIdentifiers();
 
-        // Filter out records that are EXPIRED, or tombstoned in localStorage
+        // Preserve all statuses (PAID, PENDING, EXPIRED) for complete audit trail; filter only explicit user deletions
         const activePayments = data.filter((p) => {
-          const status = String(p.status || "PENDING").toUpperCase();
-          if (status === "EXPIRED") return false;
           if (p.id && deletedSet.has(String(p.id))) return false;
           if (p.md5_hash && deletedSet.has(String(p.md5_hash))) return false;
           if (p.order_number && deletedSet.has(String(p.order_number)))
@@ -1134,6 +1146,17 @@ export const khqrService = {
       supported_currencies: ["USD", "KHR"],
       emvco_specification: "EMVCo KHQR Universal QR Standard",
     };
+  },
+
+  /**
+   * Resets local storage tombstones to unhide any payments filtered locally
+   */
+  clearTombstones: () => {
+    try {
+      localStorage.removeItem(DELETED_PAYMENTS_KEY);
+      localStorage.removeItem(PAYMENTS_CACHE_KEY);
+      _memoryPayments = null;
+    } catch {}
   },
 };
 
