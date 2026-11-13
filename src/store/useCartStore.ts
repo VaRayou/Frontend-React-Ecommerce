@@ -48,6 +48,8 @@ interface CartState {
 const FREE_SHIPPING_THRESHOLD = 200;
 const STANDARD_SHIPPING_FEE = 15;
 
+let _cartMutationVersion = 0;
+
 const DEFAULT_IMG =
   "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80";
 
@@ -126,6 +128,7 @@ export const useCartStore = create<CartState>()(
 
       addToCart: (product, quantity = 1, selectedSize, selectedColor) => {
         if (!product) return;
+        _cartMutationVersion++;
         const rawStock =
           product.stock !== undefined
             ? Number(product.stock)
@@ -220,10 +223,17 @@ export const useCartStore = create<CartState>()(
       },
 
       removeFromCart: (itemId) => {
+        _cartMutationVersion++;
+        const targetId = String(itemId || "").trim();
+        if (!targetId) return;
+
         set((state) => {
-          const nextItems = (state.items || []).filter(
-            (item) => item.id !== itemId,
-          );
+          const nextItems = (state.items || []).filter((item) => {
+            const currentId = String(item.id || "").trim();
+            const currentProdId = String(item.product?.id || (item.product as any)?._id || "").trim();
+            // Match against unique cart item ID or product ID if single item
+            return currentId !== targetId && (currentProdId !== targetId || currentId.includes("-"));
+          });
           const promoUpdates = revalidatePromoDiscount(state, nextItems);
           return {
             items: nextItems,
@@ -233,6 +243,7 @@ export const useCartStore = create<CartState>()(
       },
 
       updateQuantity: (itemId, quantity) => {
+        _cartMutationVersion++;
         if (quantity <= 0) {
           get().removeFromCart(itemId);
           return;
@@ -259,6 +270,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
+        _cartMutationVersion++;
         set({
           items: [],
           promoCode: "",
@@ -272,13 +284,20 @@ export const useCartStore = create<CartState>()(
       },
 
       syncCartWithLiveStock: async () => {
-        const currentItems = get().items || [];
-        if (currentItems.length === 0) return { valid: true, adjustments: [] };
+        const startVersion = ++_cartMutationVersion;
+        const initialItems = get().items || [];
+        if (initialItems.length === 0) return { valid: true, adjustments: [] };
 
         try {
           const liveProducts = await productService.getProducts();
-          if (!Array.isArray(liveProducts))
+
+          // If cart was modified during the network fetch, abandon this sync to prevent stale overwrites
+          if (startVersion !== _cartMutationVersion) {
             return { valid: true, adjustments: [] };
+          }
+          if (!Array.isArray(liveProducts)) {
+            return { valid: true, adjustments: [] };
+          }
 
           const liveMap = new Map<string, any>();
           for (const p of liveProducts) {
@@ -286,10 +305,16 @@ export const useCartStore = create<CartState>()(
             if ((p as any)._id) liveMap.set(String((p as any)._id), p);
           }
 
+          // Fresh read of items right now - ensures deleted items are never resurrected
+          const liveItems = get().items || [];
+          if (liveItems.length === 0) {
+            return { valid: true, adjustments: [] };
+          }
+
           const adjustments: string[] = [];
           const nextItems: CartItem[] = [];
 
-          for (const item of currentItems) {
+          for (const item of liveItems) {
             const prodId = String(
               item.product?.id || (item.product as any)?._id || "",
             );
@@ -340,15 +365,12 @@ export const useCartStore = create<CartState>()(
             });
           }
 
-          if (
-            adjustments.length > 0 ||
-            nextItems.length !== currentItems.length
-          ) {
-            set({ items: nextItems });
-          } else {
-            set({ items: nextItems });
+          // Final guard: check mutation version right before applying state
+          if (startVersion !== _cartMutationVersion) {
+            return { valid: true, adjustments: [] };
           }
 
+          set({ items: nextItems });
           return { valid: adjustments.length === 0, adjustments };
         } catch {
           return { valid: true, adjustments: [] };

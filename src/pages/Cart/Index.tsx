@@ -98,8 +98,12 @@ export const Cart: React.FC = () => {
           </h1>
         </div>
         <button
-          onClick={clearCart}
-          className="text-xs text-gray-400 hover:text-red-500 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors shrink-0"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            clearCart();
+          }}
+          className="text-xs text-gray-400 hover:text-red-500 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer active:scale-95 touch-manipulation"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear Bag</span>
@@ -189,29 +193,47 @@ export const Cart: React.FC = () => {
               <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3 pt-3 sm:pt-0 border-t sm:border-0 border-gray-100">
                 <div className="flex items-center border border-gray-200 rounded-xl px-2 py-1">
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="w-7 h-7 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      updateQuantity(item.id, item.quantity - 1);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-black transition-colors cursor-pointer active:scale-90 touch-manipulation"
+                    aria-label="Decrease quantity"
                   >
-                    <Minus className="w-3 h-3" />
+                    <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="w-8 text-center text-xs font-bold text-black">
+                  <span className="w-8 text-center text-xs font-bold text-black select-none">
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="w-7 h-7 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      updateQuantity(item.id, item.quantity + 1);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-black transition-colors cursor-pointer active:scale-90 touch-manipulation"
+                    aria-label="Increase quantity"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                <div className="text-right">
+                <div className="text-right flex sm:flex-col items-center sm:items-end gap-3 sm:gap-1">
                   <span className="text-sm sm:text-base font-black text-black block">
                     {formatPrice(Number(item.product?.price || 0) * item.quantity)}
                   </span>
                   <button
-                    onClick={() => removeFromCart(item.id)}
-                    className="text-[11px] text-gray-400 hover:text-red-500 transition-colors underline font-medium"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeFromCart(item.id);
+                    }}
+                    className="text-xs text-rose-500 sm:text-gray-400 sm:hover:text-rose-500 transition-colors underline font-medium p-1 cursor-pointer active:scale-95 touch-manipulation"
+                    aria-label="Remove item"
                   >
                     Remove
                   </button>
