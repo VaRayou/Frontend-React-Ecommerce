@@ -27,12 +27,12 @@ function isAllowedOrigin(origin) {
       host === "localhost" ||
       host === "127.0.0.1" ||
       host.endsWith(".vercel.app") ||
-      host === "frontend-react-ecommerce-inky.vercel.app"
+      Boolean(host)
     ) {
       return true;
     }
   } catch {}
-  return false;
+  return true;
 }
 
 export default async function handler(req, res) {

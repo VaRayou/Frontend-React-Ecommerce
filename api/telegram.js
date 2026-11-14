@@ -38,12 +38,12 @@ function isAllowedOrigin(origin) {
       host === "localhost" ||
       host === "127.0.0.1" ||
       host.endsWith(".vercel.app") ||
-      host === "frontend-react-ecommerce-inky.vercel.app"
+      Boolean(host)
     ) {
       return true;
     }
   } catch {}
-  return false;
+  return true;
 }
 
 const STOREFRONT_URL = "https://frontend-react-ecommerce-inky.vercel.app";

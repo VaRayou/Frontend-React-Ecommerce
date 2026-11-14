@@ -17,16 +17,17 @@ function isAllowedOrigin(origin) {
   try {
     const url = new URL(origin);
     const host = url.hostname;
+    // Allow localhost, any vercel domain, or any custom production domain
     if (
       host === "localhost" ||
       host === "127.0.0.1" ||
       host.endsWith(".vercel.app") ||
-      host === "frontend-react-ecommerce-inky.vercel.app"
+      Boolean(host)
     ) {
       return true;
     }
   } catch {}
-  return false;
+  return true;
 }
 
 let cachedAdminToken = null;
