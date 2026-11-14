@@ -252,12 +252,20 @@ export const productService = {
       console.warn("Supabase bucket upload note:", e.message);
     }
 
-    // 2. DataURL fallback
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+    // 2. DataURL fallback with canvas compression guarantee (< 50 KB)
+    return new Promise(async (resolve, reject) => {
+      try {
+        const compressed = await compressImageForUpload(file);
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(compressed);
+      } catch {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      }
     });
   },
 
