@@ -661,7 +661,29 @@ export const khqrService = {
       } catch {}
     }
 
-    // 2. Query official NBC Bakong Open API via CORS-safe proxy
+    // 2. FIRST: Check if already verified or marked PAID in Supabase ledger (0ms, 0 quota used)
+    try {
+      const { data: dbPayment } = await supabase
+        .from("payments")
+        .select("status, transaction_id, paid_at, expires_at, order_number, amount, customer_name")
+        .or(`md5_hash.eq.${cleanMd5},order_number.eq.${cleanMd5},id.eq.${cleanMd5},md5_hash.eq.${md5Str}`)
+        .maybeSingle();
+
+      if (dbPayment && String(dbPayment.status).toUpperCase() === "PAID") {
+        const paidResult: KhqrStatusResponse = {
+          status: "PAID",
+          is_paid: true,
+          transaction_id: dbPayment.transaction_id || `VERIFIED-${cleanMd5.slice(0, 10)}`,
+          paid_at: dbPayment.paid_at || new Date().toISOString(),
+          message: "Payment verified.",
+        };
+        checkStatusCache[md5Str] = { timestamp: now, result: paidResult };
+        checkStatusCache[cleanMd5] = { timestamp: now, result: paidResult };
+        return paidResult;
+      }
+    } catch {}
+
+    // 3. Query official NBC Bakong Open API via CORS-safe proxy
     try {
       const resJson = await callBakongOpenApi("/v1/check_transaction_by_md5", {
         md5: cleanMd5,

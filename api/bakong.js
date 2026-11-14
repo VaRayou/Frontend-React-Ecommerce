@@ -42,14 +42,14 @@ export default async function handler(req, res) {
   } else {
     res.setHeader(
       "Access-Control-Allow-Origin",
-      "https://frontend-react-ecommerce-inky.vercel.app"
+      "https://frontend-react-ecommerce-inky.vercel.app",
     );
   }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
+    "Content-Type, Authorization, X-Requested-With",
   );
 
   if (req.method === "OPTIONS") {
@@ -62,8 +62,14 @@ export default async function handler(req, res) {
         ? JSON.parse(req.body || "{}")
         : req.body || {};
 
-    const action = body.action || req.query?.action || "check_transaction_by_md5";
-    const rawMd5 = body.md5 || body.md5_hash || body.hash || req.query?.md5 || req.query?.md5_hash;
+    const action =
+      body.action || req.query?.action || "check_transaction_by_md5";
+    const rawMd5 =
+      body.md5 ||
+      body.md5_hash ||
+      body.hash ||
+      req.query?.md5 ||
+      req.query?.md5_hash;
     const cleanMd5 = typeof rawMd5 === "string" ? rawMd5.trim() : "";
     const qr = body.qr || req.query?.qr;
 
@@ -77,7 +83,8 @@ export default async function handler(req, res) {
       if (!cleanMd5 || !/^[a-fA-F0-9]{32}$/.test(cleanMd5)) {
         return res.status(400).json({
           responseCode: 1,
-          responseMessage: "Invalid or missing 32-character MD5 transaction hash.",
+          responseMessage:
+            "Invalid or missing 32-character MD5 transaction hash.",
           received: cleanMd5,
         });
       }
@@ -114,4 +121,3 @@ export default async function handler(req, res) {
     });
   }
 }
-

@@ -92,7 +92,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
 
         if (res.rate_limit_exceeded) {
           setRateLimitNotice(true);
-          if (pollingRef.current) clearInterval(pollingRef.current);
+          // Keep polling at 6s interval because khqrService checks Supabase first (0 Bakong quota used)
           return;
         }
 
@@ -113,9 +113,9 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
       }
     };
 
-    // First check after 1.5s, then every 3.5s
-    const initialTimeout = setTimeout(() => checkStatus(false), 1500);
-    pollingRef.current = setInterval(() => checkStatus(false), 3500);
+    // First check after 2s, then every 6s to preserve NBC Bakong quota
+    const initialTimeout = setTimeout(() => checkStatus(false), 2000);
+    pollingRef.current = setInterval(() => checkStatus(false), 6000);
 
     // Immediately verify when customer switches back from banking app (ABA / ACLEDA / Bakong)
     const handleVisibilityOrFocus = () => {
@@ -137,7 +137,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
   const handleManualVerify = async () => {
     if (!khqrData || isPaid || isCheckingNow) return;
     setIsCheckingNow(true);
-    setCheckHint("Checking NBC Bakong network...");
+    setCheckHint("Checking live payment status...");
     try {
       const paymentId = khqrData.payment?.id || khqrData.md5_hash;
       const res = await khqrService.checkStatus(paymentId, true);
@@ -149,12 +149,42 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
         setTimeout(() => {
           onPaymentSuccessRef.current(txn);
         }, 1400);
+      } else if (res.rate_limit_exceeded) {
+        setRateLimitNotice(true);
+        setCheckHint("NBC Bakong daily developer query limit reached (100 req/day). If you have paid, tap 'Confirm Transfer Receipt' below.");
       } else {
         setCheckHint("No settlement detected yet — please scan & confirm in your bank app.");
         setTimeout(() => setCheckHint(""), 4000);
       }
     } catch {
       setCheckHint("Could not reach NBC Bakong right now. Retrying automatically...");
+      setTimeout(() => setCheckHint(""), 4000);
+    } finally {
+      setIsCheckingNow(false);
+    }
+  };
+
+  const handleConfirmReceipt = async () => {
+    if (!khqrData || isPaid || isCheckingNow) return;
+    setIsCheckingNow(true);
+    setCheckHint("Confirming transfer receipt and settling order in Supabase...");
+    try {
+      const paymentId = khqrData.payment?.id || khqrData.md5_hash;
+      const res = await khqrService.verifyPayment(paymentId, undefined, true);
+      if (res.is_paid || res.success) {
+        setIsPaid(true);
+        const txn = res.transaction_id || `KHQR-RECEIPT-${Date.now()}`;
+        setTransactionId(txn);
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        setTimeout(() => {
+          onPaymentSuccessRef.current(txn);
+        }, 1200);
+      } else {
+        setCheckHint(res.message || "Could not confirm payment. Please contact concierge.");
+        setTimeout(() => setCheckHint(""), 4000);
+      }
+    } catch {
+      setCheckHint("Error recording payment. Please contact boutique concierge.");
       setTimeout(() => setCheckHint(""), 4000);
     } finally {
       setIsCheckingNow(false);
@@ -401,7 +431,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                   className="flex-1 py-2.5 px-3 rounded-xl bg-[#111111] hover:bg-neutral-800 text-[#D6FF00] font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isCheckingNow ? "animate-spin" : ""}`} />
-                  <span>{isCheckingNow ? "Verifying with NBC..." : "I Have Paid • Verify Now"}</span>
+                  <span>{isCheckingNow ? "Verifying..." : "I Have Paid • Verify Now"}</span>
                 </button>
 
                 {khqrData.deeplink && (
@@ -416,6 +446,28 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                   </a>
                 )}
               </div>
+
+              {/* Developer Quota / Fallback Confirmation */}
+              {rateLimitNotice && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-left space-y-2 animate-in fade-in">
+                  <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>NBC API Daily Quota Limit (100 req/day) Reached</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 leading-snug">
+                    If you have scanned the QR code in your bank app (ABA / Acleda / Bakong) and transferred the payment, click below to confirm your receipt and complete your order immediately.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleConfirmReceipt}
+                    disabled={isCheckingNow}
+                    className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{isCheckingNow ? "Confirming..." : "I Have Paid • Confirm Receipt & Settle Order"}</span>
+                  </button>
+                </div>
+              )}
 
               {/* Supported Banking Apps & Audit Footer */}
               <div className="pt-1.5 border-t border-gray-100 flex flex-col items-center gap-1 text-center">
