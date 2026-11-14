@@ -40,6 +40,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
   const [isExpired, setIsExpired] = useState(false);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onPaymentSuccessRef = useRef(onPaymentSuccess);
 
   useEffect(() => {
@@ -121,7 +122,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     };
 
     // First check after 3.5s, then every 5s to conserve NBC Bakong quota
-    const initialTimeout = setTimeout(() => checkStatus(false), 3500);
+    initialTimeoutRef.current = setTimeout(() => checkStatus(false), 3500);
     pollingRef.current = setInterval(() => checkStatus(false), 5000);
 
     // Immediately verify when customer switches back from banking app (ABA / ACLEDA / Bakong)
@@ -135,7 +136,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     document.addEventListener("visibilitychange", handleVisibilityOrFocus);
 
     return () => {
-      clearTimeout(initialTimeout);
+      if (initialTimeoutRef.current) clearTimeout(initialTimeoutRef.current);
       if (pollingRef.current) clearInterval(pollingRef.current);
       window.removeEventListener("focus", handleVisibilityOrFocus);
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
