@@ -758,65 +758,15 @@ export const khqrService = {
           resJson.errorCode === 18 ||
           resJson.errorCode === 19
         ) {
-          const firstSeen = (checkStatusCache[md5Str] as any)?.firstSeen || now;
-          const waitDurationMs = now - firstSeen;
-
-          // If user refocused/switched back from bank app, or has waited >= 6 seconds while scanning
-          if (forceRefresh || waitDurationMs >= 6000) {
-            const txnId = `NBC-CONFIRMED-${Date.now()}`;
-            try {
-              await ensureAdminSession();
-              const { data: updatedPay } = await supabase
-                .from("payments")
-                .update({
-                  status: "PAID",
-                  transaction_id: txnId,
-                  paid_at: new Date().toISOString(),
-                })
-                .or(`md5_hash.eq.${cleanMd5},md5_hash.eq.${md5Str}`)
-                .select("*")
-                .maybeSingle();
-
-              if (updatedPay?.order_number) {
-                await supabase
-                  .from("orders")
-                  .update({ payment_status: "Paid" })
-                  .eq("order_number", updatedPay.order_number);
-                window.dispatchEvent(new Event("atelier_order_updated"));
-              }
-
-              telegramService
-                .sendKhqrPaymentAlert({
-                  orderNumber: updatedPay?.order_number || md5Str.slice(0, 10),
-                  amount: Number(updatedPay?.amount || 0),
-                  currency: updatedPay?.currency || "USD",
-                  transactionId: txnId,
-                  customerName:
-                    updatedPay?.customer_name || "Transfer Verified",
-                })
-                .catch(() => {});
-            } catch {}
-
-            const paidResult: KhqrStatusResponse = {
-              status: "PAID",
-              is_paid: true,
-              transaction_id: txnId,
-              paid_at: new Date().toISOString(),
-              message: "Payment verified successfully.",
-            };
-            checkStatusCache[md5Str] = { timestamp: now, firstSeen, result: paidResult } as any;
-            checkStatusCache[cleanMd5] = { timestamp: now, firstSeen, result: paidResult } as any;
-            return paidResult;
-          }
-
-          // Otherwise during initial scanning seconds, remain pending
           const quotaResult: KhqrStatusResponse = {
             status: "PENDING",
             is_paid: false,
+            rate_limit_exceeded: true,
             message:
-              "Waiting for customer bank transfer settlement on NBC Bakong.",
+              resJson.responseMessage ||
+              "NBC Bakong daily developer query limit reached (100 req/day).",
           };
-          checkStatusCache[md5Str] = { timestamp: now, firstSeen, result: quotaResult } as any;
+          checkStatusCache[md5Str] = { timestamp: now, result: quotaResult };
           return quotaResult;
         }
       }
