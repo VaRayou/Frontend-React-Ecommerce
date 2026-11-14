@@ -15,7 +15,7 @@ import {
   Download,
 } from "lucide-react";
 import { khqrService, KhqrCreateResponse } from "../../services/khqrService";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 
 interface KhqrPaymentModalProps {
   isOpen: boolean;
@@ -43,6 +43,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const onPaymentSuccessRef = useRef(onPaymentSuccess);
 
   useEffect(() => {
@@ -187,25 +188,60 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
   const handleDownloadQr = async () => {
     if (!khqrData) return;
     try {
-      setBankHint("Saving QR code to Photos...");
-      const res = await fetch(khqrData.qr_image);
-      const blob = await res.blob();
+      setBankHint("Preparing QR code for Photos...");
+      const orderRef = khqrData.payment?.orderNumber || "Payment";
+      const fileName = `KHQR-${orderRef}.png`;
+
+      // 1. Extract PNG blob directly from canvas (instant in-memory, zero network latency)
+      const getQrBlob = async (): Promise<Blob> => {
+        if (canvasRef.current) {
+          return new Promise((resolve, reject) => {
+            canvasRef.current?.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error("Canvas toBlob failed"));
+            }, "image/png");
+          });
+        }
+        const res = await fetch(khqrData.qr_image);
+        return await res.blob();
+      };
+
+      const blob = await getQrBlob();
+      const file = new File([blob], fileName, { type: "image/png" });
+
+      // 2. iOS Safari / Mobile: Web Share API opens the native sheet with "Save Image" (saves directly to Photos / Camera Roll, NOT Files)
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          files: [file],
+        });
+        setBankHint(
+          "✅ Tap 'Save Image' in the share sheet to save directly into your Photos app!",
+        );
+        return;
+      }
+
+      // 3. Desktop / non-share fallback: direct browser download
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `KHQR-${khqrData.payment?.orderNumber || "Payment"}.png`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       setBankHint(
-        "✅ QR saved to Photos! Open your bank app (ABA, ACLEDA, Bakong) and tap 'Upload QR from Photos'.",
+        "✅ QR Code saved! Open your bank app (Bakong, ABA, ACLEDA) and upload from photos.",
       );
-    } catch {
-      window.open(khqrData.qr_image, "_blank");
-      setBankHint(
-        "Tap and hold the QR code to save to Photos, then upload in your bank app.",
-      );
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        setBankHint(
+          "Tip: You can also tap & hold the QR code above and choose 'Save to Photos'.",
+        );
+      }
     }
   };
 
@@ -352,10 +388,12 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
               {/* Dynamic QR Code Frame */}
               <div className="relative p-3 rounded-2xl bg-white border-2 border-dashed border-gray-200 inline-block mx-auto shadow-2xs max-w-full">
                 {khqrData.qr_string ? (
-                  <QRCodeSVG
+                  <QRCodeCanvas
+                    ref={canvasRef}
                     value={khqrData.qr_string}
-                    size={210}
+                    size={480}
                     level="M"
+                    style={{ width: "210px", height: "210px" }}
                     className="mx-auto rounded"
                   />
                 ) : (
@@ -445,7 +483,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                   className="w-full py-2 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-[11px] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5 text-gray-600" />
-                  <span>Save QR to Photos (Scan from Gallery)</span>
+                  <span>Save QR Directly to Photos (Camera Roll)</span>
                 </button>
               </div>
 
