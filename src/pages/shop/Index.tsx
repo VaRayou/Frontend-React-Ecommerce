@@ -174,6 +174,24 @@ export const Shop: React.FC = () => {
     });
   }, [productsList, selectedCategory, searchQuery, maxPrice, selectedSizes, selectedColors, sortBy]);
 
+  // Windowed pagination state for silky 60 FPS mobile performance
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+
+  // Reset pagination window when filters or search change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedCategory, searchQuery, maxPrice, selectedSizes, selectedColors, sortBy]);
+
+  const displayedProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+
+  const hasMore = visibleCount < filteredProducts.length;
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filteredProducts.length));
+  };
+
   const activeFilterCount =
     (selectedCategory !== "all" ? 1 : 0) +
     (searchQuery ? 1 : 0) +
@@ -521,10 +539,38 @@ export const Shop: React.FC = () => {
         {/* Right Main Grid */}
         <div className="lg:col-span-9">
           <ProductGrid
-            products={filteredProducts}
+            products={displayedProducts}
             columns={3}
             emptyMessage="No pieces match your selected combination of filters. Try widening your price range or clearing size filters."
           />
+
+          {/* Windowed Pagination: Luxury "Load More Pieces" progress bar */}
+          {hasMore && (
+            <div className="mt-12 text-center space-y-3 pb-8">
+              <p className="text-xs text-gray-500 font-medium">
+                Showing <strong className="text-black">{displayedProducts.length}</strong> of{" "}
+                <strong className="text-black">{filteredProducts.length}</strong> pieces
+              </p>
+              <div className="w-48 mx-auto bg-gray-200 h-1 rounded-full overflow-hidden mb-4">
+                <div
+                  className="bg-black h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.round((displayedProducts.length / filteredProducts.length) * 100)}%`,
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                className="px-8 py-3.5 rounded-full bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer touch-manipulation inline-flex items-center gap-2"
+              >
+                <span>Load More Pieces</span>
+                <span className="text-[10px] text-white/70">
+                  (+{Math.min(PAGE_SIZE, filteredProducts.length - displayedProducts.length)})
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

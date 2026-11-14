@@ -13,7 +13,6 @@
     "@hookform/resolvers": "^7.0.3",
     "@supabase/supabase-js": "^2.119.0",
     "@tailwindcss/vite": "^4.3.5",
-    "axios": "^1.21.0",
     "bakong-khqr": "^1.0.20",
     "framer-motion": "^14.10.1",
     "lucide-react": "^1.70.0",
