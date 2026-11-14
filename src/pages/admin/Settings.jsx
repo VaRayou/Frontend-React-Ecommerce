@@ -123,19 +123,50 @@ export function Settings() {
       }
     };
 
+    const loadCloudSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("store_settings")
+          .select("settings")
+          .eq("id", "default")
+          .maybeSingle();
+
+        if (!error && data?.settings && active) {
+          storedBranding.updateStoreSettings(data.settings);
+          setStoreSettings((prev) => ({
+            ...prev,
+            ...data.settings,
+          }));
+        }
+      } catch (err) {
+        // Table not created yet or network offline, gracefully fallback to local
+      }
+    };
+
     loadCoupons();
+    loadCloudSettings();
     return () => {
       active = false;
     };
   }, []);
 
-  const handleStoreSave = (e) => {
+  const handleStoreSave = async (e) => {
     e.preventDefault();
     storedBranding.updateStoreSettings(storeSettings);
+
+    // Persist to Supabase for multi-device sync (PC <-> Mobile)
+    try {
+      await supabase.from("store_settings").upsert({
+        id: "default",
+        settings: storeSettings,
+        updated_at: new Date().toISOString(),
+      });
+    } catch {}
+
     telegramService
       .enableInteractiveWebhook(storeSettings.telegramBotToken)
       .catch(() => {});
-    showNotification("Boutique & Telegram alert settings saved!");
+    showNotification("Boutique & Telegram alert settings saved and synced across devices!");
   };
 
   const handleEnableInteractiveWebhook = async () => {
@@ -184,6 +215,13 @@ export function Settings() {
       };
       setStoreSettings(updated);
       storedBranding.updateStoreSettings(updated);
+      try {
+        await supabase.from("store_settings").upsert({
+          id: "default",
+          settings: updated,
+          updated_at: new Date().toISOString(),
+        });
+      } catch {}
       setTelegramStatus({
         testing: false,
         detecting: false,

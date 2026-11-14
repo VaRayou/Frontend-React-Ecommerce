@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { User, Order } from "../types";
 import { supabase } from "../services/supabase";
+import { useAdminAuthStore } from "./useAdminAuthStore";
 
 interface AuthState {
   user: User | null;
@@ -47,12 +48,28 @@ export const useAuthStore = create<AuthState>()(
 
           if (!error && data?.user) {
             const u = data.user;
+            const rawRole = String(
+              (u as any).app_metadata?.role || u.user_metadata?.role || ""
+            ).toLowerCase();
+            const isAdminEmail = [
+              "controller@atelier.com",
+              "admin@atelier.com",
+              "rayou@atelier.com",
+              "catalog@atelier.com",
+              "manager@atelier.com",
+            ].includes(cleanEmail);
+            const isAuthorizedAdmin =
+              isAdminEmail ||
+              rawRole.includes("admin") ||
+              rawRole.includes("controller") ||
+              rawRole.includes("catalog");
+
             const loggedUser: User = {
               id: String(u.id),
               name: u.user_metadata?.full_name || cleanEmail.split("@")[0].toUpperCase(),
               email: u.email || cleanEmail,
-              role: u.user_metadata?.role || "customer",
-              isAdmin: Boolean(u.user_metadata?.role === "super_admin" || u.user_metadata?.role === "admin"),
+              role: isAuthorizedAdmin ? "admin" : (u.user_metadata?.role || "customer"),
+              isAdmin: isAuthorizedAdmin,
               phone: u.user_metadata?.phone || "+855 23 888 999",
               avatar:
                 u.user_metadata?.avatar_url ||
@@ -65,6 +82,14 @@ export const useAuthStore = create<AuthState>()(
               },
             };
             set({ user: loggedUser, isAuthenticated: true });
+
+            // Seamlessly cross-authenticate useAdminAuthStore so admin layout is unlocked immediately
+            if (isAuthorizedAdmin && password) {
+              try {
+                useAdminAuthStore.getState().adminLogin(cleanEmail, password).catch(() => {});
+              } catch {}
+            }
+
             return { success: true, message: "Welcome back to Atelier Studio." };
           }
           if (error) {
@@ -128,6 +153,9 @@ export const useAuthStore = create<AuthState>()(
         try {
           supabase.auth.signOut();
           localStorage.removeItem("eshopper_token");
+        } catch {}
+        try {
+          useAdminAuthStore.getState().adminLogout();
         } catch {}
         set({ user: null, isAuthenticated: false });
       },

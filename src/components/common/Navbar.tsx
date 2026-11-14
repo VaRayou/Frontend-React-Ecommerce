@@ -282,6 +282,28 @@ export const Navbar: React.FC = () => {
             ))}
           </nav>
 
+          {/* Mobile Admin Portal Access */}
+          {(isAdminAuthenticated ||
+            (user as any)?.role === "admin" ||
+            (user as any)?.isAdmin === true ||
+            user?.email?.toLowerCase() === "controller@atelier.com" ||
+            user?.email?.toLowerCase() === "admin@atelier.com" ||
+            user?.email?.toLowerCase() === "rayou@atelier.com") && (
+            <Link
+              to="/admin/dashboard"
+              onClick={closeMobileMenu}
+              className="flex items-center justify-between p-3 rounded-xl bg-black text-[#D6FF00] font-bold text-xs uppercase tracking-wider shadow-xs hover:bg-neutral-900 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#D6FF00]" />
+                <span>Studio Controller Portal</span>
+              </span>
+              <span className="text-[10px] bg-[#D6FF00] text-black px-2 py-0.5 rounded font-black">
+                ADMIN
+              </span>
+            </Link>
+          )}
+
           <div className="pt-2 border-t border-gray-100 flex gap-2">
             <Link
               to={isAuthenticated ? "/profile" : "/login"}
@@ -297,6 +319,17 @@ export const Navbar: React.FC = () => {
               <span>({wishlistCount})</span>
             </Link>
           </div>
+
+          {!isAuthenticated && !isAdminAuthenticated && (
+            <Link
+              to="/admin/login"
+              onClick={closeMobileMenu}
+              className="flex items-center justify-center gap-1.5 text-center text-[11px] font-bold text-gray-400 hover:text-black py-1 transition-colors"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Studio Staff & Controller Login →</span>
+            </Link>
+          )}
         </div>
       )}
     </header>
