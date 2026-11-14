@@ -13,8 +13,6 @@ import {
   Check,
   Info,
   Download,
-  ChevronRight,
-  ChevronDown,
 } from "lucide-react";
 import { khqrService, KhqrCreateResponse } from "../../services/khqrService";
 import { QRCodeSVG } from "qrcode.react";
@@ -37,7 +35,6 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
   const [isPaid, setIsPaid] = useState(false);
   const [transactionId, setTransactionId] = useState<string>("");
   const [copied, setCopied] = useState(false);
-  const [isBankSelectorOpen, setIsBankSelectorOpen] = useState(false);
   const [bankHint, setBankHint] = useState<string>("");
 
   // Countdown timer in seconds (defaults to 600s / 10 mins)
@@ -59,7 +56,6 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     setIsPaid(false);
     setIsExpired(false);
     setTransactionId("");
-    setIsBankSelectorOpen(false);
     setBankHint("");
 
     const expiresAtMs = khqrData.expires_at
@@ -171,58 +167,21 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const bankApps = [
-    {
-      id: "aba",
-      name: "ABA Mobile",
-      org: "ABA Bank",
-      badge: "ABA",
-      bgColor: "bg-[#004F71]",
-      textColor: "text-white",
-      deepLink: khqrData?.qr_string
-        ? `abamobilebank://ababank.com?type=payway&qrcode=${encodeURIComponent(khqrData.qr_string)}`
-        : "abamobilebank://",
-    },
-    {
-      id: "acleda",
-      name: "ACLEDA mobile",
-      org: "ACLEDA Bank Plc.",
-      badge: "ACLEDA",
-      bgColor: "bg-[#0A2B4C]",
-      textColor: "text-[#E6CA65]",
-      deepLink: khqrData?.qr_string
-        ? `acledatoanchet://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
-        : "acledatoanchet://",
-    },
-    {
-      id: "bakong",
-      name: "Bakong App",
-      org: "National Bank of Cambodia",
-      badge: "Bakong",
-      bgColor: "bg-[#E1251B]",
-      textColor: "text-white",
-      deepLink:
-        khqrData?.deeplink ||
-        (khqrData?.qr_string
-          ? `bakong://pay?qr=${encodeURIComponent(khqrData.qr_string)}`
-          : "bakong://"),
-    },
-  ];
+  const handleOpenBakong = () => {
+    setBankHint("Opening Bakong App... Please authorize the payment.");
+    const targetUrl =
+      khqrData?.deeplink ||
+      (khqrData?.qr_string
+        ? `bakong://pay?qr=${encodeURIComponent(khqrData.qr_string)}`
+        : "bakong://");
 
-  const handleLaunchBank = (bank: (typeof bankApps)[0]) => {
-    setIsBankSelectorOpen(false);
-    setBankHint(
-      `Opening ${bank.name}... Please authorize the transfer in your bank app.`,
-    );
-
-    // Direct synchronous navigation on direct user touch (avoids Safari timer blocks)
-    window.location.href = bank.deepLink;
+    window.location.href = targetUrl;
 
     setTimeout(() => {
       setBankHint(
-        `If ${bank.name} didn't open (or isn't installed on this phone), tap "Save QR to Photos" below and use "Upload QR" inside your bank app scanner.`,
+        "If Bakong App didn't open automatically, save the QR to Photos below and scan from your banking app.",
       );
-    }, 2500);
+    }, 3000);
   };
 
   const handleDownloadQr = async () => {
@@ -422,12 +381,12 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                 </div>
                 <ol className="list-decimal list-inside space-y-0.5 text-[10px] text-blue-800 leading-snug ml-1">
                   <li>
-                    Open <strong>ABA Mobile</strong>, <strong>ACLEDA</strong>,
-                    or <strong>Bakong App</strong>
+                    Open <strong>Bakong App</strong>, <strong>ABA</strong>,{" "}
+                    <strong>ACLEDA</strong>, or any banking app
                   </li>
                   <li>
                     Tap <strong>Scan QR</strong> or tap{" "}
-                    <strong>Open in Bank App</strong> below
+                    <strong>Open Bakong App</strong> below
                   </li>
                   <li>
                     Confirm the amount and recipient, then tap{" "}
@@ -473,12 +432,11 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
               <div className="space-y-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setIsBankSelectorOpen(true)}
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#E1251B] hover:bg-red-700 text-white font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  onClick={handleOpenBakong}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#E1251B] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Open in Bank App (ABA, ACLEDA, Bakong)</span>
-                  <ChevronDown className="w-3.5 h-3.5 ml-auto opacity-75" />
+                  <Smartphone className="w-4 h-4" />
+                  <span>Open Bakong App</span>
                 </button>
 
                 <button
@@ -499,8 +457,8 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
 
               {/* Supported Banking Apps & Audit Footer */}
               <div className="pt-1.5 border-t border-gray-100 flex flex-col items-center gap-1 text-center">
-                <p className="text-[10px] text-gray-500 font-semibold">
-                  ABA Mobile • ACLEDA mobile • Bakong App
+                <p className="text-[10px] text-gray-500 font-medium">
+                  Bakong App • ABA Mobile • ACLEDA • Any KHQR App
                 </p>
                 <div className="flex items-center justify-center gap-2 text-[9px] text-gray-400 font-mono">
                   <span className="inline-flex items-center gap-1 font-sans text-gray-500">
@@ -527,76 +485,6 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
             </>
           )}
         </div>
-
-        {/* Bank Selection Sheet / Overlay */}
-        {isBankSelectorOpen && (
-          <div className="absolute inset-0 bg-white z-40 p-4 sm:p-5 flex flex-col justify-between animate-in fade-in duration-200 overflow-y-auto">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between pb-2.5 border-b border-gray-100">
-                <div className="text-left">
-                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">
-                    Select Installed Bank App
-                  </h3>
-                  <p className="text-[10px] text-gray-500">
-                    Tap an app installed on your phone:
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsBankSelectorOpen(false)}
-                  className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="space-y-2 max-h-[340px] overflow-y-auto pr-0.5">
-                {bankApps.map((bank) => (
-                  <button
-                    key={bank.id}
-                    type="button"
-                    onClick={() => handleLaunchBank(bank)}
-                    className="w-full p-2.5 rounded-xl border border-gray-200 hover:border-black hover:bg-gray-50 transition-all flex items-center justify-between group cursor-pointer text-left"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`w-8 h-8 rounded-lg ${bank.bgColor} ${bank.textColor} font-black text-[10px] flex items-center justify-center shadow-xs shrink-0`}
-                      >
-                        {bank.badge}
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-gray-900 group-hover:text-black">
-                          {bank.name}
-                        </div>
-                        <div className="text-[10px] text-gray-500">
-                          {bank.org}
-                        </div>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-black transition-transform group-hover:translate-x-0.5" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-gray-100 space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsBankSelectorOpen(false);
-                  handleDownloadQr();
-                }}
-                className="w-full py-2.5 px-3 rounded-xl bg-black hover:bg-neutral-800 text-[#D6FF00] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-              >
-                <Download className="w-4 h-4" />
-                <span>Save QR Code to Photos</span>
-              </button>
-              <p className="text-[9px] text-gray-500 text-center">
-                Supports instant dynamic payment via ABA, ACLEDA &amp; Bakong
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </div>,
     document.body,
