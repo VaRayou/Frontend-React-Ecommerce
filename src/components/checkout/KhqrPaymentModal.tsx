@@ -119,6 +119,11 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
         } else if (res.status === "EXPIRED") {
           setIsExpired(true);
           if (pollingRef.current) clearInterval(pollingRef.current);
+        } else if (res.rate_limit_exceeded) {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setBankHint(
+            "⚠️ NBC Bakong daily developer query limit reached (100 req/day). If you transferred, your order is safely logged and will be confirmed by store admin.",
+          );
         }
       } catch {
         // Quiet polling error — keep polling

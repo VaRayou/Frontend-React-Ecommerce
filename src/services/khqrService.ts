@@ -938,28 +938,8 @@ export const khqrService = {
           return true;
         });
 
-        // Reconcile up to 5 most recent active PENDING payments with NBC Bakong API
-        const recentPending = activePayments
-          .filter(
-            (p) =>
-              String(p.status || "PENDING").toUpperCase() === "PENDING" &&
-              p.md5_hash,
-          )
-          .slice(0, 5);
-
-        if (recentPending.length > 0) {
-          await Promise.allSettled(
-            recentPending.map(async (p) => {
-              const check = await khqrService.checkStatus(p.md5_hash);
-              if (check.is_paid) {
-                p.status = "PAID";
-                p.transaction_id = check.transaction_id;
-                p.paid_at = check.paid_at;
-              }
-            }),
-          );
-        }
-
+        // Store ledger in local storage and return active payments directly from Supabase
+        // (Removed automated background polling loop to conserve NBC Bakong daily quota)
         savePaymentsStorage(activePayments);
         return activePayments;
       }
