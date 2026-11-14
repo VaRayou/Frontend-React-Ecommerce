@@ -6,22 +6,22 @@ const DEFAULT_CHAT_ID = String(env.VITE_TELEGRAM_CHAT_ID || "").trim();
 const ADMIN_PRODUCTS_URL =
   typeof window !== "undefined" && window.location.origin.startsWith("http")
     ? `${window.location.origin}/admin/products`
-    : "https://frontend-react-ecommerce-inky.vercel.app/admin/products";
+    : "https://youngsteav.site/admin/products";
 
 const ADMIN_ORDERS_URL =
   typeof window !== "undefined" && window.location.origin.startsWith("http")
     ? `${window.location.origin}/admin/orders`
-    : "https://frontend-react-ecommerce-inky.vercel.app/admin/orders";
+    : "https://youngsteav.site/admin/orders";
 
 const WEBHOOK_BASE_URL =
   typeof window !== "undefined" && window.location.origin.startsWith("https://")
     ? window.location.origin
-    : "https://frontend-react-ecommerce-inky.vercel.app";
+    : "https://youngsteav.site";
 
 const TRACK_ORDER_URL =
   typeof window !== "undefined" && window.location.origin.startsWith("http")
     ? `${window.location.origin}/track`
-    : "https://frontend-react-ecommerce-inky.vercel.app/track";
+    : "https://youngsteav.site/track";
 
 export interface TelegramConfig {
   botToken: string;

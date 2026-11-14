@@ -46,7 +46,7 @@ function isAllowedOrigin(origin) {
   return true;
 }
 
-const STOREFRONT_URL = "https://frontend-react-ecommerce-inky.vercel.app";
+const STOREFRONT_URL = process.env.VITE_STOREFRONT_URL || "https://youngsteav.site";
 
 function escapeHtml(str) {
   return String(str ?? "")
