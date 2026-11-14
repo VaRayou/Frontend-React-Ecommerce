@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ATELIER E-COMMERCE: PRODUCTION DATABASE PERFORMANCE INDEXES
+-- ATELIER E-COMMERCE: PRODUCTION DATABASE PERFORMANCE INDEXES (SCHEMA-VERIFIED)
 -- Run these statements in your Supabase SQL Editor (Dashboard -> SQL Editor)
 -- to achieve sub-10ms queries, prevent full table scans, and reduce database CPU load.
 -- ==============================================================================
@@ -15,8 +15,12 @@ CREATE INDEX IF NOT EXISTS idx_products_price
 ON products(price ASC);
 
 -- 2. Orders: Accelerate Customer Order History & Admin Lookup
-CREATE INDEX IF NOT EXISTS idx_orders_user_created 
-ON orders(user_id, created_at DESC);
+-- Note: 'orders' uses customer_id and customer_email (not user_id)
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id_created 
+ON orders(customer_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_orders_customer_email_created 
+ON orders(customer_email, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_orders_status_created 
 ON orders(payment_status, created_at DESC);
@@ -35,18 +39,22 @@ ON order_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_product_created 
 ON reviews(product_id, created_at DESC);
 
--- 5. Payments / Bakong KHQR Ledger: Fast ledger and reconciliation queries
-CREATE INDEX IF NOT EXISTS idx_payments_order_id 
-ON payments(order_id);
+-- 5. Payments / Bakong KHQR Ledger: Fast hash, order, and status lookups
+-- Note: 'payments' status column is named 'status' (not payment_status)
+CREATE INDEX IF NOT EXISTS idx_payments_order_number 
+ON payments(order_number);
+
+CREATE INDEX IF NOT EXISTS idx_payments_md5_hash 
+ON payments(md5_hash);
 
 CREATE INDEX IF NOT EXISTS idx_payments_status_created 
-ON payments(payment_status, created_at DESC);
+ON payments(status, created_at DESC);
 
 -- 6. Promo Coupons: Fast uppercase code lookups during Checkout
 CREATE INDEX IF NOT EXISTS idx_coupons_code 
 ON coupons(UPPER(code));
 
--- Re-analyze tables to refresh query planner statistics
+-- Re-analyze all tables to refresh Postgres query planner statistics
 ANALYZE products;
 ANALYZE orders;
 ANALYZE order_items;
