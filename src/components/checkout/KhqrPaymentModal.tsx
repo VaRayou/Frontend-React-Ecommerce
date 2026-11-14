@@ -12,6 +12,9 @@ import {
   Copy,
   Check,
   Info,
+  Download,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { khqrService, KhqrCreateResponse } from "../../services/khqrService";
 import { QRCodeSVG } from "qrcode.react";
@@ -34,6 +37,8 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
   const [isPaid, setIsPaid] = useState(false);
   const [transactionId, setTransactionId] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [isBankSelectorOpen, setIsBankSelectorOpen] = useState(false);
+  const [bankHint, setBankHint] = useState<string>("");
 
   // Countdown timer in seconds (defaults to 600s / 10 mins)
   const [timeLeft, setTimeLeft] = useState(600);
@@ -54,6 +59,8 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     setIsPaid(false);
     setIsExpired(false);
     setTransactionId("");
+    setIsBankSelectorOpen(false);
+    setBankHint("");
 
     const expiresAtMs = khqrData.expires_at
       ? new Date(khqrData.expires_at).getTime()
@@ -162,6 +169,102 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const bankApps = [
+    {
+      id: "aba",
+      name: "ABA Mobile",
+      org: "ABA Bank",
+      badge: "ABA",
+      bgColor: "bg-[#004F71]",
+      textColor: "text-white",
+      deepLink: khqrData?.qr_string
+        ? `abamobilebank://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
+        : "abamobilebank://",
+    },
+    {
+      id: "acleda",
+      name: "ACLEDA mobile",
+      org: "ACLEDA Bank Plc.",
+      badge: "ACLEDA",
+      bgColor: "bg-[#0A2B4C]",
+      textColor: "text-[#E6CA65]",
+      deepLink: khqrData?.qr_string
+        ? `acledamobile://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
+        : "acledamobile://",
+    },
+    {
+      id: "bakong",
+      name: "Bakong App",
+      org: "National Bank of Cambodia",
+      badge: "Bakong",
+      bgColor: "bg-[#E1251B]",
+      textColor: "text-white",
+      deepLink:
+        khqrData?.deeplink ||
+        (khqrData?.qr_string
+          ? `bakong://pay?qr=${encodeURIComponent(khqrData.qr_string)}`
+          : "bakong://"),
+    },
+    {
+      id: "wing",
+      name: "Wing Bank",
+      org: "Wing Money",
+      badge: "Wing",
+      bgColor: "bg-[#0B6E38]",
+      textColor: "text-white",
+      deepLink: khqrData?.qr_string
+        ? `wingbank://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
+        : "wingmoney://",
+    },
+    {
+      id: "canadia",
+      name: "Canadia Bank",
+      org: "Canadia Bank PLC",
+      badge: "Canadia",
+      bgColor: "bg-[#C8102E]",
+      textColor: "text-white",
+      deepLink: "canadiabank://",
+    },
+  ];
+
+  const handleLaunchBank = (bank: (typeof bankApps)[0]) => {
+    setIsBankSelectorOpen(false);
+    setBankHint(
+      `Opening ${bank.name}... Once transferred in your bank app, your order will auto-confirm!`,
+    );
+    window.location.href = bank.deepLink;
+    setTimeout(() => {
+      setBankHint(
+        `If ${bank.name} didn't open automatically, save the QR to Photos below and upload from your bank app scanner.`,
+      );
+    }, 3500);
+  };
+
+  const handleDownloadQr = async () => {
+    if (!khqrData) return;
+    try {
+      setBankHint("Saving QR code to Photos...");
+      const res = await fetch(khqrData.qr_image);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `KHQR-${khqrData.payment?.orderNumber || "Payment"}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setBankHint(
+        "✅ QR saved to Photos! Open your bank app (ABA, ACLEDA, Bakong) and tap 'Upload QR from Photos'.",
+      );
+    } catch {
+      window.open(khqrData.qr_image, "_blank");
+      setBankHint(
+        "Tap and hold the QR code to save to Photos, then upload in your bank app.",
+      );
+    }
   };
 
   return createPortal(
@@ -383,17 +486,32 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                 </div>
               </div>
 
-              {/* Open in Bakong App deep-link (mobile only) */}
-              {khqrData.deeplink && (
-                <a
-                  href={khqrData.deeplink}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              {/* Mobile Bank App Launcher & QR Save */}
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsBankSelectorOpen(true)}
                   className="w-full py-2.5 px-4 rounded-xl bg-[#E1251B] hover:bg-red-700 text-white font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
                   <Smartphone className="w-3.5 h-3.5" />
-                  <span>Open Bakong App</span>
-                </a>
+                  <span>Open in Bank App (ABA, ACLEDA, Bakong...)</span>
+                  <ChevronDown className="w-3.5 h-3.5 ml-auto opacity-75" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadQr}
+                  className="w-full py-2 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-[11px] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-gray-600" />
+                  <span>Save QR to Photos (Scan from Gallery)</span>
+                </button>
+              </div>
+
+              {bankHint && (
+                <div className="text-[11px] font-medium text-blue-900 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-left leading-snug animate-in fade-in">
+                  {bankHint}
+                </div>
               )}
 
               {/* Supported Banking Apps & Audit Footer */}
@@ -426,6 +544,76 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
             </>
           )}
         </div>
+
+        {/* Bank Selection Sheet / Overlay */}
+        {isBankSelectorOpen && (
+          <div className="absolute inset-0 bg-white z-40 p-4 sm:p-5 flex flex-col justify-between animate-in fade-in duration-200 overflow-y-auto">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between pb-2.5 border-b border-gray-100">
+                <div className="text-left">
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                    Select Your Bank App
+                  </h3>
+                  <p className="text-[10px] text-gray-500">
+                    Tap to open your mobile banking app:
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsBankSelectorOpen(false)}
+                  className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-[340px] overflow-y-auto pr-0.5">
+                {bankApps.map((bank) => (
+                  <button
+                    key={bank.id}
+                    type="button"
+                    onClick={() => handleLaunchBank(bank)}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 hover:border-black hover:bg-gray-50 transition-all flex items-center justify-between group cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={`w-8 h-8 rounded-lg ${bank.bgColor} ${bank.textColor} font-black text-[10px] flex items-center justify-center shadow-xs shrink-0`}
+                      >
+                        {bank.badge}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-gray-900 group-hover:text-black">
+                          {bank.name}
+                        </div>
+                        <div className="text-[10px] text-gray-500">
+                          {bank.org}
+                        </div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-black transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-gray-100 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBankSelectorOpen(false);
+                  handleDownloadQr();
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-black hover:bg-neutral-800 text-[#D6FF00] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              >
+                <Download className="w-4 h-4" />
+                <span>Save QR Code to Photos</span>
+              </button>
+              <p className="text-[9px] text-gray-500 text-center">
+                Supports all 30+ Bakong member banks in Cambodia
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body,
