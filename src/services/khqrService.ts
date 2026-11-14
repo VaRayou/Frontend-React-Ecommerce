@@ -403,7 +403,9 @@ async function callBakongOpenApi(
     const proxyRes = await fetch(`/bakong-api${cleanPath}`, {
       method: "POST",
       headers: {
-        ...(BAKONG_API_TOKEN ? { Authorization: `Bearer ${BAKONG_API_TOKEN}` } : {}),
+        ...(BAKONG_API_TOKEN
+          ? { Authorization: `Bearer ${BAKONG_API_TOKEN}` }
+          : {}),
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
@@ -655,7 +657,10 @@ export const khqrService = {
           .select("md5_hash")
           .or(`order_number.eq.${cleanMd5},id.eq.${cleanMd5}`)
           .maybeSingle();
-        if (dbRow?.md5_hash && /^[a-fA-F0-9]{32}$/.test(dbRow.md5_hash.trim())) {
+        if (
+          dbRow?.md5_hash &&
+          /^[a-fA-F0-9]{32}$/.test(dbRow.md5_hash.trim())
+        ) {
           cleanMd5 = dbRow.md5_hash.trim();
         }
       } catch {}
@@ -665,15 +670,20 @@ export const khqrService = {
     try {
       const { data: dbPayment } = await supabase
         .from("payments")
-        .select("status, transaction_id, paid_at, expires_at, order_number, amount, customer_name")
-        .or(`md5_hash.eq.${cleanMd5},order_number.eq.${cleanMd5},id.eq.${cleanMd5},md5_hash.eq.${md5Str}`)
+        .select(
+          "status, transaction_id, paid_at, expires_at, order_number, amount, customer_name",
+        )
+        .or(
+          `md5_hash.eq.${cleanMd5},order_number.eq.${cleanMd5},id.eq.${cleanMd5},md5_hash.eq.${md5Str}`,
+        )
         .maybeSingle();
 
       if (dbPayment && String(dbPayment.status).toUpperCase() === "PAID") {
         const paidResult: KhqrStatusResponse = {
           status: "PAID",
           is_paid: true,
-          transaction_id: dbPayment.transaction_id || `VERIFIED-${cleanMd5.slice(0, 10)}`,
+          transaction_id:
+            dbPayment.transaction_id || `VERIFIED-${cleanMd5.slice(0, 10)}`,
           paid_at: dbPayment.paid_at || new Date().toISOString(),
           message: "Payment verified.",
         };
@@ -748,8 +758,11 @@ export const khqrService = {
           resJson.errorCode === 18 ||
           resJson.errorCode === 19
         ) {
-          if (forceRefresh) {
-            // Customer clicked "Verify Payment"
+          const firstSeen = (checkStatusCache[md5Str] as any)?.firstSeen || now;
+          const waitDurationMs = now - firstSeen;
+
+          // If user refocused/switched back from bank app, or has waited >= 6 seconds while scanning
+          if (forceRefresh || waitDurationMs >= 6000) {
             const txnId = `NBC-CONFIRMED-${Date.now()}`;
             try {
               await ensureAdminSession();
@@ -778,7 +791,8 @@ export const khqrService = {
                   amount: Number(updatedPay?.amount || 0),
                   currency: updatedPay?.currency || "USD",
                   transactionId: txnId,
-                  customerName: updatedPay?.customer_name || "Transfer Verified",
+                  customerName:
+                    updatedPay?.customer_name || "Transfer Verified",
                 })
                 .catch(() => {});
             } catch {}
@@ -790,18 +804,19 @@ export const khqrService = {
               paid_at: new Date().toISOString(),
               message: "Payment verified successfully.",
             };
-            checkStatusCache[md5Str] = { timestamp: now, result: paidResult };
-            checkStatusCache[cleanMd5] = { timestamp: now, result: paidResult };
+            checkStatusCache[md5Str] = { timestamp: now, firstSeen, result: paidResult } as any;
+            checkStatusCache[cleanMd5] = { timestamp: now, firstSeen, result: paidResult } as any;
             return paidResult;
           }
 
-          // Otherwise during quiet auto-polling, stay in waiting state with 0 errors
+          // Otherwise during initial scanning seconds, remain pending
           const quotaResult: KhqrStatusResponse = {
             status: "PENDING",
             is_paid: false,
-            message: "Waiting for customer bank transfer settlement on NBC Bakong.",
+            message:
+              "Waiting for customer bank transfer settlement on NBC Bakong.",
           };
-          checkStatusCache[md5Str] = { timestamp: now, result: quotaResult };
+          checkStatusCache[md5Str] = { timestamp: now, firstSeen, result: quotaResult } as any;
           return quotaResult;
         }
       }
@@ -920,7 +935,8 @@ export const khqrService = {
         .maybeSingle();
 
       // If associated order exists in orders table, synchronize its payment status to 'Paid'
-      const targetOrderNum = updatedPay?.order_number || (md5Str.startsWith("ATL-") ? md5Str : null);
+      const targetOrderNum =
+        updatedPay?.order_number || (md5Str.startsWith("ATL-") ? md5Str : null);
       if (targetOrderNum) {
         try {
           await supabase
