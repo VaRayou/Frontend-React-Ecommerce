@@ -993,7 +993,7 @@ export const khqrService = {
         addDeletedPaymentIdentifiers(idsToTombstone);
 
         // 2. Mark record as EXPIRED in Supabase (fully permitted by Supabase RLS update policy)
-        const updateTasks: Promise<any>[] = [];
+        const updateTasks: PromiseLike<any>[] = [];
         if (paymentOrKey.id) {
           updateTasks.push(
             supabase
@@ -1021,7 +1021,7 @@ export const khqrService = {
         await Promise.allSettled(updateTasks);
 
         // 3. Also attempt hard delete in Supabase
-        const deleteTasks: Promise<any>[] = [];
+        const deleteTasks: PromiseLike<any>[] = [];
         if (paymentOrKey.id) {
           deleteTasks.push(
             supabase.from("payments").delete().eq("id", paymentOrKey.id),
