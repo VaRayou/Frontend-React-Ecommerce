@@ -175,30 +175,24 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     {
       id: "aba",
       name: "ABA Mobile",
-      org: "ABA Bank • Dynamic KHQR",
+      org: "ABA Bank",
       badge: "ABA",
       bgColor: "bg-[#004F71]",
       textColor: "text-white",
       deepLink: khqrData?.qr_string
-        ? `abamobilebank://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
+        ? `abamobilebank://ababank.com?type=payway&qrcode=${encodeURIComponent(khqrData.qr_string)}`
         : "abamobilebank://",
-      altDeepLink: khqrData?.qr_string
-        ? `aba://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
-        : "aba://",
     },
     {
       id: "acleda",
       name: "ACLEDA mobile",
-      org: "ACLEDA Bank Plc. • Dynamic KHQR",
+      org: "ACLEDA Bank Plc.",
       badge: "ACLEDA",
       bgColor: "bg-[#0A2B4C]",
       textColor: "text-[#E6CA65]",
       deepLink: khqrData?.qr_string
         ? `acledatoanchet://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
         : "acledatoanchet://",
-      altDeepLink: khqrData?.qr_string
-        ? `acledamobile://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
-        : "acledamobile://",
     },
     {
       id: "bakong",
@@ -212,9 +206,6 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
         (khqrData?.qr_string
           ? `bakong://pay?qr=${encodeURIComponent(khqrData.qr_string)}`
           : "bakong://"),
-      altDeepLink: khqrData?.qr_string
-        ? `bakong://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
-        : "bakong://",
     },
   ];
 
@@ -223,24 +214,15 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     setBankHint(
       `Opening ${bank.name}... Please authorize the transfer in your bank app.`,
     );
-    window.location.href = bank.deepLink;
 
-    // Fallback attempt if primary deep link was not intercepted by OS within 1.2s
-    setTimeout(() => {
-      if (
-        typeof document !== "undefined" &&
-        !document.hidden &&
-        bank.altDeepLink
-      ) {
-        window.location.href = bank.altDeepLink;
-      }
-    }, 1200);
+    // Direct synchronous navigation on direct user touch (avoids Safari timer blocks)
+    window.location.href = bank.deepLink;
 
     setTimeout(() => {
       setBankHint(
-        `If ${bank.name} didn't open automatically, save the QR to Photos below and tap "Upload QR from Photos" inside ${bank.name}.`,
+        `If ${bank.name} didn't open (or isn't installed on this phone), tap "Save QR to Photos" below and use "Upload QR" inside your bank app scanner.`,
       );
-    }, 3500);
+    }, 2500);
   };
 
   const handleDownloadQr = async () => {
@@ -553,10 +535,10 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
               <div className="flex items-center justify-between pb-2.5 border-b border-gray-100">
                 <div className="text-left">
                   <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">
-                    Select Your Bank App
+                    Select Installed Bank App
                   </h3>
                   <p className="text-[10px] text-gray-500">
-                    Tap to open your mobile banking app:
+                    Tap an app installed on your phone:
                   </p>
                 </div>
                 <button
