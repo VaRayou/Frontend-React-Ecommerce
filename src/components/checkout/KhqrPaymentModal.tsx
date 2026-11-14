@@ -175,22 +175,28 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
     {
       id: "aba",
       name: "ABA Mobile",
-      org: "ABA Bank",
+      org: "ABA Bank • Dynamic KHQR",
       badge: "ABA",
       bgColor: "bg-[#004F71]",
       textColor: "text-white",
       deepLink: khqrData?.qr_string
         ? `abamobilebank://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
         : "abamobilebank://",
+      altDeepLink: khqrData?.qr_string
+        ? `aba://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
+        : "aba://",
     },
     {
       id: "acleda",
       name: "ACLEDA mobile",
-      org: "ACLEDA Bank Plc.",
+      org: "ACLEDA Bank Plc. • Dynamic KHQR",
       badge: "ACLEDA",
       bgColor: "bg-[#0A2B4C]",
       textColor: "text-[#E6CA65]",
       deepLink: khqrData?.qr_string
+        ? `acledatoanchet://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
+        : "acledatoanchet://",
+      altDeepLink: khqrData?.qr_string
         ? `acledamobile://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
         : "acledamobile://",
     },
@@ -206,38 +212,33 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
         (khqrData?.qr_string
           ? `bakong://pay?qr=${encodeURIComponent(khqrData.qr_string)}`
           : "bakong://"),
-    },
-    {
-      id: "wing",
-      name: "Wing Bank",
-      org: "Wing Money",
-      badge: "Wing",
-      bgColor: "bg-[#0B6E38]",
-      textColor: "text-white",
-      deepLink: khqrData?.qr_string
-        ? `wingbank://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
-        : "wingmoney://",
-    },
-    {
-      id: "canadia",
-      name: "Canadia Bank",
-      org: "Canadia Bank PLC",
-      badge: "Canadia",
-      bgColor: "bg-[#C8102E]",
-      textColor: "text-white",
-      deepLink: "canadiabank://",
+      altDeepLink: khqrData?.qr_string
+        ? `bakong://khqr?qr=${encodeURIComponent(khqrData.qr_string)}`
+        : "bakong://",
     },
   ];
 
   const handleLaunchBank = (bank: (typeof bankApps)[0]) => {
     setIsBankSelectorOpen(false);
     setBankHint(
-      `Opening ${bank.name}... Once transferred in your bank app, your order will auto-confirm!`,
+      `Opening ${bank.name}... Please authorize the transfer in your bank app.`,
     );
     window.location.href = bank.deepLink;
+
+    // Fallback attempt if primary deep link was not intercepted by OS within 1.2s
+    setTimeout(() => {
+      if (
+        typeof document !== "undefined" &&
+        !document.hidden &&
+        bank.altDeepLink
+      ) {
+        window.location.href = bank.altDeepLink;
+      }
+    }, 1200);
+
     setTimeout(() => {
       setBankHint(
-        `If ${bank.name} didn't open automatically, save the QR to Photos below and upload from your bank app scanner.`,
+        `If ${bank.name} didn't open automatically, save the QR to Photos below and tap "Upload QR from Photos" inside ${bank.name}.`,
       );
     }, 3500);
   };
@@ -439,12 +440,12 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                 </div>
                 <ol className="list-decimal list-inside space-y-0.5 text-[10px] text-blue-800 leading-snug ml-1">
                   <li>
-                    Open <strong>ABA Mobile</strong>, <strong>Wing</strong>,{" "}
-                    <strong>ACLEDA</strong>, or any Bakong-supported app
+                    Open <strong>ABA Mobile</strong>, <strong>ACLEDA</strong>,
+                    or <strong>Bakong App</strong>
                   </li>
                   <li>
-                    Tap <strong>Scan QR</strong> and point your camera at the
-                    code above
+                    Tap <strong>Scan QR</strong> or tap{" "}
+                    <strong>Open in Bank App</strong> below
                   </li>
                   <li>
                     Confirm the amount and recipient, then tap{" "}
@@ -494,7 +495,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                   className="w-full py-2.5 px-4 rounded-xl bg-[#E1251B] hover:bg-red-700 text-white font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
                   <Smartphone className="w-3.5 h-3.5" />
-                  <span>Open in Bank App (ABA, ACLEDA, Bakong...)</span>
+                  <span>Open in Bank App (ABA, ACLEDA, Bakong)</span>
                   <ChevronDown className="w-3.5 h-3.5 ml-auto opacity-75" />
                 </button>
 
@@ -516,8 +517,8 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
 
               {/* Supported Banking Apps & Audit Footer */}
               <div className="pt-1.5 border-t border-gray-100 flex flex-col items-center gap-1 text-center">
-                <p className="text-[10px] text-gray-500 font-medium">
-                  ABA Mobile • Bakong • Wing • ACLEDA • Canadia • Sathapana
+                <p className="text-[10px] text-gray-500 font-semibold">
+                  ABA Mobile • ACLEDA mobile • Bakong App
                 </p>
                 <div className="flex items-center justify-center gap-2 text-[9px] text-gray-400 font-mono">
                   <span className="inline-flex items-center gap-1 font-sans text-gray-500">
@@ -609,7 +610,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                 <span>Save QR Code to Photos</span>
               </button>
               <p className="text-[9px] text-gray-500 text-center">
-                Supports all 30+ Bakong member banks in Cambodia
+                Supports instant dynamic payment via ABA, ACLEDA &amp; Bakong
               </p>
             </div>
           </div>
