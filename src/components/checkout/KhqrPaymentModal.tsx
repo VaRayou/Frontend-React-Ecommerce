@@ -83,7 +83,22 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
       return;
     }
 
+    let queryCount = 0;
+    const MAX_AUTO_QUERIES = 22; // Quota safety valve: max ~2 mins per checkout session
+
     const checkStatus = async (forceRefresh = false) => {
+      // 1. Quota Shield: Never waste queries while tab is hidden/minimized
+      if (typeof document !== "undefined" && document.hidden && !forceRefresh) {
+        return;
+      }
+
+      // 2. Quota Shield: Pause auto-polling if modal is left open unattended
+      if (!forceRefresh && queryCount >= MAX_AUTO_QUERIES) {
+        return;
+      }
+
+      queryCount++;
+
       try {
         const paymentId = khqrData.payment?.id || khqrData.md5_hash;
         const res = await khqrService.checkStatus(paymentId, forceRefresh);
@@ -105,13 +120,14 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
       }
     };
 
-    // First check after 1.5s, then every 3.5s to auto-detect bank transfer
-    const initialTimeout = setTimeout(() => checkStatus(false), 1500);
-    pollingRef.current = setInterval(() => checkStatus(false), 3500);
+    // First check after 3.5s, then every 5s to conserve NBC Bakong quota
+    const initialTimeout = setTimeout(() => checkStatus(false), 3500);
+    pollingRef.current = setInterval(() => checkStatus(false), 5000);
 
     // Immediately verify when customer switches back from banking app (ABA / ACLEDA / Bakong)
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === "visible") {
+        queryCount = 0; // Reset counter on active user return
         checkStatus(true);
       }
     };
