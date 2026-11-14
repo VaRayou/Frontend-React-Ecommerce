@@ -436,7 +436,7 @@ export const KhqrPaymentModal: React.FC<KhqrPaymentModalProps> = ({
                   <span>
                     {isCheckingNow
                       ? "Verifying..."
-                      : "I Have Paid • Verify Now"}
+                      : "Verify Payment"}
                   </span>
                 </button>
 

@@ -749,7 +749,7 @@ export const khqrService = {
           resJson.errorCode === 19
         ) {
           if (forceRefresh) {
-            // Customer explicitly confirmed transfer ("I Have Paid • Verify Now")
+            // Customer clicked "Verify Payment"
             const txnId = `NBC-CONFIRMED-${Date.now()}`;
             try {
               await ensureAdminSession();
