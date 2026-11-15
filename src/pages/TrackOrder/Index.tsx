@@ -221,8 +221,10 @@ export const TrackOrder: React.FC = () => {
       .subscribe();
 
     const interval = setInterval(() => {
-      handleLookup(activeRef, true);
-    }, 15000);
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        handleLookup(activeRef, true);
+      }
+    }, 45000);
 
     return () => {
       active = false;
@@ -712,7 +714,7 @@ export const TrackOrder: React.FC = () => {
                   AWB-882-{activeOrderNum.replace(/\D/g, "") || "90218"}
                 </p>
                 <p className="text-[11px] text-gray-500">
-                  Auto-refreshing every 15s
+                  Live Realtime Sync Active
                 </p>
               </div>
             </div>

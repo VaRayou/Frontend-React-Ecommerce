@@ -94,7 +94,7 @@ let _memoryProducts = null;
 let _cachedBaseProducts = null;
 let _lastBaseProductsFetchTime = 0;
 let _inFlightBaseProductsPromise = null;
-const BASE_PRODUCTS_CACHE_TTL = 30000; // 30 seconds
+const BASE_PRODUCTS_CACHE_TTL = 300000; // 5 minutes cache to protect Supabase Egress
 
 export const invalidateProductsCache = () => {
   _cachedBaseProducts = null;
