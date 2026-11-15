@@ -182,7 +182,7 @@ export const ProductDetails: React.FC = () => {
     setTouchStartX(null);
   };
 
-  // Keyboard Navigation: Arrow Left/Right for gallery photos & Escape / Alt+Left for Home
+  // Keyboard Navigation: Arrow Left/Right for gallery photos & Escape / Alt+Left for Shop
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -193,7 +193,7 @@ export const ProductDetails: React.FC = () => {
         return;
       }
       if (e.key === "Escape" || (e.altKey && e.key === "ArrowLeft")) {
-        navigate("/");
+        navigate("/shop");
         return;
       }
       if (!product?.images || product.images.length <= 1) return;
@@ -450,11 +450,11 @@ export const ProductDetails: React.FC = () => {
           The requested piece could not be found in our Supabase catalog.
         </p>
         <Link
-          to="/"
+          to="/shop"
           className="inline-flex items-center gap-2 px-6 py-3 bg-black text-[#D6FF00] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-neutral-800 transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
+          <span>Back to Shop</span>
         </Link>
       </div>
     );
@@ -462,12 +462,12 @@ export const ProductDetails: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-16 pb-28 md:pb-16">
-      {/* Top Header Row with Back Arrow Button to Home & Breadcrumb Navigation */}
+      {/* Top Header Row with Back Arrow Button to Shop & Breadcrumb Navigation */}
       <div className="mb-5 sm:mb-8 flex items-center gap-3 sm:gap-4">
         <Link
-          to="/"
-          title="Back to Home"
-          aria-label="Back to Home"
+          to="/shop"
+          title="Back to Shop"
+          aria-label="Back to Shop"
           className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-black text-black hover:text-[#D6FF00] border border-gray-200 hover:border-black flex items-center justify-center transition-all shadow-2xs cursor-pointer group shrink-0"
         >
           <ArrowLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform group-hover:-translate-x-0.5" />
