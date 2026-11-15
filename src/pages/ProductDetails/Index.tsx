@@ -27,7 +27,10 @@ import { useUIStore } from "../../store/useUIStore";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ProductCard } from "../../components/product/ProductCard";
-import { productService, ensureAdminSession } from "../../services/productService";
+import {
+  productService,
+  ensureAdminSession,
+} from "../../services/productService";
 import { supabase } from "../../services/supabase";
 import { Product } from "../../types";
 import { telegramService } from "../../services/telegramService";
@@ -41,8 +44,9 @@ export const ProductDetails: React.FC = () => {
   const [currentProduct, setCurrentProduct] = useState<Product | null>(() => {
     const cached = (productService as any).getCachedProducts?.() || [];
     return (
-      cached.find((p: any) => String(p.id) === String(id) || String(p._id) === String(id)) ||
-      null
+      cached.find(
+        (p: any) => String(p.id) === String(id) || String(p._id) === String(id),
+      ) || null
     );
   });
   const [loading, setLoading] = useState<boolean>(!currentProduct);
@@ -88,19 +92,24 @@ export const ProductDetails: React.FC = () => {
     product?.stock !== undefined
       ? Number(product.stock)
       : product?.quantity !== undefined
-      ? Number(product.quantity)
-      : product?.stockCount !== undefined
-      ? Number(product.stockCount)
-      : 10;
+        ? Number(product.quantity)
+        : product?.stockCount !== undefined
+          ? Number(product.stockCount)
+          : 10;
   const isStatusOut =
-    String(product?.status || "").trim().toLowerCase() === "out of stock" ||
-    product?.inStock === false;
+    String(product?.status || "")
+      .trim()
+      .toLowerCase() === "out of stock" || product?.inStock === false;
   const stockCount = isStatusOut || isNaN(rawStock) ? 0 : Math.max(0, rawStock);
   const isOutOfStock = stockCount <= 0;
 
   const relatedProducts = product
     ? catalogProducts
-        .filter((p) => String(p.id) !== String(product.id) && p.category === product.category)
+        .filter(
+          (p) =>
+            String(p.id) !== String(product.id) &&
+            p.category === product.category,
+        )
         .slice(0, 4)
     : [];
 
@@ -156,12 +165,15 @@ export const ProductDetails: React.FC = () => {
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX === null || !product?.images || product.images.length <= 1) return;
+    if (touchStartX === null || !product?.images || product.images.length <= 1)
+      return;
     const diff = e.changedTouches[0].clientX - touchStartX;
     if (Math.abs(diff) > 40) {
       if (diff > 0) {
         // swipe right -> previous photo
-        setActiveImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+        setActiveImage(
+          (prev) => (prev - 1 + product.images.length) % product.images.length,
+        );
       } else {
         // swipe left -> next photo
         setActiveImage((prev) => (prev + 1) % product.images.length);
@@ -173,7 +185,11 @@ export const ProductDetails: React.FC = () => {
   // Keyboard Navigation: Arrow Left/Right for gallery photos & Escape / Alt+Left for Home
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName)) {
+      if (
+        ["INPUT", "TEXTAREA", "SELECT"].includes(
+          (e.target as HTMLElement)?.tagName,
+        )
+      ) {
         return;
       }
       if (e.key === "Escape" || (e.altKey && e.key === "ArrowLeft")) {
@@ -182,7 +198,9 @@ export const ProductDetails: React.FC = () => {
       }
       if (!product?.images || product.images.length <= 1) return;
       if (e.key === "ArrowLeft") {
-        setActiveImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+        setActiveImage(
+          (prev) => (prev - 1 + product.images.length) % product.images.length,
+        );
       } else if (e.key === "ArrowRight") {
         setActiveImage((prev) => (prev + 1) % product.images.length);
       }
@@ -210,7 +228,9 @@ export const ProductDetails: React.FC = () => {
       });
 
       // 2. Persist in local storage audit
-      const existingWaitlist = JSON.parse(localStorage.getItem("atelier_waitlist_entries") || "[]");
+      const existingWaitlist = JSON.parse(
+        localStorage.getItem("atelier_waitlist_entries") || "[]",
+      );
       existingWaitlist.unshift({
         id: `wait-${Date.now()}`,
         productId: product.id,
@@ -219,11 +239,17 @@ export const ProductDetails: React.FC = () => {
         customerName: user?.name || "",
         createdAt: new Date().toISOString(),
       });
-      localStorage.setItem("atelier_waitlist_entries", JSON.stringify(existingWaitlist.slice(0, 100)));
+      localStorage.setItem(
+        "atelier_waitlist_entries",
+        JSON.stringify(existingWaitlist.slice(0, 100)),
+      );
 
       setWaitlistJoined(true);
       setWaitlistContact("");
-      showToast("You're on the restock waitlist! We'll alert you as soon as it returns.", "success");
+      showToast(
+        "You're on the restock waitlist! We'll alert you as soon as it returns.",
+        "success",
+      );
     } catch {
       setWaitlistJoined(true);
       setWaitlistContact("");
@@ -254,7 +280,11 @@ export const ProductDetails: React.FC = () => {
     }
     const safeQty = Math.min(quantity, Math.max(1, stockCount));
     addToCart(product, safeQty, selectedSize, product.colors[selectedColor]);
-    showToast(`Added ${safeQty}x "${product.name}" to bag`, "success", product.images[0]);
+    showToast(
+      `Added ${safeQty}x "${product.name}" to bag`,
+      "success",
+      product.images[0],
+    );
     openCartDrawer();
   };
 
@@ -279,7 +309,11 @@ export const ProductDetails: React.FC = () => {
     if (isAuthenticated) {
       navigate("/checkout");
     } else {
-      showToast(`Added to bag! Sign in to complete your instant checkout`, "info", product.images[0]);
+      showToast(
+        `Added to bag! Sign in to complete your instant checkout`,
+        "info",
+        product.images[0],
+      );
       navigate("/login", { state: { from: "/checkout" } });
     }
   };
@@ -289,7 +323,7 @@ export const ProductDetails: React.FC = () => {
     showToast(
       added ? `Saved "${product.name}" to wishlist` : `Removed from wishlist`,
       "info",
-      product.images[0]
+      product.images[0],
     );
   };
 
@@ -315,7 +349,7 @@ export const ProductDetails: React.FC = () => {
               comment: r.comment,
               title: r.title,
               createdAt: r.created_at,
-            }))
+            })),
           );
         } else {
           setReviewsList([]);
@@ -370,7 +404,10 @@ export const ProductDetails: React.FC = () => {
       }
       setNewReviewComment("");
       setReviewSubmitted(true);
-      showToast("Thank you! Your verified review has been published.", "success");
+      showToast(
+        "Thank you! Your verified review has been published.",
+        "success",
+      );
       window.dispatchEvent(new Event("atelier_products_updated"));
     } catch (err: any) {
       console.warn("Review submit error:", err);
@@ -382,7 +419,9 @@ export const ProductDetails: React.FC = () => {
     try {
       await ensureAdminSession();
       await supabase.from("reviews").delete().eq("id", reviewId);
-      setReviewsList((prev) => prev.filter((r) => String(r.id) !== String(reviewId)));
+      setReviewsList((prev) =>
+        prev.filter((r) => String(r.id) !== String(reviewId)),
+      );
       showToast("Review removed.", "info");
       window.dispatchEvent(new Event("atelier_products_updated"));
     } catch (err) {
@@ -394,7 +433,9 @@ export const ProductDetails: React.FC = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <div className="w-10 h-10 border-2 border-black border-t-[#D6FF00] rounded-full animate-spin" />
-        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Loading piece from Supabase...</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+          Loading piece from Supabase...
+        </p>
       </div>
     );
   }
@@ -402,8 +443,12 @@ export const ProductDetails: React.FC = () => {
   if (!product) {
     return (
       <div className="max-w-md mx-auto px-4 py-28 text-center space-y-5">
-        <h2 className="text-2xl font-black uppercase tracking-tight text-black">Piece Not Found</h2>
-        <p className="text-sm text-gray-500">The requested piece could not be found in our Supabase catalog.</p>
+        <h2 className="text-2xl font-black uppercase tracking-tight text-black">
+          Piece Not Found
+        </h2>
+        <p className="text-sm text-gray-500">
+          The requested piece could not be found in our Supabase catalog.
+        </p>
         <Link
           to="/"
           className="inline-flex items-center gap-2 px-6 py-3 bg-black text-[#D6FF00] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-neutral-800 transition-all"
@@ -418,27 +463,36 @@ export const ProductDetails: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-16 pb-28 md:pb-16">
       {/* Top Header Row with Back Arrow Button to Home & Breadcrumb Navigation */}
-      <div className="mb-5 sm:mb-8 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 sm:mb-8 flex items-center gap-3 sm:gap-4">
         <Link
           to="/"
-          title="Back to Home Page"
-          className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-black hover:text-[#D6FF00] border border-gray-200 hover:border-black px-3.5 py-2 rounded-xl transition-all shadow-2xs cursor-pointer"
+          title="Back to Home"
+          aria-label="Back to Home"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-black text-black hover:text-[#D6FF00] border border-gray-200 hover:border-black flex items-center justify-center transition-all shadow-2xs cursor-pointer group shrink-0"
         >
-          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-          <span>Back to Home</span>
+          <ArrowLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform group-hover:-translate-x-0.5" />
         </Link>
 
         {/* Breadcrumb Navigation */}
         <nav className="text-[11px] sm:text-xs text-gray-400 font-semibold uppercase tracking-wider flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <Link to="/" className="hover:text-black transition-colors">Home</Link>
+          <Link to="/" className="hover:text-black transition-colors">
+            Home
+          </Link>
           <span>/</span>
-          <Link to="/shop" className="hover:text-black transition-colors">Shop</Link>
+          <Link to="/shop" className="hover:text-black transition-colors">
+            Shop
+          </Link>
           <span>/</span>
-          <Link to={`/shop?category=${product.category.toLowerCase()}`} className="hover:text-black transition-colors">
+          <Link
+            to={`/shop?category=${product.category.toLowerCase()}`}
+            className="hover:text-black transition-colors"
+          >
             {product.category}
           </Link>
           <span>/</span>
-          <span className="text-black truncate max-w-[140px] sm:max-w-xs">{product.name}</span>
+          <span className="text-black truncate max-w-[140px] sm:max-w-xs">
+            {product.name}
+          </span>
         </nav>
       </div>
 
@@ -459,7 +513,11 @@ export const ProductDetails: React.FC = () => {
                       : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt="Thumbnail"
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -496,7 +554,11 @@ export const ProductDetails: React.FC = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setActiveImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+                    setActiveImage(
+                      (prev) =>
+                        (prev - 1 + product.images.length) %
+                        product.images.length,
+                    );
                   }}
                   className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/90 hover:bg-white text-black backdrop-blur-md flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-90 cursor-pointer z-20 border border-black/5"
                   aria-label="Previous photo"
@@ -510,7 +572,9 @@ export const ProductDetails: React.FC = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setActiveImage((prev) => (prev + 1) % product.images.length);
+                    setActiveImage(
+                      (prev) => (prev + 1) % product.images.length,
+                    );
                   }}
                   className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/90 hover:bg-white text-black backdrop-blur-md flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-90 cursor-pointer z-20 border border-black/5"
                   aria-label="Next photo"
@@ -531,7 +595,9 @@ export const ProductDetails: React.FC = () => {
                         setActiveImage(idx);
                       }}
                       className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                        activeImage === idx ? "w-5 bg-[#D6FF00]" : "w-1.5 bg-white/70 hover:bg-white"
+                        activeImage === idx
+                          ? "w-5 bg-[#D6FF00]"
+                          : "w-1.5 bg-white/70 hover:bg-white"
                       }`}
                       aria-label={`Go to photo ${idx + 1}`}
                     />
@@ -551,16 +617,24 @@ export const ProductDetails: React.FC = () => {
           {/* Header */}
           <div>
             <div className="flex items-center justify-between text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">
-              <span className="text-black font-extrabold">{product.category}</span>
+              <span className="text-black font-extrabold">
+                {product.category}
+              </span>
               <div className="flex items-center gap-1.5 text-black">
                 <Star className="w-4 h-4 fill-black stroke-black" />
                 <span className="font-bold">
                   {reviewsList.length > 0
-                    ? (reviewsList.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviewsList.length).toFixed(1)
+                    ? (
+                        reviewsList.reduce(
+                          (acc, r) => acc + (Number(r.rating) || 5),
+                          0,
+                        ) / reviewsList.length
+                      ).toFixed(1)
                     : product.rating || "5.0"}
                 </span>
                 <span className="text-gray-400">
-                  ({reviewsList.length} {reviewsList.length === 1 ? "review" : "reviews"})
+                  ({reviewsList.length}{" "}
+                  {reviewsList.length === 1 ? "review" : "reviews"})
                 </span>
               </div>
             </div>
@@ -569,7 +643,9 @@ export const ProductDetails: React.FC = () => {
               {product.name}
             </h1>
             {product.subtitle && (
-              <p className="text-sm text-gray-500 mt-1 font-light">{product.subtitle}</p>
+              <p className="text-sm text-gray-500 mt-1 font-light">
+                {product.subtitle}
+              </p>
             )}
 
             {/* Price Box */}
@@ -577,11 +653,12 @@ export const ProductDetails: React.FC = () => {
               <span className="text-3xl font-black text-black">
                 {formatPrice(product.price)}
               </span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span className="text-lg line-through text-gray-400 font-semibold">
-                  {formatPrice(product.originalPrice)}
-                </span>
-              )}
+              {product.originalPrice &&
+                product.originalPrice > product.price && (
+                  <span className="text-lg line-through text-gray-400 font-semibold">
+                    {formatPrice(product.originalPrice)}
+                  </span>
+                )}
               {product.discount && (
                 <span className="px-3 py-1 rounded-full bg-[#D6FF00] text-black text-xs font-black tracking-wider uppercase">
                   {product.discount}
@@ -593,22 +670,33 @@ export const ProductDetails: React.FC = () => {
             {isOutOfStock ? (
               <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs font-bold text-rose-600 shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-rose-500" />
-                <span>Out of Stock — Currently Unavailable in Atelier Vault</span>
+                <span>
+                  Out of Stock — Currently Unavailable in Atelier Vault
+                </span>
               </div>
             ) : stockCount <= 3 ? (
               <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/50 text-xs font-black text-amber-950 shadow-xs">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                <span>⚡ High Demand: Only {stockCount} {stockCount === 1 ? "piece" : "pieces"} left in studio — order soon</span>
+                <span>
+                  ⚡ High Demand: Only {stockCount}{" "}
+                  {stockCount === 1 ? "piece" : "pieces"} left in studio — order
+                  soon
+                </span>
               </div>
             ) : stockCount <= 5 ? (
               <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>Limited Runway Edition — Only {stockCount} pieces available</span>
+                <span>
+                  Limited Runway Edition — Only {stockCount} pieces available
+                </span>
               </div>
             ) : (
               <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-emerald-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>In Stock ({stockCount} available) — Ships within 24 hours from Flagship Atelier</span>
+                <span>
+                  In Stock ({stockCount} available) — Ships within 24 hours from
+                  Flagship Atelier
+                </span>
               </div>
             )}
           </div>
@@ -620,7 +708,12 @@ export const ProductDetails: React.FC = () => {
           {/* Color Selector */}
           <div className="pt-2">
             <div className="flex justify-between items-center text-xs font-bold text-gray-700 mb-2.5">
-              <span>Selected Shade: <strong className="text-black">{product.colors[selectedColor]?.name}</strong></span>
+              <span>
+                Selected Shade:{" "}
+                <strong className="text-black">
+                  {product.colors[selectedColor]?.name}
+                </strong>
+              </span>
             </div>
             <div className="flex gap-2.5">
               {product.colors.map((color, idx) => (
@@ -638,7 +731,9 @@ export const ProductDetails: React.FC = () => {
                   {selectedColor === idx && (
                     <Check
                       className={`w-4 h-4 ${
-                        color.hex === "#FFFFFF" || color.hex === "#D6FF00" || color.hex === "#F3EDE2"
+                        color.hex === "#FFFFFF" ||
+                        color.hex === "#D6FF00" ||
+                        color.hex === "#F3EDE2"
                           ? "text-black"
                           : "text-white"
                       } stroke-[3]`}
@@ -652,7 +747,10 @@ export const ProductDetails: React.FC = () => {
           {/* Size Selector */}
           <div>
             <div className="flex justify-between items-center text-xs font-bold text-gray-700 mb-2.5">
-              <span>Select Size: <strong className="text-black">{selectedSize}</strong></span>
+              <span>
+                Select Size:{" "}
+                <strong className="text-black">{selectedSize}</strong>
+              </span>
               <button
                 type="button"
                 onClick={() => setShowSizeGuide(true)}
@@ -683,7 +781,9 @@ export const ProductDetails: React.FC = () => {
           <div className="pt-4 border-t border-gray-100 space-y-3">
             <div className="flex flex-wrap sm:flex-nowrap gap-2.5 sm:gap-3">
               {/* Quantity Counter */}
-              <div className={`flex items-center border border-gray-200 rounded-xl px-2 py-1 ${isOutOfStock ? "opacity-50 bg-gray-50" : ""}`}>
+              <div
+                className={`flex items-center border border-gray-200 rounded-xl px-2 py-1 ${isOutOfStock ? "opacity-50 bg-gray-50" : ""}`}
+              >
                 <button
                   type="button"
                   disabled={isOutOfStock || quantity <= 1}
@@ -699,7 +799,9 @@ export const ProductDetails: React.FC = () => {
                 <button
                   type="button"
                   disabled={isOutOfStock || quantity >= stockCount}
-                  onClick={() => setQuantity(Math.min(stockCount, quantity + 1))}
+                  onClick={() =>
+                    setQuantity(Math.min(stockCount, quantity + 1))
+                  }
                   className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-black transition-colors cursor-pointer active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed select-none"
                   aria-label="Increase quantity"
                 >
@@ -719,7 +821,9 @@ export const ProductDetails: React.FC = () => {
                 }`}
                 aria-label="Add product to bag"
               >
-                <ShoppingBag className={`w-4 h-4 shrink-0 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`} />
+                <ShoppingBag
+                  className={`w-4 h-4 shrink-0 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`}
+                />
                 <span className="truncate">
                   {isOutOfStock
                     ? "Out of Stock"
@@ -739,7 +843,9 @@ export const ProductDetails: React.FC = () => {
                 title={isWishlisted ? "In Wishlist" : "Save to Wishlist"}
                 aria-label="Toggle wishlist"
               >
-                <Heart className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`} />
+                <Heart
+                  className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`}
+                />
               </button>
             </div>
 
@@ -755,8 +861,14 @@ export const ProductDetails: React.FC = () => {
               }`}
               aria-label="Instant Buy Now direct checkout"
             >
-              <span>{isOutOfStock ? "Sold Out — Temporarily Unavailable" : "Instant Buy Now"}</span>
-              {!isOutOfStock && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+              <span>
+                {isOutOfStock
+                  ? "Sold Out — Temporarily Unavailable"
+                  : "Instant Buy Now"}
+              </span>
+              {!isOutOfStock && (
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              )}
             </button>
 
             {/* Notify Me When Back in Stock Waitlist Card */}
@@ -773,7 +885,10 @@ export const ProductDetails: React.FC = () => {
                 {waitlistJoined ? (
                   <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>You are on the priority waitlist! We will notify you as soon as this piece is restocked.</span>
+                    <span>
+                      You are on the priority waitlist! We will notify you as
+                      soon as this piece is restocked.
+                    </span>
                   </p>
                 ) : (
                   <form onSubmit={handleJoinWaitlist} className="flex gap-2">
@@ -820,7 +935,9 @@ export const ProductDetails: React.FC = () => {
             <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white">
               <button
                 onClick={() =>
-                  setActiveAccordion(activeAccordion === "details" ? "" : "details")
+                  setActiveAccordion(
+                    activeAccordion === "details" ? "" : "details",
+                  )
                 }
                 className="w-full p-4 text-left font-bold uppercase tracking-wider text-black flex items-center justify-between"
               >
@@ -833,7 +950,9 @@ export const ProductDetails: React.FC = () => {
               </button>
               {activeAccordion === "details" && (
                 <div className="px-4 pb-4 text-gray-600 space-y-2 border-t border-gray-50 pt-3">
-                  <p><strong>Primary Material:</strong> {product.material}</p>
+                  <p>
+                    <strong>Primary Material:</strong> {product.material}
+                  </p>
                   <ul className="list-disc pl-5 space-y-1 text-gray-500">
                     {product.details.map((d, i) => (
                       <li key={i}>{d}</li>
@@ -860,8 +979,9 @@ export const ProductDetails: React.FC = () => {
               </button>
               {activeAccordion === "craft" && (
                 <div className="px-4 pb-4 text-gray-600 space-y-2 border-t border-gray-50 pt-3 text-xs leading-relaxed">
-                  Every Atelier garment is shaped in family-owned workshops in Biella and Florence.
-                  All fabrics carry OEKO-TEX Standard 100 non-toxic certifications and traceability back to source.
+                  Every Atelier garment is shaped in family-owned workshops in
+                  Biella and Florence. All fabrics carry OEKO-TEX Standard 100
+                  non-toxic certifications and traceability back to source.
                 </div>
               )}
             </div>
@@ -901,7 +1021,10 @@ export const ProductDetails: React.FC = () => {
 
             {reviewSubmitted ? (
               <div className="p-4 bg-emerald-50 text-emerald-800 rounded-2xl text-xs font-semibold flex items-center justify-between gap-4">
-                <span>✓ Thank you for submitting your review! It is now saved and live below.</span>
+                <span>
+                  ✓ Thank you for submitting your review! It is now saved and
+                  live below.
+                </span>
                 <button
                   type="button"
                   onClick={() => setReviewSubmitted(false)}
@@ -914,7 +1037,9 @@ export const ProductDetails: React.FC = () => {
               <form onSubmit={handleReviewSubmit} className="space-y-4 text-xs">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-bold text-gray-700 mb-1">Your Full Name *</label>
+                    <label className="block font-bold text-gray-700 mb-1">
+                      Your Full Name *
+                    </label>
                     <input
                       type="text"
                       value={newReviewAuthor}
@@ -925,13 +1050,19 @@ export const ProductDetails: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-gray-700 mb-1">Rating *</label>
+                    <label className="block font-bold text-gray-700 mb-1">
+                      Rating *
+                    </label>
                     <select
                       value={newReviewRating}
-                      onChange={(e) => setNewReviewRating(Number(e.target.value))}
+                      onChange={(e) =>
+                        setNewReviewRating(Number(e.target.value))
+                      }
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none bg-white font-semibold"
                     >
-                      <option value="5">⭐⭐⭐⭐⭐ 5 Stars - Exceptional</option>
+                      <option value="5">
+                        ⭐⭐⭐⭐⭐ 5 Stars - Exceptional
+                      </option>
                       <option value="4">⭐⭐⭐⭐ 4 Stars - Very Good</option>
                       <option value="3">⭐⭐⭐ 3 Stars - Average</option>
                       <option value="2">⭐⭐ 2 Stars - Below Average</option>
@@ -941,7 +1072,9 @@ export const ProductDetails: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Your Review *</label>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Your Review *
+                  </label>
                   <textarea
                     rows={3}
                     value={newReviewComment}
@@ -967,34 +1100,50 @@ export const ProductDetails: React.FC = () => {
             <div className="text-center sm:text-left space-y-1 sm:border-r border-gray-100 sm:pr-6">
               <span className="text-4xl font-black text-black">
                 {reviewsList.length > 0
-                  ? (reviewsList.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviewsList.length).toFixed(1)
+                  ? (
+                      reviewsList.reduce(
+                        (acc, r) => acc + (Number(r.rating) || 5),
+                        0,
+                      ) / reviewsList.length
+                    ).toFixed(1)
                   : "0.0"}
               </span>
               <div className="flex justify-center sm:justify-start text-black">
                 {[...Array(5)].map((_, i) => {
                   const avg =
                     reviewsList.length > 0
-                      ? reviewsList.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviewsList.length
+                      ? reviewsList.reduce(
+                          (acc, r) => acc + (Number(r.rating) || 5),
+                          0,
+                        ) / reviewsList.length
                       : 0;
                   return (
                     <Star
                       key={i}
                       className={`w-4 h-4 ${
-                        i < Math.round(avg) ? "fill-black stroke-black" : "fill-gray-200 stroke-gray-200"
+                        i < Math.round(avg)
+                          ? "fill-black stroke-black"
+                          : "fill-gray-200 stroke-gray-200"
                       }`}
                     />
                   );
                 })}
               </div>
               <p className="text-xs text-gray-500 font-medium">
-                Based on {reviewsList.length} {reviewsList.length === 1 ? "real review" : "real reviews"}
+                Based on {reviewsList.length}{" "}
+                {reviewsList.length === 1 ? "real review" : "real reviews"}
               </p>
             </div>
 
             <div className="sm:col-span-2 space-y-2 text-xs">
               {[5, 4, 3, 2, 1].map((star) => {
-                const count = reviewsList.filter((r) => Math.round(Number(r.rating) || 5) === star).length;
-                const pct = reviewsList.length > 0 ? Math.round((count / reviewsList.length) * 100) : 0;
+                const count = reviewsList.filter(
+                  (r) => Math.round(Number(r.rating) || 5) === star,
+                ).length;
+                const pct =
+                  reviewsList.length > 0
+                    ? Math.round((count / reviewsList.length) * 100)
+                    : 0;
                 return (
                   <div key={star} className="flex items-center gap-3">
                     <span className="w-8 font-bold text-gray-700 flex items-center gap-1">
@@ -1007,7 +1156,9 @@ export const ProductDetails: React.FC = () => {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="w-10 text-right text-gray-400 font-mono text-[11px]">{pct}%</span>
+                    <span className="w-10 text-right text-gray-400 font-mono text-[11px]">
+                      {pct}%
+                    </span>
                   </div>
                 );
               })}
@@ -1022,9 +1173,12 @@ export const ProductDetails: React.FC = () => {
               </div>
             ) : reviewsList.length === 0 ? (
               <div className="p-8 rounded-2xl bg-white border border-dashed border-gray-200 text-center space-y-1.5">
-                <p className="text-sm font-bold text-black">No customer reviews yet for this product</p>
+                <p className="text-sm font-bold text-black">
+                  No customer reviews yet for this product
+                </p>
                 <p className="text-xs text-gray-500">
-                  All reviews shown here are 100% real customer submissions. Use the form above to write the first review!
+                  All reviews shown here are 100% real customer submissions. Use
+                  the form above to write the first review!
                 </p>
               </div>
             ) : (
@@ -1032,8 +1186,12 @@ export const ProductDetails: React.FC = () => {
                 const authorName = rev.authorName || rev.author || "Customer";
                 const avatarUrl = rev.authorAvatar || rev.avatar || "";
                 const canDelete =
-                  (user?.email && rev.authorEmail && user.email.toLowerCase() === String(rev.authorEmail).toLowerCase()) ||
-                  (user?.name && authorName.toLowerCase() === user.name.toLowerCase()) ||
+                  (user?.email &&
+                    rev.authorEmail &&
+                    user.email.toLowerCase() ===
+                      String(rev.authorEmail).toLowerCase()) ||
+                  (user?.name &&
+                    authorName.toLowerCase() === user.name.toLowerCase()) ||
                   user?.email?.toLowerCase().includes("admin") ||
                   user?.email?.toLowerCase().includes("controller");
 
@@ -1056,7 +1214,9 @@ export const ProductDetails: React.FC = () => {
                           </div>
                         )}
                         <div>
-                          <h4 className="text-xs font-bold text-black">{authorName}</h4>
+                          <h4 className="text-xs font-bold text-black">
+                            {authorName}
+                          </h4>
                           {rev.isVerifiedBuyer ? (
                             <span className="text-[10px] text-emerald-600 font-semibold">
                               ✓ Verified Buyer
@@ -1096,7 +1256,9 @@ export const ProductDetails: React.FC = () => {
                     <p className="text-xs text-gray-700 leading-relaxed italic">
                       &ldquo;{rev.comment}&rdquo;
                     </p>
-                    <span className="text-[10px] text-gray-400 block">{rev.date || "Recently"}</span>
+                    <span className="text-[10px] text-gray-400 block">
+                      {rev.date || "Recently"}
+                    </span>
                   </div>
                 );
               })
@@ -1176,13 +1338,19 @@ export const ProductDetails: React.FC = () => {
               className="w-10 h-12 rounded-lg object-cover border border-gray-200 shrink-0"
             />
             <div className="min-w-0">
-              <p className="text-xs font-black text-black truncate">{product.name}</p>
+              <p className="text-xs font-black text-black truncate">
+                {product.name}
+              </p>
               <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
                 <span className="font-black text-black">
-                  {formatPrice(product.price * Math.min(quantity, Math.max(1, stockCount)))}
+                  {formatPrice(
+                    product.price * Math.min(quantity, Math.max(1, stockCount)),
+                  )}
                 </span>
                 <span>•</span>
-                <span className="font-semibold text-gray-600">Sz: {selectedSize}</span>
+                <span className="font-semibold text-gray-600">
+                  Sz: {selectedSize}
+                </span>
               </div>
             </div>
           </div>
@@ -1198,7 +1366,9 @@ export const ProductDetails: React.FC = () => {
                   : "bg-[#111111] hover:bg-black text-white active:scale-95 shadow-sm"
               }`}
             >
-              <ShoppingBag className={`w-3.5 h-3.5 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`} />
+              <ShoppingBag
+                className={`w-3.5 h-3.5 ${isOutOfStock ? "text-gray-400" : "text-[#D6FF00]"}`}
+              />
               <span>{isOutOfStock ? "Sold Out" : "Add to Bag"}</span>
             </button>
             {!isOutOfStock && (
@@ -1244,7 +1414,10 @@ export const ProductDetails: React.FC = () => {
 
             <div className="p-5 sm:p-6 overflow-y-auto overscroll-contain space-y-4 text-xs text-gray-600">
               <p className="font-medium text-gray-700 leading-relaxed">
-                All <strong className="text-black">ATELIER PARIS</strong> garments are tailored to standard European luxury proportions. Take your normal size for a signature silhouette, or size up for a relaxed fit.
+                All <strong className="text-black">ATELIER PARIS</strong>{" "}
+                garments are tailored to standard European luxury proportions.
+                Take your normal size for a signature silhouette, or size up for
+                a relaxed fit.
               </p>
 
               <div className="overflow-x-auto rounded-2xl border border-gray-200">
@@ -1279,7 +1452,9 @@ export const ProductDetails: React.FC = () => {
                             : "hover:bg-gray-50"
                         }`}
                       >
-                        <td className="py-2.5 px-3 font-black text-black">{row.s}</td>
+                        <td className="py-2.5 px-3 font-black text-black">
+                          {row.s}
+                        </td>
                         <td className="py-2.5 px-3">{row.c}</td>
                         <td className="py-2.5 px-3">{row.w}</td>
                         <td className="py-2.5 px-3">{row.h}</td>
@@ -1305,4 +1480,3 @@ export const ProductDetails: React.FC = () => {
 };
 
 export default ProductDetails;
-
