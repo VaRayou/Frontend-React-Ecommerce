@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   User,
   Package,
@@ -241,9 +242,19 @@ export const Profile: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16"
+    >
       {/* Header Profile Hero Card */}
-      <div className="p-6 sm:p-10 rounded-3xl bg-[#111111] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10 shadow-xl">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="p-6 sm:p-10 rounded-3xl bg-[#111111] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10 shadow-xl"
+      >
         <div className="flex items-center gap-5">
           <img
             src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"}
@@ -289,7 +300,7 @@ export const Profile: React.FC = () => {
             <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">Wishlist</span>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {/* VIP Tier Progression Card */}
       <div className="p-6 rounded-3xl bg-neutral-900 text-white mb-8 border border-neutral-800 shadow-md">
@@ -573,7 +584,7 @@ export const Profile: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

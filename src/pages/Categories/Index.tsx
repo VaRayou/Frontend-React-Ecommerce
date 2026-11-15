@@ -33,9 +33,19 @@ export const Categories: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16 space-y-8 sm:space-y-14">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16 space-y-8 sm:space-y-14"
+    >
       {/* Page Header */}
-      <div className="text-center max-w-2xl mx-auto space-y-2.5 sm:space-y-3">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="text-center max-w-2xl mx-auto space-y-2.5 sm:space-y-3"
+      >
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black text-[#D6FF00] text-[10px] font-black tracking-[0.2em] uppercase">
           <Sparkles className="w-3 h-3" />
           <span>Curated Worlds</span>
@@ -47,7 +57,7 @@ export const Categories: React.FC = () => {
           From sculptural leather accessories to fluid double-faced virgin wool tailoring.
           Explore each universe crafted with unyielding dedication to form and tactile materials.
         </p>
-      </div>
+      </motion.div>
 
       {/* Categories Grid (2 Large featured top + bottom grid) */}
       <div className="space-y-4 sm:space-y-6">
@@ -147,7 +157,7 @@ export const Categories: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

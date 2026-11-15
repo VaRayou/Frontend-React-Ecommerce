@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Phone, MapPin, Send, CheckCircle2, ChevronDown, Clock } from "lucide-react";
 import { useUIStore } from "../../store/useUIStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -85,9 +86,19 @@ export const Contact: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-20">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-20"
+    >
       {/* Header */}
-      <div className="text-center max-w-xl mx-auto space-y-2">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="text-center max-w-xl mx-auto space-y-2"
+      >
         <span className="text-xs font-bold tracking-widest uppercase text-gray-400 block">
           Client Concierge
         </span>
@@ -98,7 +109,7 @@ export const Contact: React.FC = () => {
           Our Paris client advisors are available 7 days a week for styling guidance, bespoke sizing,
           and order assistance.
         </p>
-      </div>
+      </motion.div>
 
       {/* Main Grid: Contact Form (7 cols) + Boutique Locations (5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
@@ -261,29 +272,41 @@ export const Contact: React.FC = () => {
           {FAQS.map((faq, idx) => (
             <div
               key={idx}
-              className="border border-gray-100 rounded-2xl overflow-hidden bg-white shadow-2xs"
+              className="border border-gray-100 rounded-2xl overflow-hidden bg-white shadow-2xs transition-colors hover:border-gray-200"
             >
               <button
+                type="button"
                 onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                className="w-full p-5 text-left font-bold text-xs sm:text-sm text-black flex items-center justify-between"
+                className="w-full p-5 text-left font-bold text-xs sm:text-sm text-black flex items-center justify-between cursor-pointer"
               >
                 <span>{faq.q}</span>
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform shrink-0 ${
-                    activeFaq === idx ? "rotate-180" : ""
+                  className={`w-4 h-4 transition-transform duration-300 shrink-0 ${
+                    activeFaq === idx ? "rotate-180 text-black" : "text-gray-400"
                   }`}
                 />
               </button>
-              {activeFaq === idx && (
-                <div className="px-5 pb-5 text-xs text-gray-600 font-light leading-relaxed border-t border-gray-50 pt-3">
-                  {faq.a}
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {activeFaq === idx && (
+                  <motion.div
+                    key="content"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-5 pb-5 text-xs text-gray-600 font-light leading-relaxed border-t border-gray-50 pt-3">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Package,
   Clock,
@@ -137,7 +138,12 @@ export const Orders: React.FC = () => {
 
   if (orders.length === 0) {
     return (
-      <div className="max-w-md mx-auto px-4 py-24 text-center">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-md mx-auto px-4 py-24 text-center"
+      >
         <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
         <h2 className="text-2xl font-bold uppercase mb-2">No Previous Orders Found</h2>
         <p className="text-xs text-gray-500 mb-6">
@@ -145,16 +151,21 @@ export const Orders: React.FC = () => {
         </p>
         <Link
           to="/shop"
-          className="px-8 py-3 bg-black text-[#D6FF00] font-black text-xs uppercase rounded-full tracking-widest inline-block"
+          className="px-8 py-3 bg-black text-[#D6FF00] font-black text-xs uppercase rounded-full tracking-widest inline-block active:scale-95 transition-all shadow-md"
         >
           Explore Catalog
         </Link>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10"
+    >
       {/* Header */}
       <div className="pb-6 border-b border-gray-200">
         <span className="text-xs font-bold tracking-widest uppercase text-gray-400 block mb-1">
@@ -170,15 +181,18 @@ export const Orders: React.FC = () => {
 
       {/* Orders List */}
       <div className="space-y-6">
-        {orders.map((order) => {
+        {orders.map((order, orderIdx) => {
           const status = order.orderStatus || order.status || "Processing";
           const totalVal = Number(order.total || 0);
           const orderDate = order.date || (order.createdAt ? order.createdAt.split("T")[0] : "Recently");
 
           return (
-            <div
+            <motion.div
               key={order.id || order.orderNumber}
-              className="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-white border border-gray-100 shadow-xs space-y-4 sm:space-y-5"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.32, delay: Math.min(orderIdx * 0.05, 0.2), ease: [0.16, 1, 0.3, 1] }}
+              className="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-white border border-gray-100 shadow-xs space-y-4 sm:space-y-5 hover:border-gray-200 transition-colors"
             >
               {/* Order Top Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 sm:pb-4 border-b border-gray-100 gap-3 text-xs">
@@ -415,7 +429,7 @@ export const Orders: React.FC = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -433,7 +447,7 @@ export const Orders: React.FC = () => {
         onClose={() => setReceiptOrder(null)}
         invoiceData={receiptOrder}
       />
-    </div>
+    </motion.div>
   );
 };
 

@@ -3,6 +3,7 @@ import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   ShieldCheck,
@@ -397,7 +398,12 @@ export const Checkout: React.FC = () => {
   // STEP 4: Order Confirmation Screen
   if (currentStep === 4 && placedOrder) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-2xl mx-auto px-4 py-16 text-center space-y-6"
+      >
         <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
           <CheckCircle2 className="w-10 h-10" />
         </div>
@@ -484,7 +490,7 @@ export const Checkout: React.FC = () => {
           onClose={() => setIsInvoiceModalOpen(false)}
           order={placedOrder}
         />
-      </div>
+      </motion.div>
     );
   }
 
@@ -537,9 +543,17 @@ export const Checkout: React.FC = () => {
         {/* Form Body */}
         <div className="lg:col-span-7">
           <form onSubmit={handleSubmit(onSubmitOrder)} className="space-y-6">
-            {/* STEP 1: Customer Information */}
-            {currentStep === 1 && (
-              <div className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-5">
+            <AnimatePresence mode="wait">
+              {/* STEP 1: Customer Information */}
+              {currentStep === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -14 }}
+                  transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                  className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-5"
+                >
                 <div>
                   <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400 block">
                     Step 1 of 3
@@ -606,12 +620,19 @@ export const Checkout: React.FC = () => {
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* STEP 2: Shipping Address */}
             {currentStep === 2 && (
-              <div className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-5">
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 14 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -14 }}
+                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-5"
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400 block">
@@ -741,12 +762,19 @@ export const Checkout: React.FC = () => {
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* STEP 3: Payment Method & Submit */}
             {currentStep === 3 && (
-              <div className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-6">
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 14 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -14 }}
+                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-6"
+              >
                 <div>
                   <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400 block">
                     Step 3 of 3
@@ -886,13 +914,19 @@ export const Checkout: React.FC = () => {
                     )}
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </form>
         </div>
 
         {/* Right: Order Summary Sidebar */}
-        <div className="lg:col-span-5 space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          className="lg:col-span-5 space-y-6"
+        >
           <div className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-6">
             <h3 className="font-black text-base uppercase tracking-tight text-black pb-4 border-b border-gray-100">
               Bag Overview ({items.length} pieces)
@@ -1045,7 +1079,7 @@ export const Checkout: React.FC = () => {
               <span>Certified SSL encryption & buyer protection guaranteed</span>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Dynamic Bakong KHQR Payment Modal */}

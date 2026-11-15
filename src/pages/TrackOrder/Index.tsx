@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Package,
@@ -296,7 +297,12 @@ export const TrackOrder: React.FC = () => {
   const telegramCmd = activeOrderNum ? `/track ${activeOrderNum}` : "/track";
 
   return (
-    <div className="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-14 space-y-6 sm:space-y-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      className="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-14 space-y-6 sm:space-y-8"
+    >
       {/* Page Header */}
       <div className="text-center max-w-2xl mx-auto space-y-2.5">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black text-[#D6FF00] text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-xs">
@@ -381,8 +387,15 @@ export const TrackOrder: React.FC = () => {
       </div>
 
       {/* Order Results Timeline Card */}
-      {order && (
-        <div className="bg-white rounded-3xl border border-gray-200/80 shadow-xl overflow-hidden p-4 sm:p-8 lg:p-10 space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+      <AnimatePresence>
+        {order && (
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-white rounded-3xl border border-gray-200/80 shadow-xl overflow-hidden p-4 sm:p-8 lg:p-10 space-y-6 sm:space-y-8"
+          >
           {/* Header Summary */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-5 border-b border-gray-100 gap-4">
             <div className="space-y-1">
@@ -740,8 +753,9 @@ export const TrackOrder: React.FC = () => {
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Invoice Modal */}
       <InvoiceModal
@@ -756,7 +770,7 @@ export const TrackOrder: React.FC = () => {
         onClose={() => setIsReceiptOpen(false)}
         invoiceData={order}
       />
-    </div>
+    </motion.div>
   );
 };
 export default TrackOrder;

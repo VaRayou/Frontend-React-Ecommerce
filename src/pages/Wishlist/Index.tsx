@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
 import { useWishlistStore } from "../../store/useWishlistStore";
 import { useCartStore } from "../../store/useCartStore";
@@ -34,7 +35,12 @@ export const Wishlist: React.FC = () => {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-24 text-center">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-4xl mx-auto px-4 py-24 text-center"
+      >
         <div className="w-20 h-20 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-6">
           <Heart className="w-10 h-10" />
         </div>
@@ -50,17 +56,22 @@ export const Wishlist: React.FC = () => {
         </p>
         <Link
           to="/shop"
-          className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-black text-[#D6FF00] text-xs font-black uppercase tracking-widest hover:bg-neutral-900 transition-all shadow-md"
+          className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-black text-[#D6FF00] text-xs font-black uppercase tracking-widest hover:bg-neutral-900 transition-all shadow-md active:scale-95"
         >
           <span>Explore All Collections</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16"
+    >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 sm:mb-10 pb-5 sm:pb-6 border-b border-gray-200 gap-4">
         <div>
@@ -75,7 +86,7 @@ export const Wishlist: React.FC = () => {
         <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={handleAddAllToBag}
-            className="flex-1 sm:flex-initial justify-center px-4 sm:px-5 py-2.5 rounded-full bg-[#111111] text-[#D6FF00] text-xs font-black uppercase tracking-wider hover:bg-black transition-all flex items-center gap-2 shadow-xs"
+            className="flex-1 sm:flex-initial justify-center px-4 sm:px-5 py-2.5 rounded-full bg-[#111111] text-[#D6FF00] text-xs font-black uppercase tracking-wider hover:bg-black transition-all flex items-center gap-2 shadow-xs cursor-pointer active:scale-95"
           >
             <ShoppingBag className="w-4 h-4 shrink-0" />
             <span>Move All to Bag</span>
@@ -83,7 +94,7 @@ export const Wishlist: React.FC = () => {
 
           <button
             onClick={clearWishlist}
-            className="px-4 py-2.5 rounded-full border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0"
+            className="px-4 py-2.5 rounded-full border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Clear</span>
@@ -91,13 +102,24 @@ export const Wishlist: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid of Wishlist Items */}
+      {/* Grid of Wishlist Items with popLayout animations */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-2.5 sm:gap-x-6 gap-y-4 sm:gap-y-10">
-        {items.map((product, idx) => (
-          <ProductCard key={product.id} product={product} index={idx} />
-        ))}
+        <AnimatePresence mode="popLayout">
+          {items.map((product, idx) => (
+            <motion.div
+              key={product.id}
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <ProductCard product={product} index={idx} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

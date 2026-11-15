@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2,
   Plus,
@@ -60,7 +61,12 @@ export const Cart: React.FC = () => {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-4xl mx-auto px-4 py-20 text-center"
+      >
         <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6 text-gray-400">
           <ShoppingBag className="w-10 h-10" />
         </div>
@@ -76,17 +82,22 @@ export const Cart: React.FC = () => {
         </p>
         <Link
           to="/shop"
-          className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-black text-[#D6FF00] text-xs font-black uppercase tracking-widest hover:bg-neutral-900 transition-all shadow-md"
+          className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-black text-[#D6FF00] text-xs font-black uppercase tracking-widest hover:bg-neutral-900 transition-all shadow-md active:scale-95"
         >
           <span>Explore All Collections</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-16"
+    >
       {/* Page Title */}
       <div className="flex flex-row items-end justify-between mb-6 sm:mb-8 pb-4 sm:pb-6 border-b border-gray-200 gap-4">
         <div>
@@ -139,11 +150,17 @@ export const Cart: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-start">
         {/* Left: Items List */}
         <div className="lg:col-span-8 space-y-3 sm:space-y-4">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-gray-100 shadow-xs flex flex-col sm:flex-row gap-3.5 sm:gap-5 items-start sm:items-center hover:border-gray-200 transition-colors"
-            >
+          <AnimatePresence mode="popLayout">
+            {items.map((item) => (
+              <motion.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-gray-100 shadow-xs flex flex-col sm:flex-row gap-3.5 sm:gap-5 items-start sm:items-center hover:border-gray-200 transition-colors"
+              >
               <div className="flex gap-3.5 sm:gap-5 items-center w-full sm:w-auto flex-1 min-w-0">
                 {/* Product Thumbnail */}
                 <Link
@@ -239,8 +256,9 @@ export const Cart: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
+        </AnimatePresence>
 
           <div className="pt-4 flex justify-between items-center text-xs text-gray-500">
             <Link to="/shop" className="hover:text-black underline font-semibold">
@@ -250,7 +268,12 @@ export const Cart: React.FC = () => {
         </div>
 
         {/* Right: Summary Card */}
-        <div className="lg:col-span-4 space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          className="lg:col-span-4 space-y-6"
+        >
           <div className="p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-xs space-y-6">
             <h3 className="font-black text-base uppercase tracking-tight text-black pb-4 border-b border-gray-100">
               Order Summary
@@ -354,9 +377,9 @@ export const Cart: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
