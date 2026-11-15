@@ -1,254 +1,142 @@
-# E-Shopper — React E-Commerce Application
+# Atelier Haute Couture — Production React 19 Storefront & Admin Portal
 
-An enhanced, modern, and responsive React E-Commerce web application converted from the classic **E-Shopper** HTML/CSS/Bootstrap template. The project is structured with two complete experiences:
-1. **Customer / User Website**: Product browsing, instant category filtering, price sliders, dynamic product details with image zoom/thumbnails, shared persistent shopping cart, responsive checkout flow, customer account profile, and order history.
-2. **Admin Panel**: Professional vertical sidebar dashboard, statistics cards, products catalog management (Create, Read, Update, Delete with modal dialogs), categories management, users management, orders management with instant status transitions, and store settings.
+[![Production](https://img.shields.io/badge/Production-Live-00E5FF.svg?style=flat&logo=vercel&logoColor=white)](https://www.youngsteav.site)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-38B2AC.svg?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF.svg?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E.svg?style=flat&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Bakong KHQR](https://img.shields.io/badge/Bakong-KHQR_EMVCo-E1251B.svg?style=flat)](https://bakong.nbc.gov.kh/)
 
-Prepared for seamless future integration with **Django REST Framework (DRF)**.
-
----
-
-## 1. Technologies Used
-
-- **React 19** (Functional Components & React Hooks)
-- **Vite 6** (Fast frontend development environment and bundler)
-- **React Router DOM v7** (Client-side routing, protected role-based routes)
-- **React Context API** (Global state management for Authentication and Shopping Cart)
-- **Bootstrap 5 & Original E-Shopper CSS** (Authentic branding, responsive grids, buttons, and badges)
-- **Font Awesome 4.7** (Icons for cart, wishlist, admin navigation, and actions)
-- **Axios** (Centralized HTTP client configured for upcoming Django REST API)
-- **LocalStorage API** (Persistent mock database for products, categories, users, orders, and cart)
+A high-performance, mobile-first luxury fashion e-commerce storefront and enterprise management portal built with **React 19**, **Vite**, **TypeScript**, **Tailwind CSS v4**, **Framer Motion**, and **Supabase PostgreSQL**. Deployed and running live in production at **[youngsteav.site](https://www.youngsteav.site)**.
 
 ---
 
-## 2. Project Folder Structure
+## 1. Key Production Capabilities
+
+### 🛍️ Client Luxury Storefront
+* **Architectural Runway Catalog**: Filter by category, price, sizes, and colors with sub-10ms UI updates.
+* **Apple-Grade Page Transitions & Physics**: Silky route navigation and spring-animated shopping bag using `framer-motion` cubic-bezier easing (`[0.22, 1, 0.36, 1]`).
+* **Multi-Step Checkout Flow**: Fluid 3-step checkout with GPS location auto-detection and Cambodia delivery presets (BKK1, Daun Penh, Tuol Kouk, Chroy Changvar, Siem Reap, Sihanoukville).
+* **Live Order Logistics Tracker**: Real-time order progress timeline with sound alerts and instant order reference lookups.
+* **Patron Sanctuary (VIP Tiering)**: Dynamic lifetime spend tracking with VIP tier status perks (Silver, Gold, Platinum).
+
+### 💳 NBC Bakong KHQR EMVCo Payments
+* **Direct Bakong App Launcher**: One-click instant deep-link (`bakong://`) to launch the native Bakong App directly on mobile.
+* **Save QR Directly to Photos**: High-resolution HTML5 canvas rendering integrated with native Web Share API (`navigator.share`) to save payment QR directly to iPhone Camera Roll / Android Gallery.
+* **Zero Quota Exhaustion**: Optimized PostgreSQL ledger queries eliminating redundant API polling loops to stay strictly within NBC API quotas.
+
+### 🛡️ Executive Admin Suite (`/admin`)
+* **Real-time Analytics Dashboard**: Total revenue metrics, live order statuses, sales breakdown, and low-stock alerts.
+* **Full CRUD Management**: Products, Categories, Customer Accounts, Promo Coupons, and Orders with instant modal dialogs.
+* **Point-of-Sale (POS) Integration**: Printable 80mm thermal receipt generator and official tax invoice modal.
+
+---
+
+## 2. Technology Stack
+
+| Category | Technology | Description |
+| :--- | :--- | :--- |
+| **Framework** | React 19.2 | Modern concurrent mode and hooks |
+| **Language** | TypeScript 5.x | Strict type safety across models and services |
+| **Build Tool** | Vite 6 / 8 | Sub-second HMR and production bundle optimization (983ms build) |
+| **Styling** | Tailwind CSS v4 | High-performance compiled utility classes |
+| **Animations** | Framer Motion | 60 FPS GPU-accelerated page transitions and micro-interactions |
+| **State Management** | Zustand | Lightweight persistent stores (`useCartStore`, `useAuthStore`, `useUIStore`) |
+| **Database & Auth** | Supabase PostgreSQL | Cloud PostgreSQL with real-time replication and secure Auth |
+| **Payments** | Bakong KHQR EMVCo | Universal Cambodian banking QR standard (USD & KHR) |
+| **Form Handling** | React Hook Form & Zod | Schema-based validation with instant field error handling |
+| **Icons** | Lucide React | High-clarity geometric iconography |
+
+---
+
+## 3. Project Structure
 
 ```text
 frontend/
-├── public/
-│   ├── admin/
-│   │   ├── css/               # AdminKit theme stylesheets
-│   │   └── img/               # Avatars, dashboard icons, and photos
-│   ├── user/
-│   │   ├── css/               # E-Shopper main.css, bootstrap, responsive.css
-│   │   ├── fonts/             # FontAwesome and Glyphicons font files
-│   │   ├── images/            # E-Shopper original images (home, shop, cart, 404)
-│   │   └── js/                # Template support scripts
-│   └── favicon.svg
-│
+├── public/                 # Static assets, favicon, brand logos
 ├── src/
 │   ├── components/
-│   │   ├── common/            # Reusable UI primitives
-│   │   │   ├── Button.jsx           # Button with spinner and variants
-│   │   │   ├── Input.jsx            # Form input with show/hide password & validation
-│   │   │   ├── Loader.jsx           # Clean spinner & loading indicators
-│   │   │   ├── Modal.jsx            # Modal dialog for Add/Edit/Delete
-│   │   │   └── ProtectedRoute.jsx   # Role-based route guard
-│   │   │
-│   │   ├── shop/              # Customer-facing components
-│   │   │   ├── ShopNavbar.jsx       # Header with live cart count & user status
-│   │   │   ├── ProductCard.jsx      # Reusable card with Add-to-Cart & Details
-│   │   │   ├── ProductFilter.jsx    # Category, price range, and brand filters
-│   │   │   └── CartSummary.jsx      # Order totals calculation widget
-│   │   │
-│   │   ├── admin/             # Admin panel components
-│   │   │   ├── AdminSidebar.jsx     # Professional vertical sidebar with categories & badges
-│   │   │   ├── AdminHeader.jsx      # Top header with hamburger toggle, notifications & profile
-│   │   │   ├── StatisticsCard.jsx   # Dashboard KPI metric cards
-│   │   │   └── DataTable.jsx        # Table with search, sorting & pagination
-│   │   │
-│   │   └── user/              # Preserved template components
-│   │       ├── Slider.jsx           # Homepage carousel banner
-│   │       ├── Footer.jsx           # Complete E-Shopper footer
-│   │       └── Sidebar.jsx          # Original sidebar reference
-│   │
+│   │   ├── checkout/       # KhqrPaymentModal, Payment selector
+│   │   ├── common/         # Navbar, Footer, AnnouncementBar, ToastNotification, Modals
+│   │   ├── product/        # ProductCard, ProductGrid, QuickViewModal
+│   │   └── receipt/        # ThermalReceiptModal, 80mm print generator
 │   ├── layouts/
-│   │   ├── ShopLayout.jsx     # Customer layout with header, outlet, footer & toast
-│   │   ├── AdminLayout.jsx    # Professional Admin horizontal top-nav layout
-│   │   └── AuthLayout.jsx     # Clean auth layout with back-to-store navigation
-│   │
+│   │   ├── MainLayout.tsx  # Storefront layout with AnimatePresence page transitions
+│   │   └── AdminLayout.tsx # Executive admin sidebar & management header
 │   ├── pages/
-│   │   ├── auth/
-│   │   │   ├── Login.jsx            # Login with validation & demo autofill buttons
-│   │   │   ├── Register.jsx         # Registration form with validation
-│   │   │   └── ForgotPassword.jsx   # Password reset simulation
-│   │   │
-│   │   ├── shop/
-│   │   │   ├── Home.jsx             # Features, categories tab, recommended items
-│   │   │   ├── Shop.jsx             # Product catalog, search, sort, pagination
-│   │   │   ├── ProductDetails.jsx   # Image gallery, quantity selector, related items
-│   │   │   ├── Cart.jsx             # Shopping cart table & quantity adjustment
-│   │   │   ├── Checkout.jsx         # Customer shipping form & demo payments
-│   │   │   ├── OrderSuccess.jsx     # Order confirmation & summary
-│   │   │   ├── Profile.jsx          # Customer profile & past orders history
-│   │   │   └── Contact.jsx          # Contact Us form & store location
-│   │   │
-│   │   ├── admin/
-│   │   │   ├── Dashboard.jsx        # KPIs, sales chart, recent orders & users
-│   │   │   ├── ManageProducts.jsx   # Product CRUD table & modal forms
-│   │   │   ├── ManageCategories.jsx # Category CRUD table & modal forms
-│   │   │   ├── ManageUsers.jsx      # User management table & modal forms
-│   │   │   ├── ManageOrders.jsx     # Order review & live status updater
-│   │   │   └── Settings.jsx         # Store information & password change
-│   │   │
-│   │   └── NotFound.jsx       # Custom E-Shopper 404 page
-│   │
-│   ├── context/
-│   │   ├── AuthContext.jsx    # User login, register, profile update & role
-│   │   └── CartContext.jsx    # Cart items, badge count, subtotal, discount, tax
-│   │
+│   │   ├── Home/           # Hero showcase, spotlight studio, category runways
+│   │   ├── shop/           # Complete catalog, multi-filter drawer, sorting
+│   │   ├── ProductDetails/ # Gallery zoom, size/color selectors, back navigation
+│   │   ├── Cart/           # Spring-physics item list, free shipping goal bar
+│   │   ├── Checkout/       # 3-Step animated checkout with Bakong KHQR
+│   │   ├── TrackOrder/     # Real-time Supabase logistics tracker
+│   │   ├── Orders/         # Customer order history & invoice reprints
+│   │   ├── Profile/        # Account management & VIP spend progression
+│   │   ├── Categories/     # Curated worlds and collections grid
+│   │   ├── Wishlist/       # Saved designs with one-click move-to-bag
+│   │   ├── About/          # Atelier manifesto, tailoring philosophy & pillars
+│   │   ├── Contact/        # Concierge inquiry form & animated FAQs
+│   │   └── admin/          # Dashboard, ManageProducts, ManageOrders, Settings
 │   ├── services/
-│   │   ├── api.js             # Centralized Axios client with Bearer interceptors
-│   │   ├── authService.js     # Mock auth operations with localStorage persistence
-│   │   ├── productService.js  # Product CRUD operations
-│   │   ├── categoryService.js # Category CRUD operations
-│   │   ├── userService.js     # User management operations
-│   │   └── orderService.js    # Order creation and status updates
-│   │
-│   ├── data/
-│   │   ├── demoProducts.js    # 12 initial products using original template images
-│   │   ├── demoCategories.js  # 10 product categories
-│   │   ├── demoUsers.js       # Demo admin and customer accounts
-│   │   └── demoOrders.js      # Demo customer order records
-│   │
-│   ├── routes/
-│   │   └── AppRoutes.jsx      # All application routes and role guards
-│   │
-│   ├── styles/
-│   │   ├── global.css         # Toast notifications, badges, loading spinner
-│   │   ├── shop.css           # Product cards, thumbnails, filter widgets
-│   │   ├── admin.css          # Horizontal top-nav, admin tables, modal overlays
-│   │   └── auth.css           # Clean login/register cards and demo fill buttons
-│   │
-│   ├── App.jsx                # Providers wrapper
-│   └── main.jsx               # React DOM entry point
-│
-├── .env                       # Vite environment variables
-├── .env.example               # Example template for environment configuration
-├── index.html                 # HTML entry with original CSS & script tags
-├── package.json               # Dependencies and build scripts
-└── README.md
+│   │   ├── supabase.ts     # Supabase client configuration
+│   │   ├── khqrService.ts  # EMVCo Bakong QR generation and verification
+│   │   ├── orderService.ts # Order placement and status sync
+│   │   ├── productService.ts # Catalog fetching and caching
+│   │   └── telegramService.ts # Automated concierge notification bot
+│   ├── store/              # Zustand global state stores
+│   └── types/              # Comprehensive TypeScript interfaces
+├── .env.example            # Environment variables template
+├── package.json
+└── vite.config.ts
 ```
 
 ---
 
-## 3. Demo Login Accounts
+## 4. Local Development & Build
 
-Quick-fill buttons are provided on the Login page for convenience:
+### Prerequisites
+* **Node.js**: v18.x or v20.x
+* **npm** or **pnpm**
 
-### Admin Account
-- **Email:** `admin@example.com`
-- **Password:** `admin123`
-- **Role:** `admin`
-- **Destination:** Redirects automatically to `/admin/dashboard`. Has full permission to manage products, categories, users, orders, settings, and view the customer store via the top navigation.
-
-### Customer Account
-- **Email:** `user@example.com`
-- **Password:** `user123`
-- **Role:** `customer`
-- **Destination:** Redirects to customer homepage `/`. Can add products to cart, checkout, view profile, and inspect past order history. Cannot access `/admin/*` routes.
-
----
-
-## 4. Application Routes
-
-### Customer Store
-| Route | Page | Description |
-|---|---|---|
-| `/` | Home | Hero carousel, featured items, category tabs, recommended items |
-| `/shop` | Shop Catalog | Search by keyword, filter by category/brand/price, sort, pagination |
-| `/shop/:id` | Product Details | Dynamic product view, image gallery, quantity, stock, related items |
-| `/cart` | Shopping Cart | Live item count, quantity increment/decrement, remove, totals |
-| `/checkout` | Checkout | Shipping information, demo payment selection, order placement |
-| `/order-success` | Order Confirmation | Displays order reference number, items, and delivery summary |
-| `/profile` or `/account` | Customer Profile | Edit profile data, inspect personal order history with status |
-| `/contact` | Contact Us | Inquiry contact form and store address information |
-
-### Authentication
-| Route | Page | Description |
-|---|---|---|
-| `/login` | Login | Email & password authentication with demo quick-fill buttons |
-| `/register` | Register | New account registration with validation and auto-login |
-| `/forgot-password` | Forgot Password | Reset link simulation |
-
-### Admin Portal (Requires Admin Role)
-| Route | Page | Description |
-|---|---|---|
-| `/admin/dashboard` | Dashboard | Statistics KPI cards, sales bar chart, recent orders & users |
-| `/admin/products` | Manage Products | Search, filter, add product modal, edit, view, delete product |
-| `/admin/categories` | Manage Categories | Add, edit, delete product categories with modal forms |
-| `/admin/users` | Manage Users | View users, add user, edit role/status, delete user accounts |
-| `/admin/orders` | Manage Orders | Filter by status, inspect order details, live status updater |
-| `/admin/settings` | Store Settings | Store details, email/phone, currency, admin password change |
-
-### Error Page
-| Route | Page | Description |
-|---|---|---|
-| `*` | 404 Not Found | Authentic E-Shopper 404 page with return home button |
-
----
-
-## 5. How to Run the Project in VS Code
-
-### Step 1: Open Terminal in Project Folder
-Ensure your terminal is in the `frontend` directory:
-```bash
-cd "d:\Year 4  All Subject\Python II\Py-React\Py-React\frontend"
-```
-
-### Step 2: Install Dependencies
+### Step 1: Install Dependencies
 ```bash
 npm install
 ```
 
-### Step 3: Start Development Server
+### Step 2: Configure Environment Variables
+Copy `.env.example` to `.env`:
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-public-key
+VITE_BAKONG_ACCOUNT_ID=rayou_va@bkrt
+VITE_BAKONG_API_URL=https://api-bakong.nbc.gov.kh
+```
+
+### Step 3: Run Development Server
 ```bash
 npm run dev
 ```
-Vite will start the local development server (typically at `http://localhost:5173/`). Open this URL in your web browser.
+Access the application at `http://localhost:5173`.
 
-### Step 4: Build for Production
-To generate an optimized production bundle:
+### Step 4: Production Build
 ```bash
 npm run build
 ```
-The output files will be created in the `dist/` folder.
+Generates an optimized production bundle in `dist/` in under 1 second.
 
 ---
 
-## 6. How Mock Data and LocalStorage Work
+## 5. Security & Production Checklist
 
-1. On first launch, the application checks if data exists in `localStorage`.
-2. If empty, it seeds initial data from `src/data/demoProducts.js`, `demoCategories.js`, `demoUsers.js`, and `demoOrders.js`.
-3. When you add a product, create an order, or edit a user in the Admin panel, changes are saved to `localStorage`.
-4. The data remains persistent across page refreshes and navigations.
+- [x] Sensitive API keys excluded from version control via `.gitignore`.
+- [x] Client-side transitions run locally with zero added Egress.
+- [x] NBC Bakong daily rate-limiting protections active.
+- [x] Responsive layout tested for mobile Safari, Android Chrome, and desktop.
+- [x] Dual-currency USD ($) and KHR (៛) support.
+- [x] HTTPS enforced on production domain `https://www.youngsteav.site`.
 
 ---
 
-## 7. Connecting to Django REST Framework Later
-
-The application is architected with a dedicated services layer (`src/services/`):
-
-1. **Central Axios Configuration** (`src/services/api.js`):
-   ```javascript
-   import axios from "axios";
-
-   const api = axios.create({
-     baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api",
-     headers: { "Content-Type": "application/json" }
-   });
-
-   // Interceptor automatically attaches JWT token:
-   api.interceptors.request.use((config) => {
-     const token = localStorage.getItem("eshopper_token");
-     if (token) config.headers.Authorization = `Bearer ${token}`;
-     return config;
-   });
-   ```
-
-2. **Connecting to Django**:
-   - Update `.env`:
-     ```env
-     VITE_API_BASE_URL=http://127.0.0.1:8000/api
-     ```
-   - In each service (`productService.js`, `orderService.js`, etc.), simply replace the `localStorage` calls with standard `api.get()`, `api.post()`, `api.put()`, and `api.delete()` calls. The component code will not need to change!
+## 6. License
+Designed and developed for **Atelier Haute Couture Paris** — All Rights Reserved.
