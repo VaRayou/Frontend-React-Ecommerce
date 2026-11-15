@@ -26,7 +26,13 @@ import { supabase } from "../../services/supabase";
 import { orderService } from "../../services/orderService";
 
 export const Profile: React.FC = () => {
-  const { user, isAuthenticated, logout, updateProfile, orders: storeOrders } = useAuthStore();
+  const {
+    user,
+    isAuthenticated,
+    logout,
+    updateProfile,
+    orders: storeOrders,
+  } = useAuthStore();
   const { items: wishlistItems } = useWishlistStore();
   const { showToast } = useUIStore();
   const { formatPrice } = useCurrencyStore();
@@ -100,9 +106,12 @@ export const Profile: React.FC = () => {
     return (
       <div className="max-w-md mx-auto px-4 py-24 text-center">
         <User className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-        <h2 className="text-2xl font-bold uppercase mb-2">Authentication Required</h2>
+        <h2 className="text-2xl font-bold uppercase mb-2">
+          Authentication Required
+        </h2>
         <p className="text-xs text-gray-500 mb-6">
-          Please sign in to access your Atelier VIP membership profile and addresses.
+          Please sign in to access your Atelier VIP membership profile and
+          addresses.
         </p>
         <Link
           to="/login"
@@ -224,14 +233,28 @@ export const Profile: React.FC = () => {
 
       if (error) {
         if (user?.email === "camille@atelier.com") {
-          setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+          setPasswordForm({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          });
           showToast("Demo account password simulated successfully!", "success");
         } else {
-          showToast(error.message || "Could not update password. Please log in again.", "error");
+          showToast(
+            error.message || "Could not update password. Please log in again.",
+            "error",
+          );
         }
       } else {
-        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-        showToast("Password updated successfully via Supabase Cloud Auth!", "success");
+        setPasswordForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        showToast(
+          "Password updated successfully via Supabase Cloud Auth!",
+          "success",
+        );
       }
     } catch (err: any) {
       const errMsg = err?.message || "Could not update password.";
@@ -257,12 +280,17 @@ export const Profile: React.FC = () => {
       >
         <div className="flex items-center gap-5">
           <img
-            src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"}
+            src={
+              user.avatar ||
+              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+            }
             alt={user.name}
             className="w-20 h-20 rounded-full object-cover border-2 border-[#D6FF00] shadow-md"
           />
           <div className="space-y-1">
-            <span className={`px-3 py-0.5 rounded-full font-black text-[10px] tracking-wider uppercase inline-block ${vipTier.pill}`}>
+            <span
+              className={`px-3 py-0.5 rounded-full font-black text-[10px] tracking-wider uppercase inline-block ${vipTier.pill}`}
+            >
               {vipTier.badge}
             </span>
             <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">
@@ -288,16 +316,24 @@ export const Profile: React.FC = () => {
             to="/orders"
             className="flex-1 md:flex-initial p-4 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/10 text-center transition-colors min-w-[90px]"
           >
-            <span className="text-lg font-black text-[#D6FF00] block">{liveOrdersCount}</span>
-            <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">Orders</span>
+            <span className="text-lg font-black text-[#D6FF00] block">
+              {liveOrdersCount}
+            </span>
+            <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">
+              Orders
+            </span>
           </Link>
 
           <Link
             to="/wishlist"
             className="flex-1 md:flex-initial p-4 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/10 text-center transition-colors min-w-[90px]"
           >
-            <span className="text-lg font-black text-[#D6FF00] block">{wishlistItems.length}</span>
-            <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">Wishlist</span>
+            <span className="text-lg font-black text-[#D6FF00] block">
+              {wishlistItems.length}
+            </span>
+            <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">
+              Wishlist
+            </span>
           </Link>
         </div>
       </motion.div>
@@ -368,21 +404,29 @@ export const Profile: React.FC = () => {
             <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Full Legal Name</label>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Full Legal Name
+                  </label>
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Email Address</label>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Email Address
+                  </label>
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                     required
                   />
@@ -390,21 +434,29 @@ export const Profile: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Contact Phone</label>
+                <label className="block font-bold text-gray-700 mb-1">
+                  Contact Phone
+                </label>
                 <input
                   type="text"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Primary Street Address</label>
+                <label className="block font-bold text-gray-700 mb-1">
+                  Primary Street Address
+                </label>
                 <input
                   type="text"
                   value={formData.street}
-                  onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, street: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                   required
                 />
@@ -412,31 +464,43 @@ export const Profile: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">City</label>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    City
+                  </label>
                   <input
                     type="text"
                     value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Country</label>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Country
+                  </label>
                   <input
                     type="text"
                     value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, country: e.target.value })
+                    }
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Postal Code</label>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Postal Code
+                  </label>
                   <input
                     type="text"
                     value={formData.postalCode}
-                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, postalCode: e.target.value })
+                    }
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                     required
                   />
@@ -456,20 +520,32 @@ export const Profile: React.FC = () => {
             <div className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100">
                 <div>
-                  <span className="text-gray-400 block font-semibold text-[11px]">Client Name</span>
+                  <span className="text-gray-400 block font-semibold text-[11px]">
+                    Client Name
+                  </span>
                   <strong className="text-black text-sm">{user.name}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block font-semibold text-[11px]">Primary Email</span>
+                  <span className="text-gray-400 block font-semibold text-[11px]">
+                    Primary Email
+                  </span>
                   <strong className="text-black text-sm">{user.email}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block font-semibold text-[11px]">Telephone</span>
-                  <strong className="text-black text-sm">{user.phone || "Not provided"}</strong>
+                  <span className="text-gray-400 block font-semibold text-[11px]">
+                    Telephone
+                  </span>
+                  <strong className="text-black text-sm">
+                    {user.phone || "Not provided"}
+                  </strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block font-semibold text-[11px]">Membership Status</span>
-                  <span className="font-bold text-emerald-700">{vipTier.badge}</span>
+                  <span className="text-gray-400 block font-semibold text-[11px]">
+                    Membership Status
+                  </span>
+                  <span className="font-bold text-emerald-700">
+                    {vipTier.badge}
+                  </span>
                 </div>
               </div>
 
@@ -480,9 +556,12 @@ export const Profile: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-start gap-3">
                   <MapPin className="w-4 h-4 text-black mt-0.5 shrink-0" />
                   <div className="text-xs">
-                    <strong className="text-black block font-bold">{user.address?.street}</strong>
+                    <strong className="text-black block font-bold">
+                      {user.address?.street}
+                    </strong>
                     <span className="text-gray-500">
-                      {user.address?.city}, {user.address?.postalCode} • {user.address?.country}
+                      {user.address?.city}, {user.address?.postalCode} •{" "}
+                      {user.address?.country}
                     </span>
                   </div>
                 </div>
@@ -546,13 +625,18 @@ export const Profile: React.FC = () => {
 
             <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">New Password</label>
+                <label className="block font-bold text-gray-700 mb-1">
+                  New Password
+                </label>
                 <input
                   type="password"
                   required
                   value={passwordForm.newPassword}
                   onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                    setPasswordForm({
+                      ...passwordForm,
+                      newPassword: e.target.value,
+                    })
                   }
                   placeholder="Min. 6 characters"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none"
@@ -560,13 +644,18 @@ export const Profile: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Confirm New Password</label>
+                <label className="block font-bold text-gray-700 mb-1">
+                  Confirm New Password
+                </label>
                 <input
                   type="password"
                   required
                   value={passwordForm.confirmPassword}
                   onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                    setPasswordForm({
+                      ...passwordForm,
+                      confirmPassword: e.target.value,
+                    })
                   }
                   placeholder="Repeat new password"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-black outline-none"
@@ -578,7 +667,9 @@ export const Profile: React.FC = () => {
                 disabled={changingPassword}
                 className="w-full py-3 rounded-xl bg-black hover:bg-neutral-900 text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-colors disabled:opacity-50 cursor-pointer"
               >
-                {changingPassword ? "Updating via Supabase..." : "Update Password"}
+                {changingPassword
+                  ? "Updating via Supabase..."
+                  : "Update Password"}
               </button>
             </form>
           </div>

@@ -103,6 +103,17 @@ ON public.orders FOR DELETE
 TO authenticated
 USING (public.is_admin());
 
+-- Secure Guest Order Tracking RPC: Allows looking up an individual order by reference
+CREATE OR REPLACE FUNCTION public.get_order_by_ref(p_ref text)
+RETURNS SETOF public.orders AS $$
+BEGIN
+  RETURN QUERY
+  SELECT * FROM public.orders
+  WHERE (order_number = p_ref OR id::text = p_ref)
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
 -- ==============================================================================
 -- 4. ORDER ITEMS TABLE (Line Items Security)
@@ -215,6 +226,17 @@ CREATE POLICY "Only admins can delete payments"
 ON public.payments FOR DELETE
 TO authenticated
 USING (public.is_admin());
+
+-- Secure Guest Payment Lookup RPC: Allows looking up payment status by md5 or order_number
+CREATE OR REPLACE FUNCTION public.get_payment_by_ref(p_ref text)
+RETURNS SETOF public.payments AS $$
+BEGIN
+  RETURN QUERY
+  SELECT * FROM public.payments
+  WHERE (md5_hash = p_ref OR order_number = p_ref OR id::text = p_ref)
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- ==============================================================================

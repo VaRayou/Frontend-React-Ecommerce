@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Phone, MapPin, Send, CheckCircle2, ChevronDown, Clock } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Send,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+} from "lucide-react";
 import { useUIStore } from "../../store/useUIStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { telegramService } from "../../services/telegramService";
@@ -52,7 +60,9 @@ export const Contact: React.FC = () => {
     e.preventDefault();
     if (honeypot) {
       // Invisible honeypot trap triggered by automated scraper/spambot! Discard quietly.
-      console.warn("[Security Trap] Automated spam bot detected and discarded.");
+      console.warn(
+        "[Security Trap] Automated spam bot detected and discarded.",
+      );
       setFormSent(true);
       return;
     }
@@ -69,19 +79,27 @@ export const Contact: React.FC = () => {
       });
 
       // 2. Persist locally for audit
-      const existingInquiries = JSON.parse(localStorage.getItem("atelier_contact_inquiries") || "[]");
+      const existingInquiries = JSON.parse(
+        localStorage.getItem("atelier_contact_inquiries") || "[]",
+      );
       existingInquiries.unshift({
         id: `inq-${Date.now()}`,
         ...formData,
         createdAt: new Date().toISOString(),
       });
-      localStorage.setItem("atelier_contact_inquiries", JSON.stringify(existingInquiries.slice(0, 50)));
+      localStorage.setItem(
+        "atelier_contact_inquiries",
+        JSON.stringify(existingInquiries.slice(0, 50)),
+      );
     } catch (err) {
       console.warn("Contact inquiry sync notice:", err);
     } finally {
       setSubmitting(false);
       setFormSent(true);
-      showToast("Your inquiry has been delivered to the Atelier concierge.", "success");
+      showToast(
+        "Your inquiry has been delivered to the Atelier concierge.",
+        "success",
+      );
     }
   };
 
@@ -106,8 +124,8 @@ export const Contact: React.FC = () => {
           Contact The House
         </h1>
         <p className="text-xs sm:text-sm text-gray-500 font-light">
-          Our Paris client advisors are available 7 days a week for styling guidance, bespoke sizing,
-          and order assistance.
+          Our Paris client advisors are available 7 days a week for styling
+          guidance, bespoke sizing, and order assistance.
         </p>
       </motion.div>
 
@@ -122,17 +140,28 @@ export const Contact: React.FC = () => {
           {formSent ? (
             <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-200 text-center space-y-2">
               <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-              <h3 className="text-sm font-bold text-emerald-900 uppercase">Inquiry Transmitted</h3>
+              <h3 className="text-sm font-bold text-emerald-900 uppercase">
+                Inquiry Transmitted
+              </h3>
               <p className="text-xs text-emerald-700">
-                Thank you, {formData.name}. An advisor will review your message and reply to{" "}
-                <strong>{formData.email}</strong> within 12 hours.
+                Thank you, {formData.name}. An advisor will review your message
+                and reply to <strong>{formData.email}</strong> within 12 hours.
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs relative">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 text-xs relative"
+            >
               {/* Invisible honeypot trap to catch automated scraping bots */}
               <div
-                style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }}
+                style={{
+                  position: "absolute",
+                  left: "-9999px",
+                  opacity: 0,
+                  height: 0,
+                  overflow: "hidden",
+                }}
                 aria-hidden="true"
               >
                 <input
@@ -147,11 +176,15 @@ export const Contact: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Your Full Name *</label>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Your Full Name *
+                  </label>
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="e.g. Camille Laurent"
                     required
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
@@ -159,11 +192,15 @@ export const Contact: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Email Address *</label>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Email Address *
+                  </label>
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="camille@atelier.com"
                     required
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
@@ -172,25 +209,41 @@ export const Contact: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Inquiry Topic</label>
+                <label className="block font-bold text-gray-700 mb-1">
+                  Inquiry Topic
+                </label>
                 <select
                   value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, subject: e.target.value })
+                  }
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black outline-none bg-white font-medium"
                 >
-                  <option value="Client Inquiry">Order & Delivery Inquiries</option>
-                  <option value="Private Styling">Private Styling Appointment</option>
-                  <option value="Bespoke Sizing">Bespoke Garment & Tailoring</option>
-                  <option value="Press & Media">Press & Editorial Editorial</option>
+                  <option value="Client Inquiry">
+                    Order & Delivery Inquiries
+                  </option>
+                  <option value="Private Styling">
+                    Private Styling Appointment
+                  </option>
+                  <option value="Bespoke Sizing">
+                    Bespoke Garment & Tailoring
+                  </option>
+                  <option value="Press & Media">
+                    Press & Editorial Editorial
+                  </option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Your Message *</label>
+                <label className="block font-bold text-gray-700 mb-1">
+                  Your Message *
+                </label>
                 <textarea
                   rows={5}
                   value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, message: e.target.value })
+                  }
                   placeholder="Describe your inquiry or order reference..."
                   required
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
@@ -217,7 +270,9 @@ export const Contact: React.FC = () => {
 
             {/* Paris */}
             <div className="space-y-1.5 pb-4 border-b border-white/10 text-xs">
-              <strong className="text-white text-sm font-bold block">Paris Place Vendôme</strong>
+              <strong className="text-white text-sm font-bold block">
+                Paris Place Vendôme
+              </strong>
               <div className="flex items-center gap-2 text-gray-300">
                 <MapPin className="w-3.5 h-3.5 text-[#D6FF00] shrink-0" />
                 <span>12 Place Vendôme, 75001 Paris, France</span>
@@ -230,7 +285,9 @@ export const Contact: React.FC = () => {
 
             {/* New York */}
             <div className="space-y-1.5 pb-4 border-b border-white/10 text-xs">
-              <strong className="text-white text-sm font-bold block">New York Madison Studio</strong>
+              <strong className="text-white text-sm font-bold block">
+                New York Madison Studio
+              </strong>
               <div className="flex items-center gap-2 text-gray-300">
                 <MapPin className="w-3.5 h-3.5 text-[#D6FF00] shrink-0" />
                 <span>740 Madison Avenue, New York, NY 10065</span>
@@ -243,7 +300,9 @@ export const Contact: React.FC = () => {
 
             {/* Tokyo */}
             <div className="space-y-1.5 text-xs">
-              <strong className="text-white text-sm font-bold block">Tokyo Ginza Boutique</strong>
+              <strong className="text-white text-sm font-bold block">
+                Tokyo Ginza Boutique
+              </strong>
               <div className="flex items-center gap-2 text-gray-300">
                 <MapPin className="w-3.5 h-3.5 text-[#D6FF00] shrink-0" />
                 <span>6-10-1 Ginza, Chuo-ku, Tokyo 104-0061</span>
@@ -282,7 +341,9 @@ export const Contact: React.FC = () => {
                 <span>{faq.q}</span>
                 <ChevronDown
                   className={`w-4 h-4 transition-transform duration-300 shrink-0 ${
-                    activeFaq === idx ? "rotate-180 text-black" : "text-gray-400"
+                    activeFaq === idx
+                      ? "rotate-180 text-black"
+                      : "text-gray-400"
                   }`}
                 />
               </button>
@@ -311,4 +372,3 @@ export const Contact: React.FC = () => {
 };
 
 export default Contact;
-

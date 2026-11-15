@@ -29,7 +29,9 @@ import { supabase } from "../../services/supabase";
 import { soundEffects } from "../../utils/soundEffects";
 
 export const TrackOrder: React.FC = () => {
-  const { orderNumber: paramOrderNumber } = useParams<{ orderNumber?: string }>();
+  const { orderNumber: paramOrderNumber } = useParams<{
+    orderNumber?: string;
+  }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -81,7 +83,7 @@ export const TrackOrder: React.FC = () => {
               hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
-            })
+            }),
           );
           setLoading(false);
           setRefreshing(false);
@@ -96,13 +98,13 @@ export const TrackOrder: React.FC = () => {
         const cleanQ = query.toLowerCase();
         const match = (allOrders || []).find((o: any) => {
           const ordNum = String(
-            o.orderNumber || o.order_number || o.id || o._id || ""
+            o.orderNumber || o.order_number || o.id || o._id || "",
           ).toLowerCase();
           const email = String(
-            o.customerEmail || o.customer_email || o.customer?.email || ""
+            o.customerEmail || o.customer_email || o.customer?.email || "",
           ).toLowerCase();
           const phone = String(
-            o.customerPhone || o.customer_phone || o.customer?.phone || ""
+            o.customerPhone || o.customer_phone || o.customer?.phone || "",
           );
           return (
             ordNum === cleanQ ||
@@ -119,18 +121,18 @@ export const TrackOrder: React.FC = () => {
               hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
-            })
+            }),
           );
         } else if (!silent) {
           setOrder(null);
           setError(
-            `No active dispatch record found for "${query}". Check your order reference (e.g. ATL-2026-...) or tap one of the recent orders below.`
+            `No active dispatch record found for "${query}". Check your order reference (e.g. ATL-2026-...) or tap one of the recent orders below.`,
           );
         }
       } catch {
         if (!silent) {
           setError(
-            "Unable to retrieve dispatch record at this time. Please try again."
+            "Unable to retrieve dispatch record at this time. Please try again.",
           );
         }
       } finally {
@@ -138,7 +140,7 @@ export const TrackOrder: React.FC = () => {
         setRefreshing(false);
       }
     },
-    []
+    [],
   );
 
   // Load recent orders for quick-tap pills (customer's own orders or latest store orders)
@@ -163,7 +165,7 @@ export const TrackOrder: React.FC = () => {
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
-              })
+              }),
             );
           }
         }
@@ -195,22 +197,26 @@ export const TrackOrder: React.FC = () => {
     window.addEventListener("atelier_order_updated", onOrderEvent);
 
     const trackingChannel = supabase
-      .channel(`tracking_feed_${String(activeRef).replace(/[^a-zA-Z0-9_-]/g, "_")}`)
+      .channel(
+        `tracking_feed_${String(activeRef).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
+      )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders" },
         (payload) => {
           if (!active) return;
           const updatedNum = payload.new?.order_number || payload.new?.id;
-          const currentNum = order?.orderNumber || order?.order_number || order?.id;
+          const currentNum =
+            order?.orderNumber || order?.order_number || order?.id;
           if (
-            String(updatedNum).toLowerCase() === String(currentNum).toLowerCase() ||
+            String(updatedNum).toLowerCase() ===
+              String(currentNum).toLowerCase() ||
             String(updatedNum).toLowerCase() === String(activeRef).toLowerCase()
           ) {
             soundEffects.playOrderChime();
             handleLookup(activeRef, true);
           }
-        }
+        },
       )
       .subscribe();
 
@@ -396,365 +402,369 @@ export const TrackOrder: React.FC = () => {
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             className="bg-white rounded-3xl border border-gray-200/80 shadow-xl overflow-hidden p-4 sm:p-8 lg:p-10 space-y-6 sm:space-y-8"
           >
-          {/* Header Summary */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-5 border-b border-gray-100 gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                  Order Reference
-                </span>
-                <span className="font-mono text-xs sm:text-sm font-black text-black bg-gray-100 px-2.5 py-0.5 rounded-lg border border-gray-200">
-                  {activeOrderNum}
-                </span>
+            {/* Header Summary */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-5 border-b border-gray-100 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Order Reference
+                  </span>
+                  <span className="font-mono text-xs sm:text-sm font-black text-black bg-gray-100 px-2.5 py-0.5 rounded-lg border border-gray-200">
+                    {activeOrderNum}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyText(activeOrderNum, "ref")}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 cursor-pointer"
+                    title="Copy Order Reference"
+                  >
+                    {copiedField === "ref" ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span className="text-emerald-700">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy ID</span>
+                      </>
+                    )}
+                  </button>
+                  {lastSyncedAt && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Synced {lastSyncedAt}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                  <h2 className="text-lg sm:text-2xl font-black text-gray-950 uppercase tracking-tight">
+                    Status: {rawStatus}
+                  </h2>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      isCancelled
+                        ? "bg-rose-100 text-rose-700"
+                        : currentStep === 5
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-black text-[#D6FF00]"
+                    }`}
+                  >
+                    {isCancelled ? "Cancelled" : `${progressPercent}% Complete`}
+                  </span>
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  Placed on{" "}
+                  {order.date ||
+                    (order.createdAt
+                      ? order.createdAt.split("T")[0]
+                      : "Today")}{" "}
+                  •{" "}
+                  {isCancelled
+                    ? "Dispatch cancelled"
+                    : currentStep === 5
+                      ? "Delivered to destination"
+                      : "Estimated Delivery: 2–3 Business Days"}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 sm:flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => copyText(activeOrderNum, "ref")}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 cursor-pointer"
-                  title="Copy Order Reference"
+                  disabled={refreshing}
+                  onClick={() => handleLookup(activeOrderNum, true)}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-900 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
                 >
-                  {copiedField === "ref" ? (
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
+                  />
+                  <span>{refreshing ? "Syncing..." : "Refresh"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => copyText(shareUrl, "link")}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-900 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  {copiedField === "link" ? (
                     <>
-                      <Check className="w-3 h-3 text-emerald-600" />
-                      <span className="text-emerald-700">Copied</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">Link Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3" />
-                      <span>Copy ID</span>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Share Link</span>
                     </>
                   )}
                 </button>
-                {lastSyncedAt && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Synced {lastSyncedAt}
-                  </span>
-                )}
-              </div>
 
-              <div className="flex items-center gap-2.5 flex-wrap pt-1">
-                <h2 className="text-lg sm:text-2xl font-black text-gray-950 uppercase tracking-tight">
-                  Status: {rawStatus}
-                </h2>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    isCancelled
-                      ? "bg-rose-100 text-rose-700"
-                      : currentStep === 5
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-black text-[#D6FF00]"
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => setIsReceiptOpen(true)}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
                 >
-                  {isCancelled ? "Cancelled" : `${progressPercent}% Complete`}
-                </span>
-              </div>
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>POS Receipt</span>
+                </button>
 
-              <p className="text-xs text-gray-500">
-                Placed on{" "}
-                {order.date ||
-                  (order.createdAt ? order.createdAt.split("T")[0] : "Today")}{" "}
-                •{" "}
-                {isCancelled
-                  ? "Dispatch cancelled"
-                  : currentStep === 5
-                  ? "Delivered to destination"
-                  : "Estimated Delivery: 2–3 Business Days"}
-              </p>
+                <button
+                  type="button"
+                  onClick={() => setIsInvoiceOpen(true)}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-900 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Tax Invoice</span>
+                </button>
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 sm:flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                disabled={refreshing}
-                onClick={() => handleLookup(activeOrderNum, true)}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-900 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw
-                  className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
-                />
-                <span>{refreshing ? "Syncing..." : "Refresh"}</span>
-              </button>
+            {/* Cancelled Banner OR Visual Milestone Stepper */}
+            {isCancelled ? (
+              <div className="p-4 sm:p-5 rounded-2xl bg-rose-50 border border-rose-200 flex items-center gap-3.5 text-rose-800">
+                <XCircle className="w-7 h-7 text-rose-600 shrink-0" />
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wide">
+                    Order Cancelled
+                  </h3>
+                  <p className="text-xs text-rose-700 mt-0.5">
+                    This order has been cancelled and is no longer scheduled for
+                    courier dispatch. Contact Atelier Concierge if you need
+                    assistance.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-gray-400">
+                    Live Dispatch Milestones
+                  </h3>
+                  <span className="text-xs font-extrabold text-gray-900">
+                    Step {currentStep} of 5
+                  </span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-full bg-black transition-all duration-500 rounded-full"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 sm:gap-4 pt-2 relative">
+                  {steps.map((st, idx) => {
+                    const Icon = st.icon;
+                    const isCompleted = currentStep >= st.step;
+                    const isCurrent = currentStep === st.step;
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-3 sm:p-3.5 rounded-2xl border transition-all flex flex-row sm:flex-col items-center text-left sm:text-center gap-3 sm:gap-2 ${
+                          isCurrent
+                            ? "bg-neutral-950 text-white border-black shadow-md"
+                            : isCompleted
+                              ? "bg-gray-50/90 border-gray-200 text-gray-900"
+                              : "bg-white border-gray-100 text-gray-400 opacity-75"
+                        }`}
+                      >
+                        <div
+                          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold shrink-0 transition-all ${
+                            isCurrent
+                              ? "bg-[#D6FF00] text-black shadow-xs"
+                              : isCompleted
+                                ? "bg-black text-[#D6FF00]"
+                                : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center sm:justify-center gap-1.5">
+                            <span
+                              className={`text-xs font-extrabold block truncate ${
+                                isCurrent
+                                  ? "text-[#D6FF00]"
+                                  : isCompleted
+                                    ? "text-gray-900"
+                                    : "text-gray-400"
+                              }`}
+                            >
+                              {st.title}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[11px] block ${
+                              isCurrent ? "text-neutral-300" : "text-gray-500"
+                            }`}
+                          >
+                            {st.desc}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Telegram Instant Bot Lookup Banner */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-sky-50/80 border border-sky-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#0088cc] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Send className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black text-sky-950 uppercase tracking-wide">
+                      Track via Telegram Bot
+                    </span>
+                    <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                  </div>
+                  <p className="text-[11px] text-sky-800">
+                    Send{" "}
+                    <code className="px-1.5 py-0.5 rounded bg-white border border-sky-200 font-mono font-bold text-sky-950">
+                      {telegramCmd}
+                    </code>{" "}
+                    in Telegram for instant mobile status &amp; courier updates.
+                  </p>
+                </div>
+              </div>
 
               <button
                 type="button"
-                onClick={() => copyText(shareUrl, "link")}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-900 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                onClick={() => copyText(telegramCmd, "tg")}
+                className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
               >
-                {copiedField === "link" ? (
+                {copiedField === "tg" ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-700">Link Copied</span>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Command Copied!</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Share Link</span>
+                    <span>Copy {telegramCmd}</span>
                   </>
                 )}
               </button>
-
-              <button
-                type="button"
-                onClick={() => setIsReceiptOpen(true)}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>POS Receipt</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsInvoiceOpen(true)}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-900 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Tax Invoice</span>
-              </button>
             </div>
-          </div>
 
-          {/* Cancelled Banner OR Visual Milestone Stepper */}
-          {isCancelled ? (
-            <div className="p-4 sm:p-5 rounded-2xl bg-rose-50 border border-rose-200 flex items-center gap-3.5 text-rose-800">
-              <XCircle className="w-7 h-7 text-rose-600 shrink-0" />
-              <div>
-                <h3 className="text-sm font-black uppercase tracking-wide">
-                  Order Cancelled
-                </h3>
-                <p className="text-xs text-rose-700 mt-0.5">
-                  This order has been cancelled and is no longer scheduled for courier dispatch. Contact Atelier Concierge if you need assistance.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-gray-400">
-                  Live Dispatch Milestones
-                </h3>
-                <span className="text-xs font-extrabold text-gray-900">
-                  Step {currentStep} of 5
+            {/* Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-4 border-t border-gray-100">
+              {/* Patron & Destination */}
+              <div className="space-y-1.5 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">
+                  Destination
                 </span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
-                <div
-                  className="h-full bg-black transition-all duration-500 rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 sm:gap-4 pt-2 relative">
-                {steps.map((st, idx) => {
-                  const Icon = st.icon;
-                  const isCompleted = currentStep >= st.step;
-                  const isCurrent = currentStep === st.step;
-
-                  return (
-                    <div
-                      key={idx}
-                      className={`p-3 sm:p-3.5 rounded-2xl border transition-all flex flex-row sm:flex-col items-center text-left sm:text-center gap-3 sm:gap-2 ${
-                        isCurrent
-                          ? "bg-neutral-950 text-white border-black shadow-md"
-                          : isCompleted
-                          ? "bg-gray-50/90 border-gray-200 text-gray-900"
-                          : "bg-white border-gray-100 text-gray-400 opacity-75"
-                      }`}
-                    >
-                      <div
-                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold shrink-0 transition-all ${
-                          isCurrent
-                            ? "bg-[#D6FF00] text-black shadow-xs"
-                            : isCompleted
-                            ? "bg-black text-[#D6FF00]"
-                            : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center sm:justify-center gap-1.5">
-                          <span
-                            className={`text-xs font-extrabold block truncate ${
-                              isCurrent
-                                ? "text-[#D6FF00]"
-                                : isCompleted
-                                ? "text-gray-900"
-                                : "text-gray-400"
-                            }`}
-                          >
-                            {st.title}
-                          </span>
-                        </div>
-                        <span
-                          className={`text-[11px] block ${
-                            isCurrent ? "text-neutral-300" : "text-gray-500"
-                          }`}
-                        >
-                          {st.desc}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Telegram Instant Bot Lookup Banner */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-sky-50/80 border border-sky-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0088cc] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Send className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black text-sky-950 uppercase tracking-wide">
-                    Track via Telegram Bot
+                <p className="text-xs font-bold text-gray-900">
+                  {order.customerName || "Patron Client"}
+                </p>
+                <p className="text-xs text-gray-600 flex items-start gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+                  <span>
+                    {typeof order.shippingAddress === "string"
+                      ? order.shippingAddress
+                      : "Preah Norodom Blvd, Phnom Penh, Cambodia"}
                   </span>
-                  <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-                </div>
-                <p className="text-[11px] text-sky-800">
-                  Send{" "}
-                  <code className="px-1.5 py-0.5 rounded bg-white border border-sky-200 font-mono font-bold text-sky-950">
-                    {telegramCmd}
-                  </code>{" "}
-                  in Telegram for instant mobile status &amp; courier updates.
+                </p>
+                <p className="text-[11px] text-gray-500 break-all">
+                  {order.customerEmail}
+                </p>
+              </div>
+
+              {/* Payment & Bakong Clearance */}
+              <div className="space-y-1.5 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">
+                  Payment Verification
+                </span>
+                <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-gray-500" />
+                  <span>{order.paymentMethod || "Bakong KHQR"}</span>
+                </p>
+                <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Status: {order.paymentStatus || "Paid"}</span>
+                </p>
+                <p className="font-mono text-[11px] text-gray-500 truncate">
+                  Ref:{" "}
+                  {order.transactionId ||
+                    `TRX-${String(order.id || activeOrderNum).slice(-8)}`}
+                </p>
+              </div>
+
+              {/* Logistics & Tracking Code */}
+              <div className="space-y-1.5 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">
+                  Courier Tracking
+                </span>
+                <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                  <Truck className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Atelier Express Dispatch</span>
+                </p>
+                <p className="font-mono text-xs font-bold text-indigo-700">
+                  AWB-882-{activeOrderNum.replace(/\D/g, "") || "90218"}
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  Auto-refreshing every 15s
                 </p>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => copyText(telegramCmd, "tg")}
-              className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
-            >
-              {copiedField === "tg" ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Command Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy {telegramCmd}</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-4 border-t border-gray-100">
-            {/* Patron & Destination */}
-            <div className="space-y-1.5 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">
-                Destination
-              </span>
-              <p className="text-xs font-bold text-gray-900">
-                {order.customerName || "Patron Client"}
-              </p>
-              <p className="text-xs text-gray-600 flex items-start gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
-                <span>
-                  {typeof order.shippingAddress === "string"
-                    ? order.shippingAddress
-                    : "Preah Norodom Blvd, Phnom Penh, Cambodia"}
-                </span>
-              </p>
-              <p className="text-[11px] text-gray-500 break-all">
-                {order.customerEmail}
-              </p>
-            </div>
-
-            {/* Payment & Bakong Clearance */}
-            <div className="space-y-1.5 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">
-                Payment Verification
-              </span>
-              <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
-                <CreditCard className="w-3.5 h-3.5 text-gray-500" />
-                <span>{order.paymentMethod || "Bakong KHQR"}</span>
-              </p>
-              <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Status: {order.paymentStatus || "Paid"}</span>
-              </p>
-              <p className="font-mono text-[11px] text-gray-500 truncate">
-                Ref:{" "}
-                {order.transactionId ||
-                  `TRX-${String(order.id || activeOrderNum).slice(-8)}`}
-              </p>
-            </div>
-
-            {/* Logistics & Tracking Code */}
-            <div className="space-y-1.5 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">
-                Courier Tracking
-              </span>
-              <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
-                <Truck className="w-3.5 h-3.5 text-gray-500" />
-                <span>Atelier Express Dispatch</span>
-              </p>
-              <p className="font-mono text-xs font-bold text-indigo-700">
-                AWB-882-{activeOrderNum.replace(/\D/g, "") || "90218"}
-              </p>
-              <p className="text-[11px] text-gray-500">
-                Auto-refreshing every 15s
-              </p>
-            </div>
-          </div>
-
-          {/* Purchased Items Overview */}
-          <div className="space-y-3 pt-4 border-t border-gray-100">
-            <h4 className="text-xs font-black uppercase tracking-wider text-gray-900">
-              Package Contents ({order.items?.length || 0} Pieces)
-            </h4>
-            <div className="divide-y divide-gray-100 border border-gray-200 rounded-2xl overflow-hidden">
-              {(order.items || []).map((item: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="p-3.5 sm:p-4 flex items-center justify-between gap-3 bg-white hover:bg-gray-50/50"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={item.image || "/user/images/home/product1.jpg"}
-                      alt={item.name || "Item"}
-                      className="w-12 h-14 object-cover rounded-xl border border-gray-200 shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-gray-900 truncate">
-                        {item.name || item.productName || "Fashion Piece"}
-                      </p>
-                      <p className="text-[11px] text-gray-500">
-                        Qty: {item.quantity || 1} • Size: {item.size || "M"} •
-                        Color: {item.color || "Standard"}
-                      </p>
+            {/* Purchased Items Overview */}
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+              <h4 className="text-xs font-black uppercase tracking-wider text-gray-900">
+                Package Contents ({order.items?.length || 0} Pieces)
+              </h4>
+              <div className="divide-y divide-gray-100 border border-gray-200 rounded-2xl overflow-hidden">
+                {(order.items || []).map((item: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 sm:p-4 flex items-center justify-between gap-3 bg-white hover:bg-gray-50/50"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={item.image || "/user/images/home/product1.jpg"}
+                        alt={item.name || "Item"}
+                        className="w-12 h-14 object-cover rounded-xl border border-gray-200 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-gray-900 truncate">
+                          {item.name || item.productName || "Fashion Piece"}
+                        </p>
+                        <p className="text-[11px] text-gray-500">
+                          Qty: {item.quantity || 1} • Size: {item.size || "M"} •
+                          Color: {item.color || "Standard"}
+                        </p>
+                      </div>
                     </div>
+                    <span className="font-bold text-xs text-gray-900 shrink-0">
+                      {formatPrice(
+                        Number(item.price || 0) * Number(item.quantity || 1),
+                      )}
+                    </span>
                   </div>
-                  <span className="font-bold text-xs text-gray-900 shrink-0">
-                    {formatPrice(
-                      Number(item.price || 0) * Number(item.quantity || 1)
-                    )}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Total */}
-            <div className="flex justify-between items-center p-4 rounded-2xl bg-neutral-900 text-white">
-              <span className="text-xs uppercase tracking-wider font-bold text-neutral-300">
-                Total Authorized Amount
-              </span>
-              <span className="text-base font-black text-[#D6FF00]">
-                {formatPrice(Number(order.total || 0))}
-              </span>
+              {/* Total */}
+              <div className="flex justify-between items-center p-4 rounded-2xl bg-neutral-900 text-white">
+                <span className="text-xs uppercase tracking-wider font-bold text-neutral-300">
+                  Total Authorized Amount
+                </span>
+                <span className="text-base font-black text-[#D6FF00]">
+                  {formatPrice(Number(order.total || 0))}
+                </span>
+              </div>
             </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Invoice Modal */}

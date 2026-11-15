@@ -15,38 +15,41 @@ A high-performance, mobile-first luxury fashion e-commerce storefront and enterp
 ## 1. Key Production Capabilities
 
 ### 🛍️ Client Luxury Storefront
-* **Architectural Runway Catalog**: Filter by category, price, sizes, and colors with sub-10ms UI updates.
-* **Apple-Grade Page Transitions & Physics**: Silky route navigation and spring-animated shopping bag using `framer-motion` cubic-bezier easing (`[0.22, 1, 0.36, 1]`).
-* **Multi-Step Checkout Flow**: Fluid 3-step checkout with GPS location auto-detection and Cambodia delivery presets (BKK1, Daun Penh, Tuol Kouk, Chroy Changvar, Siem Reap, Sihanoukville).
-* **Live Order Logistics Tracker**: Real-time order progress timeline with sound alerts and instant order reference lookups.
-* **Patron Sanctuary (VIP Tiering)**: Dynamic lifetime spend tracking with VIP tier status perks (Silver, Gold, Platinum).
+
+- **Architectural Runway Catalog**: Filter by category, price, sizes, and colors with sub-10ms UI updates.
+- **Apple-Grade Page Transitions & Physics**: Silky route navigation and spring-animated shopping bag using `framer-motion` cubic-bezier easing (`[0.22, 1, 0.36, 1]`).
+- **Multi-Step Checkout Flow**: Fluid 3-step checkout with GPS location auto-detection and Cambodia delivery presets (BKK1, Daun Penh, Tuol Kouk, Chroy Changvar, Siem Reap, Sihanoukville).
+- **Live Order Logistics Tracker**: Real-time order progress timeline with sound alerts and instant order reference lookups.
+- **Patron Sanctuary (VIP Tiering)**: Dynamic lifetime spend tracking with VIP tier status perks (Silver, Gold, Platinum).
 
 ### 💳 NBC Bakong KHQR EMVCo Payments
-* **Direct Bakong App Launcher**: One-click instant deep-link (`bakong://`) to launch the native Bakong App directly on mobile.
-* **Save QR Directly to Photos**: High-resolution HTML5 canvas rendering integrated with native Web Share API (`navigator.share`) to save payment QR directly to iPhone Camera Roll / Android Gallery.
-* **Zero Quota Exhaustion**: Optimized PostgreSQL ledger queries eliminating redundant API polling loops to stay strictly within NBC API quotas.
+
+- **Direct Bakong App Launcher**: One-click instant deep-link (`bakong://`) to launch the native Bakong App directly on mobile.
+- **Save QR Directly to Photos**: High-resolution HTML5 canvas rendering integrated with native Web Share API (`navigator.share`) to save payment QR directly to iPhone Camera Roll / Android Gallery.
+- **Zero Quota Exhaustion**: Optimized PostgreSQL ledger queries eliminating redundant API polling loops to stay strictly within NBC API quotas.
 
 ### 🛡️ Executive Admin Suite (`/admin`)
-* **Real-time Analytics Dashboard**: Total revenue metrics, live order statuses, sales breakdown, and low-stock alerts.
-* **Full CRUD Management**: Products, Categories, Customer Accounts, Promo Coupons, and Orders with instant modal dialogs.
-* **Point-of-Sale (POS) Integration**: Printable 80mm thermal receipt generator and official tax invoice modal.
+
+- **Real-time Analytics Dashboard**: Total revenue metrics, live order statuses, sales breakdown, and low-stock alerts.
+- **Full CRUD Management**: Products, Categories, Customer Accounts, Promo Coupons, and Orders with instant modal dialogs.
+- **Point-of-Sale (POS) Integration**: Printable 80mm thermal receipt generator and official tax invoice modal.
 
 ---
 
 ## 2. Technology Stack
 
-| Category | Technology | Description |
-| :--- | :--- | :--- |
-| **Framework** | React 19.2 | Modern concurrent mode and hooks |
-| **Language** | TypeScript 5.x | Strict type safety across models and services |
-| **Build Tool** | Vite 6 / 8 | Sub-second HMR and production bundle optimization (983ms build) |
-| **Styling** | Tailwind CSS v4 | High-performance compiled utility classes |
-| **Animations** | Framer Motion | 60 FPS GPU-accelerated page transitions and micro-interactions |
-| **State Management** | Zustand | Lightweight persistent stores (`useCartStore`, `useAuthStore`, `useUIStore`) |
-| **Database & Auth** | Supabase PostgreSQL | Cloud PostgreSQL with real-time replication and secure Auth |
-| **Payments** | Bakong KHQR EMVCo | Universal Cambodian banking QR standard (USD & KHR) |
-| **Form Handling** | React Hook Form & Zod | Schema-based validation with instant field error handling |
-| **Icons** | Lucide React | High-clarity geometric iconography |
+| Category             | Technology            | Description                                                                  |
+| :------------------- | :-------------------- | :--------------------------------------------------------------------------- |
+| **Framework**        | React 19.2            | Modern concurrent mode and hooks                                             |
+| **Language**         | TypeScript 5.x        | Strict type safety across models and services                                |
+| **Build Tool**       | Vite 6 / 8            | Sub-second HMR and production bundle optimization (983ms build)              |
+| **Styling**          | Tailwind CSS v4       | High-performance compiled utility classes                                    |
+| **Animations**       | Framer Motion         | 60 FPS GPU-accelerated page transitions and micro-interactions               |
+| **State Management** | Zustand               | Lightweight persistent stores (`useCartStore`, `useAuthStore`, `useUIStore`) |
+| **Database & Auth**  | Supabase PostgreSQL   | Cloud PostgreSQL with real-time replication and secure Auth                  |
+| **Payments**         | Bakong KHQR EMVCo     | Universal Cambodian banking QR standard (USD & KHR)                          |
+| **Form Handling**    | React Hook Form & Zod | Schema-based validation with instant field error handling                    |
+| **Icons**            | Lucide React          | High-clarity geometric iconography                                           |
 
 ---
 
@@ -96,16 +99,20 @@ frontend/
 ## 4. Local Development & Build
 
 ### Prerequisites
-* **Node.js**: v18.x or v20.x
-* **npm** or **pnpm**
+
+- **Node.js**: v18.x or v20.x
+- **npm** or **pnpm**
 
 ### Step 1: Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### Step 2: Configure Environment Variables
+
 Copy `.env.example` to `.env`:
+
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-public-key
@@ -114,15 +121,19 @@ VITE_BAKONG_API_URL=https://api-bakong.nbc.gov.kh
 ```
 
 ### Step 3: Run Development Server
+
 ```bash
 npm run dev
 ```
+
 Access the application at `http://localhost:5173`.
 
 ### Step 4: Production Build
+
 ```bash
 npm run build
 ```
+
 Generates an optimized production bundle in `dist/` in under 1 second.
 
 ---
@@ -139,4 +150,5 @@ Generates an optimized production bundle in `dist/` in under 1 second.
 ---
 
 ## 6. License
+
 Designed and developed for **Atelier Haute Couture Paris** — All Rights Reserved.
