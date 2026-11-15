@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
   ArrowRight,
   Share2,
   X,
@@ -169,10 +170,14 @@ export const ProductDetails: React.FC = () => {
     setTouchStartX(null);
   };
 
-  // Keyboard Arrow Left/Right Navigation
+  // Keyboard Navigation: Arrow Left/Right for gallery photos & Escape / Alt+Left for Home
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      if (e.key === "Escape" || (e.altKey && e.key === "ArrowLeft")) {
+        navigate("/");
         return;
       }
       if (!product?.images || product.images.length <= 1) return;
@@ -184,7 +189,7 @@ export const ProductDetails: React.FC = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [product?.images]);
+  }, [product?.images, navigate]);
 
   // Restock Waitlist state ("Notify Me When Back in Stock")
   const [waitlistContact, setWaitlistContact] = useState("");
@@ -400,11 +405,11 @@ export const ProductDetails: React.FC = () => {
         <h2 className="text-2xl font-black uppercase tracking-tight text-black">Piece Not Found</h2>
         <p className="text-sm text-gray-500">The requested piece could not be found in our Supabase catalog.</p>
         <Link
-          to="/shop"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full text-xs font-bold uppercase tracking-widest hover:text-[#D6FF00] transition-colors"
+          to="/"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-[#D6FF00] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-neutral-800 transition-all"
         >
-          <span>Return to Catalog</span>
-          <ArrowRight className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Home</span>
         </Link>
       </div>
     );
@@ -412,18 +417,30 @@ export const ProductDetails: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-16 pb-28 md:pb-16">
-      {/* Breadcrumb Navigation */}
-      <nav className="text-[11px] sm:text-xs text-gray-400 font-semibold uppercase tracking-wider mb-5 sm:mb-8 flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <Link to="/" className="hover:text-black transition-colors">Home</Link>
-        <span>/</span>
-        <Link to="/shop" className="hover:text-black transition-colors">Shop</Link>
-        <span>/</span>
-        <Link to={`/shop?category=${product.category.toLowerCase()}`} className="hover:text-black transition-colors">
-          {product.category}
+      {/* Top Header Row with Back Arrow Button to Home & Breadcrumb Navigation */}
+      <div className="mb-5 sm:mb-8 flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/"
+          title="Back to Home Page"
+          className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-black hover:text-[#D6FF00] border border-gray-200 hover:border-black px-3.5 py-2 rounded-xl transition-all shadow-2xs cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          <span>Back to Home</span>
         </Link>
-        <span>/</span>
-        <span className="text-black truncate max-w-[180px] sm:max-w-xs">{product.name}</span>
-      </nav>
+
+        {/* Breadcrumb Navigation */}
+        <nav className="text-[11px] sm:text-xs text-gray-400 font-semibold uppercase tracking-wider flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <Link to="/" className="hover:text-black transition-colors">Home</Link>
+          <span>/</span>
+          <Link to="/shop" className="hover:text-black transition-colors">Shop</Link>
+          <span>/</span>
+          <Link to={`/shop?category=${product.category.toLowerCase()}`} className="hover:text-black transition-colors">
+            {product.category}
+          </Link>
+          <span>/</span>
+          <span className="text-black truncate max-w-[140px] sm:max-w-xs">{product.name}</span>
+        </nav>
+      </div>
 
       {/* Main Product Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 lg:gap-14 items-start">
