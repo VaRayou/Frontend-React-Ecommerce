@@ -12,6 +12,7 @@ import {
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminHeader from "../components/admin/AdminHeader";
 import { useAdminAuthStore } from "../store/useAdminAuthStore";
+import { useStoreSettings } from "../store/useStoreSettings";
 import { supabase } from "../services/supabase";
 import api from "../services/api";
 import "../styles/admin.css";
@@ -101,6 +102,7 @@ function AdminLayout() {
     };
 
     verifyAdminSession();
+    useStoreSettings.getState().fetchCloudSettings?.();
 
     // Preload all admin page bundles in background idle time for 0ms transitions
     const preloadAdminChunks = () => {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useCartStore } from "../../store/useCartStore";
+import { useStoreSettings } from "../../store/useStoreSettings";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useUIStore } from "../../store/useUIStore";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
@@ -36,7 +37,12 @@ export const Cart: React.FC = () => {
     getTotal,
     getItemCount,
     freeShippingThreshold,
+    standardShippingFee,
   } = useCartStore();
+
+  useEffect(() => {
+    useStoreSettings.getState().fetchCloudSettings?.();
+  }, []);
 
   const [inputCode, setInputCode] = useState("");
   const navigate = useNavigate();
@@ -47,9 +53,10 @@ export const Cart: React.FC = () => {
   const total = getTotal();
   const itemCount = getItemCount();
 
+  const isZeroShipping = standardShippingFee === 0;
   const FREE_SHIPPING_GOAL = freeShippingThreshold || 200;
-  const progress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_GOAL) * 100));
-  const amountRemaining = Math.max(0, FREE_SHIPPING_GOAL - subtotal);
+  const progress = isZeroShipping ? 100 : Math.min(100, Math.round((subtotal / FREE_SHIPPING_GOAL) * 100));
+  const amountRemaining = isZeroShipping ? 0 : Math.max(0, FREE_SHIPPING_GOAL - subtotal);
 
   const handleApplyPromo = (e: React.FormEvent) => {
     e.preventDefault();

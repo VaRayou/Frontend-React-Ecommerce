@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +22,7 @@ import {
   Printer,
 } from "lucide-react";
 import { useCartStore } from "../../store/useCartStore";
+import { useStoreSettings } from "../../store/useStoreSettings";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useUIStore } from "../../store/useUIStore";
 import { orderService } from "../../services/orderService";
@@ -78,6 +79,10 @@ export const Checkout: React.FC = () => {
   const { user, isAuthenticated, addOrder } = useAuthStore();
   const { showToast } = useUIStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    useStoreSettings.getState().fetchCloudSettings?.();
+  }, []);
 
   const [couponInput, setCouponInput] = useState<string>("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState<boolean>(false);

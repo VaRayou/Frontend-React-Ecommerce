@@ -10,6 +10,7 @@ import { QuickViewModal } from "../components/common/QuickViewModal";
 import { SearchModal } from "../components/common/SearchModal";
 import { ToastNotification } from "../components/common/ToastNotification";
 import { useCartStore } from "../store/useCartStore";
+import { useStoreSettings } from "../store/useStoreSettings";
 import { useUIStore } from "../store/useUIStore";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -25,6 +26,11 @@ export const MainLayout: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [location.pathname]);
+
+  // Synchronize store branding & live shipping rates from cloud on launch (cached for 5m)
+  useEffect(() => {
+    useStoreSettings.getState().fetchCloudSettings?.();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {

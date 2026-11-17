@@ -12,37 +12,43 @@ try {
     const parsed = JSON.parse(stored);
     // Keep ONLY real Supabase products with valid UUID format
     const valid = Array.isArray(parsed)
-      ? parsed.filter((p) => p && typeof p.id === "string" && p.id.includes("-"))
+      ? parsed.filter(
+          (p) => p && typeof p.id === "string" && p.id.includes("-"),
+        )
       : [];
     if (valid.length !== parsed?.length) {
       localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(valid));
     }
   }
 } catch {
+  a;
   // quiet
 }
 
 export const formatProductForDisplay = (p) => {
   if (!p) return null;
   const defaultLuxuryImg = "/uploads/8a82fc7bb76c.jpg";
-  const mainImg = p.image || (Array.isArray(p.images) && p.images[0]) || defaultLuxuryImg;
+  const mainImg =
+    p.image || (Array.isArray(p.images) && p.images[0]) || defaultLuxuryImg;
 
   const rawStock =
     p.stock !== undefined
       ? Number(p.stock)
       : p.quantity !== undefined
-      ? Number(p.quantity)
-      : p.stockCount !== undefined
-      ? Number(p.stockCount)
-      : 10;
+        ? Number(p.quantity)
+        : p.stockCount !== undefined
+          ? Number(p.stockCount)
+          : 10;
 
   const isStatusOut =
-    String(p.status || "").trim().toLowerCase() === "out of stock" ||
+    String(p.status || "")
+      .trim()
+      .toLowerCase() === "out of stock" ||
     p.inStock === false ||
     rawStock <= 0;
 
   const finalStock = isStatusOut || isNaN(rawStock) ? 0 : Math.max(0, rawStock);
-  const finalStatus = finalStock <= 0 ? "Out of Stock" : (p.status || "Active");
+  const finalStatus = finalStock <= 0 ? "Out of Stock" : p.status || "Active";
   const categoryName = p.categories?.name || p.category || "Collection";
 
   return {
@@ -59,7 +65,8 @@ export const formatProductForDisplay = (p) => {
     discount: p.discount || "",
     badge: p.badge || null,
     image: mainImg,
-    images: Array.isArray(p.images) && p.images.length > 0 ? p.images : [mainImg],
+    images:
+      Array.isArray(p.images) && p.images.length > 0 ? p.images : [mainImg],
     colors:
       Array.isArray(p.colors) && p.colors.length > 0
         ? p.colors
@@ -77,12 +84,22 @@ export const formatProductForDisplay = (p) => {
     inStock: finalStock > 0,
     status: finalStatus,
     rating: p.rating !== undefined ? Number(p.rating) : 5.0,
-    reviewsCount: p.reviews_count !== undefined ? Number(p.reviews_count) : (p.reviewsCount !== undefined ? Number(p.reviewsCount) : 0),
-    description: p.description || "Exclusive piece crafted with modern tailoring.",
+    reviewsCount:
+      p.reviews_count !== undefined
+        ? Number(p.reviews_count)
+        : p.reviewsCount !== undefined
+          ? Number(p.reviewsCount)
+          : 0,
+    description:
+      p.description || "Exclusive piece crafted with modern tailoring.",
     details:
       Array.isArray(p.details) && p.details.length > 0
         ? p.details
-        : ["Premium craftsmanship", "Refined tactile finish", "Bespoke tailoring"],
+        : [
+            "Premium craftsmanship",
+            "Refined tactile finish",
+            "Bespoke tailoring",
+          ],
     material: p.material || "Virgin Wool & Silk Blend",
     isFeatured: Boolean(p.is_featured ?? p.isFeatured ?? true),
     isRecommended: Boolean(p.is_recommended ?? p.isRecommended ?? true),
@@ -117,7 +134,9 @@ const getProductsStorage = () => {
   try {
     const list = JSON.parse(stored);
     const valid = Array.isArray(list)
-      ? list.filter((p) => p && typeof p.id === "string" && p.id.includes("-")).map(formatProductForDisplay)
+      ? list
+          .filter((p) => p && typeof p.id === "string" && p.id.includes("-"))
+          .map(formatProductForDisplay)
       : [];
     if (valid.length > 0) {
       _memoryProducts = valid;
@@ -204,14 +223,16 @@ const compressImageForUpload = (file) => {
             (blob) => {
               if (blob && blob.size < file.size) {
                 const cleanName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
-                const optimizedFile = new File([blob], cleanName, { type: targetType });
+                const optimizedFile = new File([blob], cleanName, {
+                  type: targetType,
+                });
                 resolve(optimizedFile);
               } else {
                 resolve(file);
               }
             },
             targetType,
-            0.85
+            0.85,
           );
         } catch {
           resolve(file);
@@ -242,10 +263,15 @@ export const productService = {
 
       const { data, error } = await supabase.storage
         .from("products")
-        .upload(filePath, fileToUpload, { cacheControl: "31536000", upsert: true });
+        .upload(filePath, fileToUpload, {
+          cacheControl: "31536000",
+          upsert: true,
+        });
 
       if (!error && data?.path) {
-        const { data: urlData } = supabase.storage.from("products").getPublicUrl(data.path);
+        const { data: urlData } = supabase.storage
+          .from("products")
+          .getPublicUrl(data.path);
         if (urlData?.publicUrl) return urlData.publicUrl;
       }
     } catch (e) {
@@ -270,9 +296,20 @@ export const productService = {
   },
 
   // Get all products directly from Supabase (with in-flight deduplication & fast SWR caching)
-  getProducts: async ({ category, search, minPrice, maxPrice, sortBy, forceRefresh = false } = {}) => {
+  getProducts: async ({
+    category,
+    search,
+    minPrice,
+    maxPrice,
+    sortBy,
+    forceRefresh = false,
+  } = {}) => {
     const isBaseCatalogQuery =
-      !category && !search && minPrice === undefined && maxPrice === undefined && !sortBy;
+      !category &&
+      !search &&
+      minPrice === undefined &&
+      maxPrice === undefined &&
+      !sortBy;
 
     // Return instant memory cache if fresh and not forcing live refresh
     if (
@@ -292,12 +329,18 @@ export const productService = {
 
     const fetchPromise = (async () => {
       try {
-        const hasCategoryFilter = Boolean(category && category.toLowerCase() !== "all");
+        const hasCategoryFilter = Boolean(
+          category && category.toLowerCase() !== "all",
+        );
 
         // Build Supabase Query (include both Active and Out of Stock items)
         let query = hasCategoryFilter
-          ? supabase.from("products").select("*, categories:category_id!inner(id, name, slug)")
-          : supabase.from("products").select("*, categories:category_id(id, name, slug)");
+          ? supabase
+              .from("products")
+              .select("*, categories:category_id!inner(id, name, slug)")
+          : supabase
+              .from("products")
+              .select("*, categories:category_id(id, name, slug)");
 
         if (hasCategoryFilter) {
           query = query.ilike("categories.name", `%${category.trim()}%`);
@@ -322,7 +365,9 @@ export const productService = {
         } else if (sortBy === "newest") {
           query = query.order("created_at", { ascending: false });
         } else {
-          query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
+          query = query
+            .order("is_featured", { ascending: false })
+            .order("created_at", { ascending: false });
         }
 
         const { data, error } = await query;
@@ -376,7 +421,9 @@ export const productService = {
 
     // Check cached real products
     const cached = getProductsStorage();
-    const found = cached.find((p) => String(p.id) === cleanId || String(p._id) === cleanId);
+    const found = cached.find(
+      (p) => String(p.id) === cleanId || String(p._id) === cleanId,
+    );
     if (found) return found;
 
     throw new Error(`Product not found: ${cleanId}`);
@@ -398,7 +445,9 @@ export const productService = {
       }
 
       const rawStock = Number(productData.stock ?? productData.quantity ?? 10);
-      const isOut = String(productData.status || "").toLowerCase() === "out of stock" || rawStock <= 0;
+      const isOut =
+        String(productData.status || "").toLowerCase() === "out of stock" ||
+        rawStock <= 0;
       const finalStock = isOut ? 0 : Math.max(0, rawStock);
       const mainImg =
         productData.image ||
@@ -411,10 +460,12 @@ export const productService = {
         category_id: categoryId || null,
         brand: productData.brand || "ATELIER",
         price: Number(productData.price) || 0,
-        original_price: Number(productData.originalPrice) || Number(productData.price) || 0,
+        original_price:
+          Number(productData.originalPrice) || Number(productData.price) || 0,
         discount: productData.discount || "",
         stock: finalStock,
-        status: finalStock <= 0 ? "Out of Stock" : (productData.status || "Active"),
+        status:
+          finalStock <= 0 ? "Out of Stock" : productData.status || "Active",
         image: mainImg,
         images:
           Array.isArray(productData.images) && productData.images.length > 0
@@ -428,16 +479,23 @@ export const productService = {
           Array.isArray(productData.sizes) && productData.sizes.length > 0
             ? productData.sizes
             : ["XS", "S", "M", "L", "XL"],
-        description: productData.description || "Exclusive piece crafted with modern tailoring.",
+        description:
+          productData.description ||
+          "Exclusive piece crafted with modern tailoring.",
         details:
           Array.isArray(productData.details) && productData.details.length > 0
             ? productData.details
             : ["Premium craftsmanship", "Refined tactile finish"],
         material: productData.material || "Virgin Wool & Silk Blend",
-        badge: productData.badge && productData.badge !== "NONE" ? productData.badge : null,
+        badge:
+          productData.badge && productData.badge !== "NONE"
+            ? productData.badge
+            : null,
         is_featured: Boolean(productData.isFeatured ?? true),
         is_recommended: Boolean(productData.isRecommended ?? true),
-        is_latest: Boolean(productData.isNewArrival ?? productData.is_latest ?? true),
+        is_latest: Boolean(
+          productData.isNewArrival ?? productData.is_latest ?? true,
+        ),
       };
 
       const { data, error } = await supabase
@@ -481,7 +539,7 @@ export const productService = {
       await ensureAdminSession();
       const cleanId = String(id).trim();
       const existingCached = getProductsStorage().find(
-        (p) => String(p.id) === cleanId
+        (p) => String(p.id) === cleanId,
       );
       const prevStock =
         existingCached?.stock !== undefined
@@ -500,32 +558,49 @@ export const productService = {
 
       const patch = {};
       if (updatedFields.name !== undefined) patch.name = updatedFields.name;
-      if (updatedFields.subtitle !== undefined) patch.subtitle = updatedFields.subtitle;
+      if (updatedFields.subtitle !== undefined)
+        patch.subtitle = updatedFields.subtitle;
       if (categoryId !== undefined) patch.category_id = categoryId;
       if (updatedFields.brand !== undefined) patch.brand = updatedFields.brand;
-      if (updatedFields.price !== undefined) patch.price = Number(updatedFields.price);
-      if (updatedFields.originalPrice !== undefined) patch.original_price = Number(updatedFields.originalPrice);
-      if (updatedFields.discount !== undefined) patch.discount = updatedFields.discount;
-      if (updatedFields.badge !== undefined) patch.badge = updatedFields.badge && updatedFields.badge !== "NONE" ? updatedFields.badge : null;
+      if (updatedFields.price !== undefined)
+        patch.price = Number(updatedFields.price);
+      if (updatedFields.originalPrice !== undefined)
+        patch.original_price = Number(updatedFields.originalPrice);
+      if (updatedFields.discount !== undefined)
+        patch.discount = updatedFields.discount;
+      if (updatedFields.badge !== undefined)
+        patch.badge =
+          updatedFields.badge && updatedFields.badge !== "NONE"
+            ? updatedFields.badge
+            : null;
 
       if (updatedFields.stock !== undefined) {
         const s = Number(updatedFields.stock);
         patch.stock = s;
-        patch.status = s <= 0 ? "Out of Stock" : (updatedFields.status || "Active");
+        patch.status =
+          s <= 0 ? "Out of Stock" : updatedFields.status || "Active";
       } else if (updatedFields.status !== undefined) {
         patch.status = updatedFields.status;
       }
 
       if (updatedFields.image !== undefined) patch.image = updatedFields.image;
-      if (updatedFields.images !== undefined) patch.images = updatedFields.images;
-      if (updatedFields.colors !== undefined) patch.colors = updatedFields.colors;
+      if (updatedFields.images !== undefined)
+        patch.images = updatedFields.images;
+      if (updatedFields.colors !== undefined)
+        patch.colors = updatedFields.colors;
       if (updatedFields.sizes !== undefined) patch.sizes = updatedFields.sizes;
-      if (updatedFields.description !== undefined) patch.description = updatedFields.description;
-      if (updatedFields.details !== undefined) patch.details = updatedFields.details;
-      if (updatedFields.material !== undefined) patch.material = updatedFields.material;
-      if (updatedFields.isFeatured !== undefined) patch.is_featured = Boolean(updatedFields.isFeatured);
-      if (updatedFields.isRecommended !== undefined) patch.is_recommended = Boolean(updatedFields.isRecommended);
-      if (updatedFields.isNewArrival !== undefined) patch.is_latest = Boolean(updatedFields.isNewArrival);
+      if (updatedFields.description !== undefined)
+        patch.description = updatedFields.description;
+      if (updatedFields.details !== undefined)
+        patch.details = updatedFields.details;
+      if (updatedFields.material !== undefined)
+        patch.material = updatedFields.material;
+      if (updatedFields.isFeatured !== undefined)
+        patch.is_featured = Boolean(updatedFields.isFeatured);
+      if (updatedFields.isRecommended !== undefined)
+        patch.is_recommended = Boolean(updatedFields.isRecommended);
+      if (updatedFields.isNewArrival !== undefined)
+        patch.is_latest = Boolean(updatedFields.isNewArrival);
 
       const { data, error } = await supabase
         .from("products")
@@ -538,7 +613,9 @@ export const productService = {
       const formatted = formatProductForDisplay(data);
 
       const current = getProductsStorage();
-      const updatedList = current.map((p) => (p.id === cleanId ? formatted : p));
+      const updatedList = current.map((p) =>
+        p.id === cleanId ? formatted : p,
+      );
       saveProductsStorage(updatedList);
       window.dispatchEvent(new Event("atelier_products_updated"));
 
@@ -576,7 +653,10 @@ export const productService = {
       await ensureAdminSession();
       const cleanId = String(id).trim();
 
-      const { error } = await supabase.from("products").delete().eq("id", cleanId);
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", cleanId);
       if (error) throw error;
 
       const current = getProductsStorage();

@@ -137,9 +137,34 @@ export function Settings() {
             ...prev,
             ...data.settings,
           }));
+
+          // Synchronize shipping controls from cloud settings
+          if (data.settings.standardShippingFee !== undefined) {
+            const fee = Number(data.settings.standardShippingFee ?? 0);
+            const threshold =
+              data.settings.freeShippingThreshold !== undefined
+                ? Number(data.settings.freeShippingThreshold)
+                : 200;
+            const carrierName =
+              data.settings.shippingCarrierName || "DHL Express Courier";
+            const enableFreeShipping = data.settings.enableFreeShipping !== false;
+
+            setShippingForm({
+              fee,
+              threshold,
+              carrierName,
+              enableFreeShipping,
+            });
+
+            setShippingConfig({
+              fee,
+              threshold,
+              carrierName,
+            });
+          }
         }
       } catch (err) {
-        // Table not created yet or network offline, gracefully fallback to local
+        // Gracefully fallback to local storage
       }
     };
 
@@ -152,16 +177,32 @@ export function Settings() {
 
   const handleStoreSave = async (e) => {
     e.preventDefault();
-    storedBranding.updateStoreSettings(storeSettings);
 
     // Persist to Supabase for multi-device sync (PC <-> Mobile)
     try {
+      await ensureAdminSession();
+
+      const { data } = await supabase
+        .from("store_settings")
+        .select("settings")
+        .eq("id", "default")
+        .maybeSingle();
+
+      const merged = {
+        ...(data?.settings || {}),
+        ...storeSettings,
+      };
+
+      storedBranding.updateStoreSettings(merged);
+
       await supabase.from("store_settings").upsert({
         id: "default",
-        settings: storeSettings,
+        settings: merged,
         updated_at: new Date().toISOString(),
       });
-    } catch {}
+    } catch (err) {
+      storedBranding.updateStoreSettings(storeSettings);
+    }
 
     telegramService
       .enableInteractiveWebhook(storeSettings.telegramBotToken)
@@ -216,9 +257,20 @@ export function Settings() {
       setStoreSettings(updated);
       storedBranding.updateStoreSettings(updated);
       try {
+        const { data } = await supabase
+          .from("store_settings")
+          .select("settings")
+          .eq("id", "default")
+          .maybeSingle();
+
+        const merged = {
+          ...(data?.settings || {}),
+          ...updated,
+        };
+
         await supabase.from("store_settings").upsert({
           id: "default",
-          settings: updated,
+          settings: merged,
           updated_at: new Date().toISOString(),
         });
       } catch {}
@@ -343,16 +395,60 @@ export function Settings() {
     }
   };
 
-  const handleShippingSave = (e) => {
+  const handleShippingSave = async (e) => {
     e.preventDefault();
+    const fee = Number(shippingForm.fee);
+    const threshold = shippingForm.enableFreeShipping
+      ? Number(shippingForm.threshold)
+      : 999999;
+    const carrierName = shippingForm.carrierName || "DHL Express Courier";
+    const enableFreeShipping = Boolean(shippingForm.enableFreeShipping);
+
+    // 1. Immediately apply to local store
     setShippingConfig({
-      fee: Number(shippingForm.fee),
-      threshold: shippingForm.enableFreeShipping
-        ? Number(shippingForm.threshold)
-        : 999999,
-      carrierName: shippingForm.carrierName,
+      fee,
+      threshold,
+      carrierName,
     });
-    showNotification("Shipping rates & policies updated across store!");
+
+    // 2. Persist to Supabase store_settings row "default" so ALL customer accounts & devices receive it
+    try {
+      await ensureAdminSession();
+
+      const { data } = await supabase
+        .from("store_settings")
+        .select("settings")
+        .eq("id", "default")
+        .maybeSingle();
+
+      const current = data?.settings || storeSettings || {};
+      const updated = {
+        ...current,
+        standardShippingFee: fee,
+        freeShippingThreshold: threshold,
+        shippingCarrierName: carrierName,
+        enableFreeShipping,
+      };
+
+      const { error } = await supabase.from("store_settings").upsert({
+        id: "default",
+        settings: updated,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) {
+        console.error("Cloud shipping sync error:", error);
+        showNotification(`Shipping saved locally (Cloud sync: ${error.message})`);
+      } else {
+        storedBranding.updateStoreSettings(updated);
+        showNotification(
+          `Shipping settings ($${fee} shipping fee) saved to cloud and synced across all devices!`
+        );
+      }
+    } catch (err) {
+      console.error("Failed to sync shipping settings:", err);
+      showNotification("Shipping rates updated locally.");
+    }
   };
 
   const handlePasswordSave = (e) => {

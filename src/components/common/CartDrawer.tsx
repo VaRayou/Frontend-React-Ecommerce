@@ -19,6 +19,7 @@ export const CartDrawer: React.FC = () => {
     getTotal,
     getItemCount,
     freeShippingThreshold,
+    standardShippingFee,
     syncCartWithLiveStock,
   } = useCartStore();
   const { formatPrice } = useCurrencyStore();
@@ -43,9 +44,10 @@ export const CartDrawer: React.FC = () => {
   const total = getTotal();
   const itemCount = getItemCount();
 
+  const isZeroShipping = standardShippingFee === 0;
   const FREE_SHIPPING_GOAL = freeShippingThreshold || 200;
-  const progress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_GOAL) * 100));
-  const amountRemaining = Math.max(0, FREE_SHIPPING_GOAL - subtotal);
+  const progress = isZeroShipping ? 100 : Math.min(100, Math.round((subtotal / FREE_SHIPPING_GOAL) * 100));
+  const amountRemaining = isZeroShipping ? 0 : Math.max(0, FREE_SHIPPING_GOAL - subtotal);
 
   const prefetchCart = () => {
     import("../../pages/Cart/Index").catch(() => {});
