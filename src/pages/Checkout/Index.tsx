@@ -31,6 +31,7 @@ import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModa
 import { InvoiceModal } from "../../components/common/InvoiceModal";
 import { khqrService, KhqrCreateResponse } from "../../services/khqrService";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
+import { emailService } from "../../services/emailService";
 
 // Zod Checkout Validation Schema
 const checkoutSchema = z.object({
@@ -295,6 +296,33 @@ export const Checkout: React.FC = () => {
         newOrder.orderNumber = persisted.orderNumber;
         setPlacedOrder(newOrder);
       }
+
+      // Automated Customer Luxury HTML Email Receipt Dispatch
+      emailService
+        .sendCustomerOrderConfirmation({
+          orderNumber: persisted?.orderNumber || orderNumber,
+          customerName: data.fullName,
+          customerEmail: data.email,
+          customerPhone: data.phone,
+          shippingAddress: `${data.street}, ${data.city}, ${data.postalCode}, ${data.country}`,
+          items: formattedItems.map((item: any) => ({
+            name: item.name || item.product?.name || "Runway Piece",
+            quantity: item.quantity || 1,
+            price: Number(item.price || 0),
+            size: item.selectedSize || item.size || "Standard",
+            color:
+              typeof item.selectedColor === "object"
+                ? item.selectedColor?.name
+                : item.selectedColor || "Standard",
+            image: item.image || item.product?.image || "",
+          })),
+          subtotal,
+          shippingFee: shipping,
+          discount,
+          total,
+          paymentMethod,
+        })
+        .catch(() => {});
     } catch (e) {
       console.warn("Order sync note:", e);
     }

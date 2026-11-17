@@ -8,6 +8,7 @@ import { useWishlistStore } from "../../store/useWishlistStore";
 import { useUIStore } from "../../store/useUIStore";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 import { useAuthStore } from "../../store/useAuthStore";
+import { imageOptimizer } from "../../utils/imageOptimizer";
 
 interface ProductCardProps {
   product: Product;
@@ -105,7 +106,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, in
       <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#F1F1EF]">
         <Link to={`/shop/${product.id}`} className="block w-full h-full relative">
           <img
-            src={images[displayImgIndex] || images[0]}
+            src={imageOptimizer.getOptimizedUrl(images[displayImgIndex] || images[0], 500)}
             alt={product.name}
             loading="lazy"
             decoding="async"

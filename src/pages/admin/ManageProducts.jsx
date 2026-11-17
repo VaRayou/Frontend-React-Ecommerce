@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Plus,
@@ -239,8 +239,20 @@ export function ManageProducts() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const s = Number(p.stock ?? p.quantity ?? 0);
+      const isOut = s <= 0 || String(p.status || "").toLowerCase() === "out of stock";
+      if (stockFilter === "out") return isOut;
+      if (stockFilter === "low") return !isOut && s <= 5;
+      if (stockFilter === "active") return !isOut && s > 5;
+      return true;
+    });
+  }, [products, stockFilter]);
+
   const handleExportCSV = () => {
-    if (!products || products.length === 0) {
+    const listToExport = filteredProducts && filteredProducts.length > 0 ? filteredProducts : products;
+    if (!listToExport || listToExport.length === 0) {
       alert("No products available to export.");
       return;
     }
@@ -265,15 +277,15 @@ export function ManageProducts() {
       return `"${str}"`;
     };
 
-    const rows = products.map((p) => {
+    const rows = listToExport.map((p) => {
       const priceUSD = Number(p.price || 0);
       const priceKHR = Math.round(priceUSD * 4100);
       const stock = Number(p.stock ?? p.quantity ?? 10);
       return [
         escapeCell(p.id || p._id),
         escapeCell(p.name),
-        escapeCell(p.category || "Electronics"),
-        escapeCell(p.brand || "E-Shopper"),
+        escapeCell(p.category || "Apparel"),
+        escapeCell(p.brand || "ATELIER PARIS"),
         escapeCell(priceUSD.toFixed(2)),
         escapeCell(priceKHR.toLocaleString()),
         escapeCell(stock),
@@ -290,13 +302,22 @@ export function ManageProducts() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     const today = new Date().toISOString().split("T")[0];
+    const filename =
+      stockFilter === "low"
+        ? `Atelier_Low_Stock_Restock_Report_${today}.csv`
+        : stockFilter === "out"
+        ? `Atelier_Out_Of_Stock_Report_${today}.csv`
+        : `Atelier_Catalog_Inventory_Report_${today}.csv`;
+
     link.href = url;
-    link.setAttribute("download", `Atelier_Catalog_Inventory_Report_${today}.csv`);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showNotification(`Exported ${products.length} catalog items to CSV successfully`);
+    showNotification(
+      `Exported ${listToExport.length} ${stockFilter === "low" ? "low-stock" : "catalog"} items to CSV successfully`
+    );
   };
 
   const loadData = async (silent = false) => {
@@ -1036,14 +1057,7 @@ export function ManageProducts() {
       {/* Modern Products DataTable */}
       <DataTable
         columns={columns}
-        data={products.filter((p) => {
-          const s = Number(p.stock ?? p.quantity ?? 0);
-          const isOut = s <= 0 || String(p.status || "").toLowerCase() === "out of stock";
-          if (stockFilter === "out") return isOut;
-          if (stockFilter === "low") return !isOut && s <= 5;
-          if (stockFilter === "active") return !isOut && s > 5;
-          return true;
-        })}
+        data={filteredProducts}
         searchKey="name"
         searchPlaceholder="Search product by title, category, or brand..."
         itemsPerPage={7}

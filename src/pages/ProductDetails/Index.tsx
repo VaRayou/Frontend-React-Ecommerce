@@ -33,6 +33,7 @@ import {
 } from "../../services/productService";
 import { supabase } from "../../services/supabase";
 import { Product } from "../../types";
+import { imageOptimizer } from "../../utils/imageOptimizer";
 import { telegramService } from "../../services/telegramService";
 
 export const ProductDetails: React.FC = () => {
@@ -327,6 +328,69 @@ export const ProductDetails: React.FC = () => {
     );
   };
 
+  const handleShareProduct = async () => {
+    if (!product) return;
+    const url = window.location.href;
+    const shareData = {
+      title: `${product.name} — ATELIER PARIS`,
+      text: `Discover the ${product.name} (${formatPrice(product.price)}) from the ATELIER PARIS Runway Collection.`,
+      url,
+    };
+
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.share &&
+      navigator.canShare &&
+      navigator.canShare(shareData)
+    ) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (e: any) {
+        if (e.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("Runway product link copied to clipboard!", "success");
+    } catch {
+      showToast("Link: " + url, "info");
+    }
+  };
+
+  // Dynamic OpenGraph Metadata & Document Title
+  useEffect(() => {
+    if (!product) return;
+    document.title = `${product.name} — ${formatPrice(product.price)} | ATELIER PARIS`;
+
+    const setMeta = (property: string, content: string) => {
+      let tag = document.querySelector(`meta[property='${property}']`);
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute("property", property);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("content", content);
+    };
+
+    const mainImg = product.image || (product.images && product.images[0]) || "";
+    setMeta("og:title", `${product.name} | ATELIER PARIS`);
+    setMeta(
+      "og:description",
+      product.description || "Exclusive luxury haute couture piece crafted by Atelier Paris."
+    );
+    setMeta("og:image", mainImg);
+    setMeta("og:url", window.location.href);
+    setMeta("og:type", "product");
+    setMeta("product:price:amount", String(product.price));
+    setMeta("product:price:currency", "USD");
+
+    return () => {
+      document.title = "ATELIER — Luxury Fashion & Modern Lifestyle";
+    };
+  }, [product, formatPrice]);
+
   useEffect(() => {
     if (!product?.id) return;
     setReviewSubmitted(false);
@@ -514,8 +578,10 @@ export const ProductDetails: React.FC = () => {
                   }`}
                 >
                   <img
-                    src={img}
+                    src={imageOptimizer.getOptimizedUrl(img, 160)}
                     alt="Thumbnail"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -530,8 +596,12 @@ export const ProductDetails: React.FC = () => {
             onTouchEnd={handleTouchEnd}
           >
             <img
-              src={product.images[activeImage] || product.images[0]}
+              src={imageOptimizer.getOptimizedUrl(
+                product.images[activeImage] || product.images[0],
+                900
+              )}
               alt={product.name}
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             />
             {isOutOfStock ? (
@@ -846,6 +916,17 @@ export const ProductDetails: React.FC = () => {
                 <Heart
                   className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`}
                 />
+              </button>
+
+              {/* Share Runway Piece CTA */}
+              <button
+                type="button"
+                onClick={handleShareProduct}
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl border border-gray-200 text-gray-600 hover:border-black hover:text-black hover:bg-gray-50 flex items-center justify-center transition-all duration-150 shrink-0 cursor-pointer active:scale-95"
+                title="Share Runway Piece"
+                aria-label="Share product link"
+              >
+                <Share2 className="w-5 h-5" />
               </button>
             </div>
 
@@ -1333,8 +1414,13 @@ export const ProductDetails: React.FC = () => {
         <div className="flex items-center justify-between gap-2.5 max-w-lg mx-auto">
           <div className="flex items-center gap-2.5 min-w-0">
             <img
-              src={product.images[activeImage] || product.images[0]}
+              src={imageOptimizer.getOptimizedUrl(
+                product.images[activeImage] || product.images[0],
+                120
+              )}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
               className="w-10 h-12 rounded-lg object-cover border border-gray-200 shrink-0"
             />
             <div className="min-w-0">

@@ -220,16 +220,23 @@ export const TrackOrder: React.FC = () => {
       )
       .subscribe();
 
-    const interval = setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        handleLookup(activeRef, true);
-      }
-    }, 45000);
+    const isCompleted =
+      String(order?.status).toLowerCase() === "delivered" ||
+      String(order?.status).toLowerCase() === "cancelled";
+
+    let interval: any = null;
+    if (!isCompleted) {
+      interval = setInterval(() => {
+        if (typeof document !== "undefined" && document.visibilityState === "visible") {
+          handleLookup(activeRef, true);
+        }
+      }, 45000);
+    }
 
     return () => {
       active = false;
       window.removeEventListener("atelier_order_updated", onOrderEvent);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       supabase.removeChannel(trackingChannel);
     };
   }, [order?.orderNumber, order?.order_number, order?.id, handleLookup]);
