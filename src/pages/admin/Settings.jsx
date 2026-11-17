@@ -451,14 +451,50 @@ export function Settings() {
     }
   };
 
-  const handlePasswordSave = (e) => {
+  const handlePasswordSave = async (e) => {
     e.preventDefault();
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("New passwords do not match!");
+    if (!passwordForm.newPassword) {
+      showNotification("Please enter a new password.");
       return;
     }
-    showNotification("Controller credentials updated successfully!");
-    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    if (passwordForm.newPassword.length < 6) {
+      showNotification("Password must be at least 6 characters.");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showNotification("New passwords do not match!");
+      return;
+    }
+
+    try {
+      await ensureAdminSession();
+
+      // If current password provided, verify it first against Supabase Auth
+      if (adminUser?.email && passwordForm.currentPassword) {
+        const { error: verifyErr } = await supabase.auth.signInWithPassword({
+          email: adminUser.email,
+          password: passwordForm.currentPassword,
+        });
+        if (verifyErr) {
+          showNotification("Current password incorrect: " + verifyErr.message);
+          return;
+        }
+      }
+
+      // Update password directly in Supabase Cloud Auth
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword,
+      });
+
+      if (error) {
+        showNotification("Failed updating password: " + error.message);
+      } else {
+        showNotification("Administrator passkey successfully updated in Supabase Auth!");
+        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      }
+    } catch (err) {
+      showNotification("Password update failed: " + (err?.message || "Network issue"));
+    }
   };
 
   const handleCreateCoupon = async (e) => {
