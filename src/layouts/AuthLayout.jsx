@@ -1,45 +1,39 @@
 import React from "react";
 import { Outlet, Link } from "react-router-dom";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 
-function AuthLayout() {
+export function AuthLayout() {
   return (
-    <div style={{ backgroundColor: "#f9f9f6", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* Header with logo and back to shop */}
-      <header style={{ padding: "18px 30px", borderBottom: "1px solid #e8e8e0", backgroundColor: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <img
-            src="/user/images/home/veayor-logo.jpg"
-            alt="VEAYOR"
-            style={{ height: 40, width: 40, objectFit: "cover", borderRadius: 8 }}
-          />
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "1.5px", color: "#1e293b", fontFamily: "serif" }}>
-            VEAYOR
+    <div className="min-h-screen flex flex-col bg-[#F6F6F4] text-[#111111]">
+      {/* Brand Header */}
+      <header className="px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200/80 flex items-center justify-between sticky top-0 z-30">
+        <Link to="/" className="inline-flex items-center gap-2.5 group">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-[0_0_8px_#D6FF00]" />
+          <span className="font-black tracking-[-0.04em] text-lg text-black">
+            ATELIER
+          </span>
+          <span className="text-[9px] font-extrabold tracking-[0.24em] text-gray-400 uppercase">
+            PARIS
           </span>
         </Link>
         <Link
           to="/"
-          style={{
-            color: "#696763",
-            textDecoration: "none",
-            fontSize: 14,
-            fontWeight: 500,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-black transition-colors"
         >
-          <i className="fa fa-arrow-left"></i> Back to Store
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Boutique</span>
         </Link>
       </header>
 
-      {/* Main Form Outlet */}
-      <div style={{ flex: 1 }}>
+      {/* Main Outlet */}
+      <div className="flex-1 flex items-center justify-center">
         <Outlet />
       </div>
 
-      {/* Simple Footer */}
-      <footer style={{ textAlign: "center", padding: "16px", fontSize: 13, color: "#888", borderTop: "1px solid #e8e8e0", backgroundColor: "#fff" }}>
-        &copy; {new Date().getFullYear()} E-Shopper. All Rights Reserved.
+      {/* Luxury Footer */}
+      <footer className="text-center py-4 text-xs text-gray-400 border-t border-gray-200/80 bg-white flex items-center justify-center gap-2">
+        <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
+        <span>&copy; {new Date().getFullYear()} ATELIER PARIS. All Rights Reserved. Private Vault 256-Bit SSL.</span>
       </footer>
     </div>
   );

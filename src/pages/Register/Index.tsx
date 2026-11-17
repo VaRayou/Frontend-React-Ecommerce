@@ -15,9 +15,12 @@ import {
   Sparkles,
   ShieldCheck,
   CheckCircle2,
-  Award,
   Gift,
   Star,
+  Crown,
+  ArrowLeft,
+  KeyRound,
+  FileText,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useUIStore } from "../../store/useUIStore";
@@ -57,6 +60,7 @@ export const Register: React.FC = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
@@ -76,7 +80,8 @@ export const Register: React.FC = () => {
 
   // Live Password Strength Computation (0 to 4)
   const passwordStrength = useMemo(() => {
-    if (!watchedPassword) return { score: 0, label: "Enter 6+ characters", color: "bg-gray-200" };
+    if (!watchedPassword)
+      return { score: 0, label: "Enter 6+ characters", color: "bg-gray-200" };
     let score = 0;
     if (watchedPassword.length >= 6) score++;
     if (watchedPassword.length >= 8) score++;
@@ -98,6 +103,16 @@ export const Register: React.FC = () => {
     };
   }, [watchedPassword]);
 
+  const handleQuickDemoFill = () => {
+    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    setValue("fullName", "Margot Fontaine", { shouldValidate: true });
+    setValue("email", `margot${randomSuffix}@atelier.com`, { shouldValidate: true });
+    setValue("phone", "+855 96 835 0317", { shouldValidate: true });
+    setValue("password", "AtelierPass2026!", { shouldValidate: true });
+    setValue("confirmPassword", "AtelierPass2026!", { shouldValidate: true });
+    showToast("Demo Patron credentials generated — ready to register", "info");
+  };
+
   const onSubmit = async (data: RegisterFormData) => {
     const res = await registerUser(
       data.fullName,
@@ -109,186 +124,168 @@ export const Register: React.FC = () => {
       showToast(res.message || "Could not create account", "error");
       return;
     }
-    showToast(`Welcome to the House of Atelier, ${data.fullName}!`, "success");
+    showToast(`Welcome to the House of Atelier Paris, ${data.fullName}!`, "success");
     navigate(from, { replace: true });
   };
 
   return (
-    <div className="min-h-[86vh] flex items-center justify-center py-6 sm:py-12 px-3.5 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Ambient Background Accents */}
-      <div className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#D6FF00]/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-black/5 blur-3xl" />
+    <div className="min-h-[88vh] flex items-center justify-center py-8 sm:py-14 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F6F6F4]">
+      {/* Ambient Lighting Spheres */}
+      <div className="pointer-events-none absolute -top-32 -right-32 w-[32rem] h-[32rem] rounded-full bg-[#D6FF00]/12 blur-[100px] animate-pulse" />
+      <div className="pointer-events-none absolute -bottom-32 -left-32 w-[32rem] h-[32rem] rounded-full bg-black/5 blur-[120px]" />
 
       <motion.div
-        initial={{ opacity: 0, y: 14 }}
+        initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 rounded-3xl sm:rounded-[2rem] overflow-hidden bg-white border border-gray-200/80 shadow-[0_24px_70px_-15px_rgba(0,0,0,0.12)] relative z-10"
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 rounded-[2rem] overflow-hidden bg-white border border-gray-200/90 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.1)] relative z-10"
       >
-        {/* Mobile Compact Luxury Header Banner (< lg) */}
-        <div className="lg:hidden relative bg-[#111111] text-white p-5 overflow-hidden">
+        {/* Left Editorial Visual Column (5 Cols) */}
+        <div className="relative hidden lg:flex lg:col-span-5 bg-[#0B0B0B] text-white p-10 flex-col justify-between overflow-hidden group">
           <img
-            src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80"
-            alt="Atelier Runway"
-            className="absolute inset-0 w-full h-full object-cover opacity-35"
+            src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=85"
+            alt="Atelier Paris Runway"
+            className="absolute inset-0 w-full h-full object-cover opacity-50 scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/40" />
-          <div className="relative z-10 flex items-center justify-between gap-3">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D6FF00] text-black font-black text-[9px] tracking-widest uppercase mb-1.5">
-                <Sparkles className="w-2.5 h-2.5" />
-                <span>Private Membership</span>
-              </div>
-              <h2 className="text-lg font-black uppercase tracking-tight leading-tight">
-                Join The House of Atelier
-              </h2>
-              <p className="text-[11px] text-gray-300 font-light mt-0.5">
-                Enjoy 20% Welcome Privilege (Code: ATELIER20)
-              </p>
-            </div>
-            <div className="shrink-0 text-right hidden xs:block">
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-bold text-[#D6FF00]">
-                <Gift className="w-3 h-3" />
-                <span>VIP Circle</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/60 to-black/35" />
 
-        {/* Left Desktop Editorial Showcase Column (5 Cols) */}
-        <div className="relative hidden lg:flex lg:col-span-5 bg-[#0B0B0B] text-white p-10 flex-col justify-between overflow-hidden">
-          <img
-            src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80"
-            alt="Atelier Runway Model"
-            className="absolute inset-0 w-full h-full object-cover opacity-55 scale-102 transition-transform duration-1000 hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#090909] via-black/55 to-black/30" />
-
-          {/* Top Brand Crest */}
+          {/* Top Brand Bar */}
           <div className="relative z-10 flex items-center justify-between">
-            <Link to="/" className="inline-flex items-center gap-2 group">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block group-hover:scale-125 transition-transform" />
-              <span className="font-extrabold tracking-[-0.05em] text-xl text-white">
+            <Link to="/" className="inline-flex items-center gap-2.5 group/logo">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-[0_0_8px_#D6FF00]" />
+              <span className="font-black tracking-[-0.04em] text-xl text-white">
                 ATELIER
               </span>
-              <span className="text-[9px] font-bold tracking-[0.22em] text-gray-300 uppercase ml-0.5">
+              <span className="text-[10px] font-extrabold tracking-[0.26em] text-neutral-400 uppercase">
                 PARIS
               </span>
             </Link>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-bold text-[#D6FF00]">
-              <ShieldCheck className="w-3 h-3" />
-              <span>Patron Registry</span>
+
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-black uppercase tracking-wider text-[#D6FF00]">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Patron Circle</span>
             </span>
           </div>
 
-          {/* Editorial Narrative & Benefits */}
-          <div className="relative z-10 space-y-6 my-auto pt-12">
+          {/* Middle Editorial Content */}
+          <div className="relative z-10 space-y-6 my-auto pt-10">
             <div className="space-y-3">
-              <span className="px-3 py-1 rounded-full bg-[#D6FF00] text-black font-black text-[10px] tracking-widest uppercase inline-block shadow-sm">
-                Private Membership • AW26
-              </span>
-              <h2 className="text-3xl font-black uppercase tracking-tight leading-[1.06]">
-                Begin Your Journey With The House of Atelier.
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D6FF00] text-black text-[10px] font-black uppercase tracking-widest shadow-xs">
+                <Crown className="w-3 h-3" />
+                <span>Private Membership Privileges</span>
+              </div>
+              <h2 className="text-3xl font-black uppercase tracking-tight leading-[1.08] text-white">
+                Begin Your Journey With Atelier.
               </h2>
-              <p className="text-xs text-gray-300 font-light leading-relaxed">
-                Create your personal patron profile for one-click Bakong KHQR checkout,
-                saved runway wishlists, and private seasonal previews.
+              <p className="text-xs text-neutral-300 font-normal leading-relaxed">
+                Register your patron profile for one-click Bakong KHQR checkout, saved runway lookbooks, and private seasonal access.
               </p>
             </div>
 
-            {/* Member Benefits */}
-            <div className="space-y-2.5 pt-2">
-              <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/12 flex items-center gap-3">
+            {/* Member Benefit Cards */}
+            <div className="space-y-2.5 pt-1">
+              <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3 transition-colors hover:bg-white/12">
                 <div className="w-8 h-8 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0">
                   <Gift className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-extrabold text-white">
-                    20% Welcome Privilege (ATELIER20)
-                  </h4>
-                  <p className="text-[11px] text-gray-300">
-                    Unlock instant savings on your first runway order
+                  <h4 className="text-xs font-bold text-white">20% Welcome Voucher (ATELIER20)</h4>
+                  <p className="text-[11px] text-neutral-300">
+                    Instant discount privilege applicable across the entire catalog
                   </p>
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/12 flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3 transition-colors hover:bg-white/12">
                 <div className="w-8 h-8 rounded-xl bg-white/15 text-[#D6FF00] flex items-center justify-center shrink-0">
-                  <Award className="w-4 h-4" />
+                  <FileText className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-extrabold text-white">
-                    Digital Receipts &amp; Tax Invoices
-                  </h4>
-                  <p className="text-[11px] text-gray-300">
-                    Permanent archive of all POS receipts and courier tracking
+                  <h4 className="text-xs font-bold text-white">Official Tax Receipts &amp; Tracker</h4>
+                  <p className="text-[11px] text-neutral-300">
+                    Permanent access to thermal invoices and 5-stage logistics
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Bottom Footer */}
-          <div className="relative z-10 pt-6 border-t border-white/15 flex items-center justify-between text-[11px] text-gray-300">
-            <div className="flex items-center gap-1.5">
+          {/* Bottom Social Proof */}
+          <div className="relative z-10 pt-6 border-t border-white/15 flex items-center justify-between text-xs text-neutral-300">
+            <div className="flex items-center gap-2">
               <div className="flex text-[#D6FF00]">
-                {[...Array(5)].map((_, idx) => (
-                  <Star key={idx} className="w-3 h-3 fill-[#D6FF00] stroke-[#D6FF00]" />
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-3.5 h-3.5 fill-[#D6FF00] stroke-[#D6FF00]" />
                 ))}
               </div>
-              <span className="font-bold text-white">Complimentary</span>
-              <span className="text-gray-400">Lifetime Membership</span>
+              <span className="font-extrabold text-white text-[11px]">Complimentary</span>
+              <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Lifetime Membership</span>
             </div>
+            <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
+              Global Archive
+            </span>
           </div>
         </div>
 
-        {/* Right Registration Form Column (7 Cols) */}
-        <div className="lg:col-span-7 p-5 sm:p-10 md:p-12 flex flex-col justify-between bg-white">
+        {/* Right Form Column (7 Cols) */}
+        <div className="lg:col-span-7 p-6 sm:p-10 md:p-12 flex flex-col justify-between bg-white">
           <div className="space-y-5">
-            {/* Top Mode Switcher Tabs */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="grid grid-cols-2 p-1 rounded-2xl bg-gray-100 border border-gray-200/70 w-full sm:w-72">
+            {/* Top Navigation & Tab Bar */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              {/* Creative Segmented Control */}
+              <div className="p-1 rounded-2xl bg-gray-100/90 border border-gray-200/80 flex items-center w-full sm:w-72 relative">
                 <Link
                   to="/login"
                   state={location.state}
-                  className="py-2 px-4 rounded-xl text-gray-500 hover:text-black text-center text-xs font-bold uppercase tracking-wider transition-colors"
+                  className="flex-1 py-2 text-center text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-black transition-colors"
                 >
                   Sign In
                 </Link>
-                <div className="py-2 px-4 rounded-xl bg-[#111111] text-[#D6FF00] text-center text-xs font-black uppercase tracking-wider shadow-xs">
-                  Create Account
-                </div>
+                <button
+                  type="button"
+                  className="relative flex-1 py-2 text-center text-xs font-black uppercase tracking-wider text-black z-10 transition-colors"
+                >
+                  <motion.div
+                    layoutId="auth-active-tab"
+                    className="absolute inset-0 bg-white rounded-xl shadow-xs border border-gray-200/60 -z-10"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                  <span>Register</span>
+                </button>
               </div>
 
-              <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                <Sparkles className="w-3 h-3 text-black" />
-                <span>Instant Activation</span>
-              </span>
+              <Link
+                to="/"
+                className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-400 hover:text-black transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Return to Boutique</span>
+              </Link>
             </div>
 
-            {/* Heading */}
-            <div>
-              <span className="text-[11px] font-extrabold tracking-[0.2em] uppercase text-gray-400 block mb-1">
-                New Patron Registration
+            {/* Header Titles */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                New Patron Registry
               </span>
               <h1 className="text-2xl sm:text-3xl font-black text-black uppercase tracking-tight">
-                Create Your Atelier Account
+                Create Your Account
               </h1>
-              <p className="text-xs text-gray-500 mt-1 font-normal">
-                Complete your profile below to unlock fast checkout and personalized order tracking.
+              <p className="text-xs text-gray-500 font-normal">
+                Join our private patron circle for instant checkout and personalized runway orders.
               </p>
             </div>
 
             {/* Registration Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5 text-xs">
-              {/* Row 1: Full Name + Phone Number */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
+              {/* Row 1: Full Name & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-extrabold text-gray-800 uppercase tracking-wider text-[11px] mb-1.5">
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
                     Full Name *
                   </label>
                   <div className="relative group">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 group-focus-within:bg-[#111111] group-focus-within:text-[#D6FF00] text-gray-500 flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
                       <User className="w-4 h-4" />
                     </div>
                     <input
@@ -296,7 +293,7 @@ export const Register: React.FC = () => {
                       autoComplete="name"
                       {...register("fullName")}
                       placeholder="e.g. Rayou Va"
-                      className="w-full pl-12 pr-3.5 py-3 rounded-xl bg-gray-50/70 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-semibold text-black transition-all"
+                      className="w-full pl-13 pr-4 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                     />
                   </div>
                   {errors.fullName && (
@@ -307,11 +304,11 @@ export const Register: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-extrabold text-gray-800 uppercase tracking-wider text-[11px] mb-1.5">
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
                     Phone Number <span className="text-gray-400 font-normal">(Optional)</span>
                   </label>
                   <div className="relative group">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 group-focus-within:bg-[#111111] group-focus-within:text-[#D6FF00] text-gray-500 flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
                       <Phone className="w-4 h-4" />
                     </div>
                     <input
@@ -319,7 +316,7 @@ export const Register: React.FC = () => {
                       autoComplete="tel"
                       {...register("phone")}
                       placeholder="e.g. 096 835 0317"
-                      className="w-full pl-12 pr-3.5 py-3 rounded-xl bg-gray-50/70 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-semibold text-black transition-all"
+                      className="w-full pl-13 pr-4 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                     />
                   </div>
                 </div>
@@ -327,19 +324,19 @@ export const Register: React.FC = () => {
 
               {/* Row 2: Email Address */}
               <div>
-                <label className="block font-extrabold text-gray-800 uppercase tracking-wider text-[11px] mb-1.5">
+                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
                   Email Address *
                 </label>
                 <div className="relative group">
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 group-focus-within:bg-[#111111] group-focus-within:text-[#D6FF00] text-gray-500 flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
                     type="email"
                     autoComplete="email"
                     {...register("email")}
-                    placeholder="name@example.com"
-                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray-50/70 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-semibold text-black transition-all"
+                    placeholder="name@atelier.com"
+                    className="w-full pl-13 pr-4 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                   />
                 </div>
                 {errors.email && (
@@ -349,27 +346,27 @@ export const Register: React.FC = () => {
                 )}
               </div>
 
-              {/* Row 3: Password + Confirm Password */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Row 3: Password & Confirm Password */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-extrabold text-gray-800 uppercase tracking-wider text-[11px] mb-1.5">
-                    Password *
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                    Security Passkey *
                   </label>
                   <div className="relative group">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 group-focus-within:bg-[#111111] group-focus-within:text-[#D6FF00] text-gray-500 flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
                       {...register("password")}
-                      placeholder="Min. 6 characters"
-                      className="w-full pl-12 pr-10 py-3 rounded-xl bg-gray-50/70 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-semibold text-black transition-all"
+                      placeholder="Min. 6 chars"
+                      className="w-full pl-13 pr-10 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -383,24 +380,24 @@ export const Register: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-extrabold text-gray-800 uppercase tracking-wider text-[11px] mb-1.5">
-                    Confirm Password *
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                    Confirm Passkey *
                   </label>
                   <div className="relative group">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 group-focus-within:bg-[#111111] group-focus-within:text-[#D6FF00] text-gray-500 flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       autoComplete="new-password"
                       {...register("confirmPassword")}
-                      placeholder="Repeat password"
-                      className="w-full pl-12 pr-10 py-3 rounded-xl bg-gray-50/70 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-semibold text-black transition-all"
+                      placeholder="Repeat passkey"
+                      className="w-full pl-13 pr-10 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
                       aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                     >
                       {showConfirmPassword ? (
@@ -418,12 +415,12 @@ export const Register: React.FC = () => {
                 </div>
               </div>
 
-              {/* Live Password Strength & Match Bar */}
+              {/* Real-Time Password Security Gauge */}
               {watchedPassword.length > 0 && (
-                <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 space-y-1.5">
+                <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 space-y-1.5">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="font-bold text-gray-600 uppercase tracking-wider">
-                      Security Strength:{" "}
+                      Passkey Strength:{" "}
                       <strong className="text-black">{passwordStrength.label}</strong>
                     </span>
                     {watchedConfirm.length > 0 && (
@@ -437,10 +434,10 @@ export const Register: React.FC = () => {
                         {watchedPassword === watchedConfirm ? (
                           <>
                             <CheckCircle2 className="w-3 h-3" />
-                            <span>Passwords match</span>
+                            <span>Passkeys match</span>
                           </>
                         ) : (
-                          <span>Passwords do not match yet</span>
+                          <span>Passkeys do not match yet</span>
                         )}
                       </span>
                     )}
@@ -460,28 +457,36 @@ export const Register: React.FC = () => {
                 </div>
               )}
 
-              {/* Terms Checkbox */}
-              <div className="flex items-start gap-2.5 pt-1">
-                <input
-                  type="checkbox"
-                  id="agreeTerms"
-                  {...register("agreeTerms")}
-                  className="w-4 h-4 accent-black rounded cursor-pointer mt-0.5 shrink-0"
-                />
+              {/* Terms of Service Checkbox & Quick Demo Fill */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
                 <label
                   htmlFor="agreeTerms"
-                  className="text-gray-600 font-medium cursor-pointer text-[11px] leading-snug select-none"
+                  className="flex items-start gap-2.5 text-xs text-gray-600 font-medium cursor-pointer select-none"
                 >
-                  I agree to the{" "}
-                  <Link to="/about" className="underline font-bold text-black">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link to="/about" className="underline font-bold text-black">
-                    Privacy Notice
-                  </Link>
-                  , and consent to receive private order updates.
+                  <input
+                    type="checkbox"
+                    id="agreeTerms"
+                    {...register("agreeTerms")}
+                    className="w-4 h-4 accent-black rounded cursor-pointer mt-0.5 shrink-0"
+                  />
+                  <span className="text-[11px] leading-snug">
+                    I agree to the{" "}
+                    <Link to="/about" className="underline font-bold text-black">
+                      Terms of Service
+                    </Link>{" "}
+                    and Privacy Protocol.
+                  </span>
                 </label>
+
+                <button
+                  type="button"
+                  onClick={handleQuickDemoFill}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold text-xs transition-all cursor-pointer shadow-2xs shrink-0 self-start sm:self-auto"
+                  title="Auto-fill Demo Registration data for fast testing"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Demo Fill</span>
+                </button>
               </div>
               {errors.agreeTerms && (
                 <p className="text-[11px] text-rose-600 font-semibold">
@@ -489,14 +494,14 @@ export const Register: React.FC = () => {
                 </p>
               )}
 
-              {/* Submit Button */}
+              {/* Submit CTA Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 px-6 bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60 mt-1"
+                className="w-full mt-2 py-3.5 px-6 rounded-2xl bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:scale-[1.008] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60"
               >
                 <span>
-                  {isSubmitting ? "Creating Your Patron Account..." : "Create Atelier Account"}
+                  {isSubmitting ? "Creating Patron Account..." : "Create Atelier Account"}
                 </span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -506,7 +511,7 @@ export const Register: React.FC = () => {
           {/* Bottom Switch to Login */}
           <div className="pt-5 mt-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
             <div>
-              <span>Already an Atelier patron? </span>
+              <span>Already a registered patron? </span>
               <Link
                 to="/login"
                 state={location.state}
@@ -516,7 +521,7 @@ export const Register: React.FC = () => {
               </Link>
             </div>
             <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest">
-              Instant Checkout Ready
+              Instant Activation Ready
             </span>
           </div>
         </div>
@@ -526,3 +531,4 @@ export const Register: React.FC = () => {
 };
 
 export default Register;
+
