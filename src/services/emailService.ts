@@ -256,40 +256,81 @@ export const emailService = {
    * 3. Resend API (via local proxy or direct)
    */
   sendCustomerOrderConfirmation: async (
-    order: EmailOrderPayload
+    order: EmailOrderPayload,
+    configOverride?: Record<string, any>
   ): Promise<EmailSendResult> => {
     const env = (import.meta as any).env || {};
     const settings = useStoreSettings.getState() || {};
 
-    const resendKey =
-      String(settings.resendApiKey || env.VITE_RESEND_API_KEY || "").trim();
-    const brevoKey =
-      String(settings.brevoApiKey || env.VITE_BREVO_API_KEY || "").trim();
-    const emailJsService =
-      String(settings.emailJsServiceId || env.VITE_EMAILJS_SERVICE_ID || "").trim();
-    const emailJsTemplate =
-      String(settings.emailJsTemplateId || env.VITE_EMAILJS_TEMPLATE_ID || "").trim();
-    const emailJsKey =
-      String(settings.emailJsPublicKey || env.VITE_EMAILJS_PUBLIC_KEY || "").trim();
+    const resendKey = String(
+      configOverride?.resendApiKey ||
+      settings.resendApiKey ||
+      env.VITE_RESEND_API_KEY ||
+      ""
+    )
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
+
+    const brevoKey = String(
+      configOverride?.brevoApiKey ||
+      settings.brevoApiKey ||
+      env.VITE_BREVO_API_KEY ||
+      ""
+    )
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
+
+    const emailJsService = String(
+      configOverride?.emailJsServiceId ||
+      settings.emailJsServiceId ||
+      env.VITE_EMAILJS_SERVICE_ID ||
+      ""
+    ).trim();
+
+    const emailJsTemplate = String(
+      configOverride?.emailJsTemplateId ||
+      settings.emailJsTemplateId ||
+      env.VITE_EMAILJS_TEMPLATE_ID ||
+      ""
+    ).trim();
+
+    const emailJsKey = String(
+      configOverride?.emailJsPublicKey ||
+      settings.emailJsPublicKey ||
+      env.VITE_EMAILJS_PUBLIC_KEY ||
+      ""
+    ).trim();
 
     const htmlContent = emailService.generateReceiptHtml(order);
 
     // 1. Try Brevo (Sendinblue) Transactional API (300 free emails/day)
     if (brevoKey) {
-      const brevoSenderEmail =
-        String(
-          settings.brevoSenderEmail ||
-          settings.storeEmail ||
-          env.VITE_BREVO_SENDER_EMAIL ||
-          "varayouk@gmail.com"
-        ).trim();
-      const brevoSenderName =
-        String(
-          settings.brevoSenderName ||
-          settings.storeName ||
-          env.VITE_BREVO_SENDER_NAME ||
-          "ATELIER PARIS"
-        ).trim();
+      if (brevoKey.startsWith("xsmtpsib-")) {
+        return {
+          success: false,
+          configured: true,
+          provider: "brevo",
+          message:
+            "Invalid Key Type: You pasted an SMTP Key (starts with 'xsmtpsib-'). Brevo REST API requires an API Key v3 (starts with 'xkeysib-'). In Brevo, go to SMTP & API -> API Keys tab and click 'Generate a new API key'.",
+          details: "SMTP Key provided instead of REST API Key v3.",
+        };
+      }
+
+      const brevoSenderEmail = String(
+        configOverride?.brevoSenderEmail ||
+        settings.brevoSenderEmail ||
+        settings.storeEmail ||
+        env.VITE_BREVO_SENDER_EMAIL ||
+        "varayouk@gmail.com"
+      ).trim();
+
+      const brevoSenderName = String(
+        configOverride?.brevoSenderName ||
+        settings.brevoSenderName ||
+        settings.storeName ||
+        env.VITE_BREVO_SENDER_NAME ||
+        "ATELIER PARIS"
+      ).trim();
 
       const subject = `✦ Runway Order Confirmation #${order.orderNumber} | ATELIER PARIS`;
       const brevoPayload = {
@@ -419,9 +460,10 @@ export const emailService = {
           errorMsg = `Sender email "${brevoSenderEmail}" is not authorized on your Brevo account. In Brevo (app.brevo.com), go to Senders & IPs -> Senders to verify this address, or enter your Brevo account registration email.`;
         } else if (
           errorMsg.toLowerCase().includes("unauthorized") ||
+          errorMsg.toLowerCase().includes("key not found") ||
           errorMsg.toLowerCase().includes("key")
         ) {
-          errorMsg = `Invalid Brevo API key. Please check or regenerate your API key at app.brevo.com/settings/keys/api.`;
+          errorMsg = `Brevo rejected this key (Key not found / unauthorized). Please check: 1) In Brevo, go to SMTP & API -> 'API Keys' tab (starts with 'xkeysib-'), NOT the SMTP tab. 2) When generating the key, choose 'Master key' (or enable Transactional Emails). 3) Ensure your Brevo account is confirmed via the email Brevo sent you.`;
         }
 
         return {

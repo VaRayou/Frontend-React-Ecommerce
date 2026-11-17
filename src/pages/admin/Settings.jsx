@@ -555,26 +555,29 @@ export function Settings() {
     showNotification(`Dispatching test receipt to ${targetRecipient}...`);
 
     try {
-      const res = await emailService.sendCustomerOrderConfirmation({
-        orderNumber: "TEST-" + Math.floor(1000 + Math.random() * 9000),
-        customerName: "Atelier Test Patron",
-        customerEmail: targetRecipient,
-        shippingAddress: storeSettings.storeAddress || "Preah Norodom Blvd, Phnom Penh, Cambodia",
-        items: [
-          {
-            name: "Haute Couture Runway Trench Coat",
-            quantity: 1,
-            price: 480,
-            size: "M",
-            color: "Obsidian Black",
-          },
-        ],
-        subtotal: 480,
-        shippingFee: 0,
-        discount: 0,
-        total: 480,
-        paymentMethod: "Bakong KHQR Verified",
-      });
+      const res = await emailService.sendCustomerOrderConfirmation(
+        {
+          orderNumber: "TEST-" + Math.floor(1000 + Math.random() * 9000),
+          customerName: "Atelier Test Patron",
+          customerEmail: targetRecipient,
+          shippingAddress: storeSettings.storeAddress || "Preah Norodom Blvd, Phnom Penh, Cambodia",
+          items: [
+            {
+              name: "Haute Couture Runway Trench Coat",
+              quantity: 1,
+              price: 480,
+              size: "M",
+              color: "Obsidian Black",
+            },
+          ],
+          subtotal: 480,
+          shippingFee: 0,
+          discount: 0,
+          total: 480,
+          paymentMethod: "Bakong KHQR Verified",
+        },
+        emailForm
+      );
 
       if (res.success) {
         setEmailStatus({
@@ -587,6 +590,7 @@ export function Settings() {
         setEmailStatus({
           testing: false,
           feedback: res.message,
+          details: res.details,
           isError: true,
         });
         showNotification(res.message);
@@ -1224,6 +1228,20 @@ export function Settings() {
                     required
                   />
 
+                  {emailForm.brevoApiKey && emailForm.brevoApiKey.trim().startsWith("xsmtpsib-") && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-xs text-rose-900 space-y-1 shadow-xs">
+                      <p className="font-black text-rose-950 flex items-center gap-1.5">
+                        <span>❌ Wrong Key: SMTP Relay Password Detected</span>
+                      </p>
+                      <p className="text-[11px] leading-relaxed">
+                        The key you pasted starts with <code>xsmtpsib-</code>, which is an <strong>SMTP Password</strong>. Brevo's REST API will reject this with "Key not found".
+                      </p>
+                      <p className="text-[11px]">
+                        <strong>How to fix:</strong> In Brevo (<a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noreferrer" className="underline font-bold text-rose-950">app.brevo.com/settings/keys/api</a>), click the <strong>API Keys</strong> tab (NOT the SMTP tab), click <strong>Generate a new API key</strong>, and copy the key starting with <code>xkeysib-</code>.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Input
@@ -1353,14 +1371,21 @@ export function Settings() {
 
                 {emailStatus.feedback && (
                   <div
-                    className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+                    className={`p-3 rounded-xl border text-xs font-semibold space-y-1 ${
                       emailStatus.isError
                         ? "bg-rose-50 border-rose-200 text-rose-700"
                         : "bg-emerald-50 border-emerald-200 text-emerald-800"
                     }`}
                   >
-                    <Sparkles className="w-4 h-4 shrink-0" />
-                    <span>{emailStatus.feedback}</span>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 shrink-0" />
+                      <span>{emailStatus.feedback}</span>
+                    </div>
+                    {emailStatus.details && (
+                      <p className="text-[10px] opacity-80 pl-6 font-mono break-all">
+                        Server diagnostic: {typeof emailStatus.details === "object" ? JSON.stringify(emailStatus.details) : emailStatus.details}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
