@@ -46,6 +46,14 @@
   ],
   "rewrites": [
     {
+      "source": "/brevo-api/:path*",
+      "destination": "https://api.brevo.com/:path*"
+    },
+    {
+      "source": "/resend-api/:path*",
+      "destination": "https://api.resend.com/:path*"
+    },
+    {
       "source": "/bakong-api/:path*",
       "destination": "https://api-bakong.nbc.gov.kh/:path*"
     },
@@ -54,7 +62,7 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/((?!api/|bakong-api/).*)",
+      "source": "/((?!api/|bakong-api/|brevo-api/|resend-api/).*)",
       "destination": "/index.html"
     }
   ]

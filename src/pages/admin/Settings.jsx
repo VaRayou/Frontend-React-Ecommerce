@@ -87,10 +87,25 @@ export function Settings() {
     provider: storedBranding.brevoApiKey ? "brevo" : "resend",
     resendApiKey: storedBranding.resendApiKey || "",
     brevoApiKey: storedBranding.brevoApiKey || "",
+    brevoSenderEmail:
+      storedBranding.brevoSenderEmail ||
+      storedBranding.storeEmail ||
+      "varayouk@gmail.com",
+    brevoSenderName: storedBranding.brevoSenderName || "ATELIER PARIS",
     emailJsServiceId: storedBranding.emailJsServiceId || "",
     emailJsTemplateId: storedBranding.emailJsTemplateId || "",
     emailJsPublicKey: storedBranding.emailJsPublicKey || "",
     customerEmailNotification: storedBranding.customerEmailNotification ?? true,
+  });
+
+  const [testRecipientEmail, setTestRecipientEmail] = useState(
+    storedBranding.brevoSenderEmail || storedBranding.storeEmail || "varayouk@gmail.com"
+  );
+
+  const [emailStatus, setEmailStatus] = useState({
+    testing: false,
+    feedback: "",
+    isError: false,
   });
 
   // Promotional Coupons Manager State
@@ -185,6 +200,14 @@ export function Settings() {
               ...prev,
               resendApiKey: data.settings.resendApiKey || "",
               brevoApiKey: data.settings.brevoApiKey || "",
+              brevoSenderEmail:
+                data.settings.brevoSenderEmail ||
+                prev.brevoSenderEmail ||
+                "varayouk@gmail.com",
+              brevoSenderName:
+                data.settings.brevoSenderName ||
+                prev.brevoSenderName ||
+                "ATELIER PARIS",
               emailJsServiceId: data.settings.emailJsServiceId || "",
               emailJsTemplateId: data.settings.emailJsTemplateId || "",
               emailJsPublicKey: data.settings.emailJsPublicKey || "",
@@ -192,6 +215,10 @@ export function Settings() {
                 data.settings.customerEmailNotification ?? true,
               provider: data.settings.brevoApiKey ? "brevo" : "resend",
             }));
+
+            if (data.settings.brevoSenderEmail) {
+              setTestRecipientEmail(data.settings.brevoSenderEmail);
+            }
           }
         }
       } catch (err) {
@@ -511,30 +538,67 @@ export function Settings() {
   };
 
   const handleTestCustomerEmail = async () => {
-    const testRecipient = storeSettings.storeEmail || "concierge@atelier.com";
-    showNotification(`Dispatching test receipt to ${testRecipient}...`);
-    const res = await emailService.sendCustomerOrderConfirmation({
-      orderNumber: "TEST-" + Math.floor(1000 + Math.random() * 9000),
-      customerName: "Atelier Tester",
-      customerEmail: testRecipient,
-      shippingAddress: storeSettings.storeAddress || "Phnom Penh, Cambodia",
-      items: [
-        {
-          name: "Haute Couture Runway Trench Coat",
-          quantity: 1,
-          price: 480,
-          size: "M",
-          color: "Obsidian Black",
-        },
-      ],
-      subtotal: 480,
-      shippingFee: 0,
-      discount: 0,
-      total: 480,
-      paymentMethod: "Bakong KHQR Verified",
-    });
+    // Make sure latest in-memory email settings are available to the emailService
+    storedBranding.updateStoreSettings(emailForm);
 
-    showNotification(res.message);
+    const targetRecipient =
+      testRecipientEmail.trim() ||
+      emailForm.brevoSenderEmail ||
+      storeSettings.storeEmail ||
+      "varayouk@gmail.com";
+
+    setEmailStatus({
+      testing: true,
+      feedback: `Transmitting real test receipt to ${targetRecipient}...`,
+      isError: false,
+    });
+    showNotification(`Dispatching test receipt to ${targetRecipient}...`);
+
+    try {
+      const res = await emailService.sendCustomerOrderConfirmation({
+        orderNumber: "TEST-" + Math.floor(1000 + Math.random() * 9000),
+        customerName: "Atelier Test Patron",
+        customerEmail: targetRecipient,
+        shippingAddress: storeSettings.storeAddress || "Preah Norodom Blvd, Phnom Penh, Cambodia",
+        items: [
+          {
+            name: "Haute Couture Runway Trench Coat",
+            quantity: 1,
+            price: 480,
+            size: "M",
+            color: "Obsidian Black",
+          },
+        ],
+        subtotal: 480,
+        shippingFee: 0,
+        discount: 0,
+        total: 480,
+        paymentMethod: "Bakong KHQR Verified",
+      });
+
+      if (res.success) {
+        setEmailStatus({
+          testing: false,
+          feedback: `✓ ${res.message}${res.details ? ` (${res.details})` : ""} — Check your inbox (or Spam/Promotions folder)!`,
+          isError: false,
+        });
+        showNotification(`✓ Test email delivered to ${targetRecipient}!`);
+      } else {
+        setEmailStatus({
+          testing: false,
+          feedback: res.message,
+          isError: true,
+        });
+        showNotification(res.message);
+      }
+    } catch (err) {
+      setEmailStatus({
+        testing: false,
+        feedback: `Dispatch error: ${err?.message || "Check network/credentials."}`,
+        isError: true,
+      });
+      showNotification(`Error: ${err?.message || "Failed to dispatch"}`);
+    }
   };
 
   const handlePasswordSave = async (e) => {
@@ -1148,7 +1212,7 @@ export function Settings() {
               )}
 
               {emailForm.provider === "brevo" && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Input
                     label="Brevo (Sendinblue) API Key"
                     type="password"
@@ -1157,18 +1221,71 @@ export function Settings() {
                       setEmailForm({ ...emailForm, brevoApiKey: e.target.value })
                     }
                     placeholder="xkeysib-..."
+                    required
                   />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Input
+                        label="Authorized Sender Email (Registered on Brevo)"
+                        type="email"
+                        value={emailForm.brevoSenderEmail}
+                        onChange={(e) => {
+                          setEmailForm({
+                            ...emailForm,
+                            brevoSenderEmail: e.target.value,
+                          });
+                          if (!testRecipientEmail) {
+                            setTestRecipientEmail(e.target.value);
+                          }
+                        }}
+                        placeholder="e.g. varayouk@gmail.com"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        label="Sender Display Name"
+                        value={emailForm.brevoSenderName}
+                        onChange={(e) =>
+                          setEmailForm({
+                            ...emailForm,
+                            brevoSenderName: e.target.value,
+                          })
+                        }
+                        placeholder="ATELIER PARIS"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-[11px] text-amber-900 space-y-1">
+                    <p className="font-extrabold flex items-center gap-1.5 text-amber-950">
+                      <span>⚠️ Crucial Brevo Requirement:</span>
+                    </p>
+                    <p>
+                      Brevo will <strong>reject any email</strong> where the Sender Email is unauthorized. The Sender Email above must match the <strong>email address you used to sign up for Brevo</strong> (e.g. <code>varayouk@gmail.com</code>), or a verified sender added in{" "}
+                      <a
+                        href="https://app.brevo.com/senders"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline font-bold text-amber-950"
+                      >
+                        Brevo &gt; Senders &amp; IPs
+                      </a>.
+                    </p>
+                  </div>
+
                   <p className="text-[11px] text-gray-400">
-                    Get your free API key from{" "}
+                    Get your free key at{" "}
                     <a
                       href="https://app.brevo.com/settings/keys/api"
                       target="_blank"
                       rel="noreferrer"
                       className="text-black font-semibold underline"
                     >
-                      app.brevo.com
+                      app.brevo.com/settings/keys/api
                     </a>{" "}
-                    (Direct browser CORS supported, 300 free emails/day).
+                    (100% free, 300 customer emails/day).
                   </p>
                 </div>
               )}
@@ -1202,23 +1319,59 @@ export function Settings() {
                 </div>
               )}
 
-              <div className="pt-2 flex flex-wrap items-center justify-between gap-2.5">
+              {/* Live Test Recipient Input and Real-Time Status Feedback */}
+              <div className="pt-2 border-t border-gray-100 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                  <div className="sm:col-span-8">
+                    <Input
+                      label="Test Recipient Email (Check Your Real Inbox)"
+                      type="email"
+                      value={testRecipientEmail}
+                      onChange={(e) => setTestRecipientEmail(e.target.value)}
+                      placeholder="e.g. varayouk@gmail.com"
+                    />
+                  </div>
+                  <div className="sm:col-span-4">
+                    <button
+                      type="button"
+                      disabled={emailStatus.testing}
+                      onClick={handleTestCustomerEmail}
+                      className="w-full py-2.5 px-3 rounded-xl border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                      title="Send a sample luxury order receipt to this email address"
+                    >
+                      <Mail
+                        className={`w-3.5 h-3.5 ${
+                          emailStatus.testing ? "animate-spin" : ""
+                        }`}
+                      />
+                      <span>
+                        {emailStatus.testing ? "Transmitting..." : "Send Test Email"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {emailStatus.feedback && (
+                  <div
+                    className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+                      emailStatus.isError
+                        ? "bg-rose-50 border-rose-200 text-rose-700"
+                        : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span>{emailStatus.feedback}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-1 flex items-center justify-between">
                 <button
                   type="submit"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Email Gateway</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleTestCustomerEmail}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer"
-                  title="Send a sample receipt to the store email"
-                >
-                  <Mail className="w-4 h-4" />
-                  <span>Send Test Email</span>
                 </button>
               </div>
             </form>

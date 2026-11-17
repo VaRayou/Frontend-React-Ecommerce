@@ -39,6 +39,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/brevo-api': {
+        target: 'https://api.brevo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/brevo-api/, ''),
+      },
       '/resend-api': {
         target: 'https://api.resend.com',
         changeOrigin: true,

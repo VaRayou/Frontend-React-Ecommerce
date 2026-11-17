@@ -274,39 +274,166 @@ export const emailService = {
 
     const htmlContent = emailService.generateReceiptHtml(order);
 
-    // 1. Try Brevo (Sendinblue) Transactional API (Supports direct browser fetch with API Key)
+    // 1. Try Brevo (Sendinblue) Transactional API (300 free emails/day)
     if (brevoKey) {
+      const brevoSenderEmail =
+        String(
+          settings.brevoSenderEmail ||
+          settings.storeEmail ||
+          env.VITE_BREVO_SENDER_EMAIL ||
+          "varayouk@gmail.com"
+        ).trim();
+      const brevoSenderName =
+        String(
+          settings.brevoSenderName ||
+          settings.storeName ||
+          env.VITE_BREVO_SENDER_NAME ||
+          "ATELIER PARIS"
+        ).trim();
+
+      const subject = `✦ Runway Order Confirmation #${order.orderNumber} | ATELIER PARIS`;
+      const brevoPayload = {
+        sender: {
+          name: brevoSenderName,
+          email: brevoSenderEmail,
+        },
+        to: [{ email: order.customerEmail, name: order.customerName || "Valued Patron" }],
+        subject: subject,
+        htmlContent: htmlContent,
+      };
+
+      let lastBrevoError: any = null;
+
+      // Strategy A: Proxy route /brevo-api/v3/smtp/email (Vite dev server + Vercel edge rewrite)
       try {
-        const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
+        const resp = await fetch("/brevo-api/v3/smtp/email", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Accept: "application/json",
             "api-key": brevoKey,
           },
-          body: JSON.stringify({
-            sender: {
-              name: settings.storeName || "ATELIER PARIS",
-              email: settings.storeEmail || "concierge@atelier.com",
-            },
-            to: [{ email: order.customerEmail, name: order.customerName }],
-            subject: `✦ Runway Order Confirmation #${order.orderNumber} | ATELIER PARIS`,
-            htmlContent: htmlContent,
-          }),
+          body: JSON.stringify(brevoPayload),
         });
 
         if (resp.ok) {
+          const respData = await resp.json().catch(() => ({}));
           return {
             success: true,
             configured: true,
             provider: "brevo",
             message: `Official confirmation email delivered to ${order.customerEmail} via Brevo!`,
+            details: respData?.messageId ? `Message ID: ${respData.messageId}` : undefined,
           };
         } else {
           const errData = await resp.json().catch(() => ({}));
-          console.warn("[Email Brevo Error]:", errData);
+          lastBrevoError = errData;
+          console.warn("[Email Brevo Proxy Error]:", resp.status, errData);
         }
       } catch (err: any) {
-        console.warn("[Email Brevo Fetch Error]:", err?.message || err);
+        lastBrevoError = err?.message || err;
+        console.warn("[Email Brevo Proxy Fetch Note]:", err);
+      }
+
+      // Strategy B: Django Backend API /api/email/dispatch/ (Zero CORS, server-to-server)
+      try {
+        const resp = await fetch("/api/email/dispatch/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            provider: "brevo",
+            apiKey: brevoKey,
+            senderEmail: brevoSenderEmail,
+            senderName: brevoSenderName,
+            recipientEmail: order.customerEmail,
+            customerName: order.customerName,
+            subject: subject,
+            htmlContent: htmlContent,
+          }),
+        });
+
+        if (resp.ok) {
+          const respData = await resp.json().catch(() => ({}));
+          return {
+            success: true,
+            configured: true,
+            provider: "brevo",
+            message: `Official confirmation email delivered to ${order.customerEmail} via Brevo!`,
+            details: respData?.messageId ? `Message ID: ${respData.messageId}` : undefined,
+          };
+        } else {
+          const errData = await resp.json().catch(() => ({}));
+          if (errData?.error || errData?.message) {
+            lastBrevoError = errData.error || errData.message;
+          }
+          console.warn("[Email Backend Dispatch Error]:", resp.status, errData);
+        }
+      } catch (err: any) {
+        console.warn("[Email Backend Dispatch Note]:", err);
+      }
+
+      // Strategy C: Direct fetch to api.brevo.com
+      try {
+        const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "api-key": brevoKey,
+          },
+          body: JSON.stringify(brevoPayload),
+        });
+
+        if (resp.ok) {
+          const respData = await resp.json().catch(() => ({}));
+          return {
+            success: true,
+            configured: true,
+            provider: "brevo",
+            message: `Official confirmation email delivered to ${order.customerEmail} via Brevo!`,
+            details: respData?.messageId ? `Message ID: ${respData.messageId}` : undefined,
+          };
+        } else {
+          const errData = await resp.json().catch(() => ({}));
+          lastBrevoError = errData;
+        }
+      } catch (err: any) {
+        if (!lastBrevoError) lastBrevoError = err?.message || err;
+      }
+
+      // If Brevo key was provided, report the specific Brevo diagnostic
+      if (lastBrevoError) {
+        let errorMsg =
+          typeof lastBrevoError === "string"
+            ? lastBrevoError
+            : lastBrevoError?.message || lastBrevoError?.code || JSON.stringify(lastBrevoError);
+
+        if (
+          errorMsg.toLowerCase().includes("sender") ||
+          errorMsg.toLowerCase().includes("authorized") ||
+          errorMsg.toLowerCase().includes("not valid") ||
+          errorMsg.toLowerCase().includes("unregistered")
+        ) {
+          errorMsg = `Sender email "${brevoSenderEmail}" is not authorized on your Brevo account. In Brevo (app.brevo.com), go to Senders & IPs -> Senders to verify this address, or enter your Brevo account registration email.`;
+        } else if (
+          errorMsg.toLowerCase().includes("unauthorized") ||
+          errorMsg.toLowerCase().includes("key")
+        ) {
+          errorMsg = `Invalid Brevo API key. Please check or regenerate your API key at app.brevo.com/settings/keys/api.`;
+        }
+
+        return {
+          success: false,
+          configured: true,
+          provider: "brevo",
+          message: `Brevo Delivery Failed: ${errorMsg}`,
+          details:
+            typeof lastBrevoError === "object"
+              ? JSON.stringify(lastBrevoError)
+              : String(lastBrevoError),
+        };
       }
     }
 
@@ -353,6 +480,7 @@ export const emailService = {
 
     // 3. Try Resend (supports /resend-api in development or direct)
     if (resendKey) {
+      let lastResendErr: any = null;
       try {
         const endpoint =
           typeof window !== "undefined" &&
@@ -376,18 +504,35 @@ export const emailService = {
         });
 
         if (resp.ok) {
+          const respData = await resp.json().catch(() => ({}));
           return {
             success: true,
             configured: true,
             provider: "resend",
             message: `Confirmation email dispatched to ${order.customerEmail} via Resend!`,
+            details: respData?.id ? `ID: ${respData.id}` : undefined,
           };
         } else {
-          const errData = await resp.json().catch(() => ({}));
-          console.warn("[Email Resend Note]:", errData);
+          lastResendErr = await resp.json().catch(() => ({}));
+          console.warn("[Email Resend Note]:", lastResendErr);
         }
       } catch (err: any) {
-        console.warn("[Email Resend Fetch Error]:", err?.message || err);
+        lastResendErr = err?.message || err;
+        console.warn("[Email Resend Fetch Error]:", err);
+      }
+
+      if (lastResendErr) {
+        const msg =
+          typeof lastResendErr === "object"
+            ? lastResendErr?.message || JSON.stringify(lastResendErr)
+            : String(lastResendErr);
+        return {
+          success: false,
+          configured: true,
+          provider: "resend",
+          message: `Resend Error: ${msg}`,
+          details: String(msg),
+        };
       }
     }
 
