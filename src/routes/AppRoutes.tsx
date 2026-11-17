@@ -49,9 +49,9 @@ export const AppRoutes: React.FC = () => {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/wishlist" element={<Wishlist />} />
 
-          {/* User Authentication & Account */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* User Authentication & Account (Unified zero-flash animated transition) */}
+          <Route path="/login" element={<Login initialMode="login" />} />
+          <Route path="/register" element={<Login initialMode="register" />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/track" element={<TrackOrder />} />

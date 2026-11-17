@@ -3,14 +3,13 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Lock,
   Mail,
   User,
   Phone,
-  Sparkles,
   Eye,
   EyeOff,
   ShieldCheck,
@@ -28,7 +27,7 @@ import {
 import { useAuthStore } from "../../store/useAuthStore";
 import { useUIStore } from "../../store/useUIStore";
 
-// 1. Zod Schemas
+// 1. Zod Validation Schemas
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -58,6 +57,14 @@ interface AuthProps {
   initialMode?: "login" | "register";
 }
 
+// Spring transition config for butter-smooth, attractive gliding
+const glideSpring = {
+  type: "spring" as const,
+  stiffness: 280,
+  damping: 28,
+  mass: 0.85,
+};
+
 export const Login: React.FC<AuthProps> = ({ initialMode }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,22 +77,28 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     initialMode || (currentPath.includes("register") ? "register" : "login");
 
   const [mode, setMode] = useState<"login" | "register">(defaultMode);
-  // Direction: +1 when switching to Register (Left -> Right), -1 when switching to Login (Right -> Left)
-  const [direction, setDirection] = useState<number>(defaultMode === "register" ? 1 : -1);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-  // Sync mode if URL changes externally (e.g. browser back/forward)
+  // Sync mode if URL changes externally (e.g. browser back/forward buttons or external links)
   useEffect(() => {
     const isReg = location.pathname.toLowerCase().includes("register");
     const targetMode = isReg ? "register" : "login";
     if (targetMode !== mode) {
-      setDirection(targetMode === "register" ? 1 : -1);
       setMode(targetMode);
     }
   }, [location.pathname]);
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [resetSent, setResetSent] = useState(false);
+  // Popstate listener for native browser history navigation
+  useEffect(() => {
+    const onPopState = () => {
+      const isReg = window.location.pathname.toLowerCase().includes("register");
+      setMode(isReg ? "register" : "login");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   const from =
     typeof location.state?.from === "string"
@@ -149,18 +162,35 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     };
   }, [watchedRegisterPassword]);
 
-  // Mode Switcher Handler with Direction
+  // Smooth Mode Switcher with Zero-Flash URL synchronization
   const handleSwitchMode = (target: "login" | "register") => {
     if (target === mode) return;
-    const dir = target === "register" ? 1 : -1;
-    setDirection(dir);
+
+    // Cross-populate email between forms for patron convenience
+    if (target === "register") {
+      const loginEmail = loginForm.getValues("email");
+      if (loginEmail && !registerForm.getValues("email")) {
+        registerForm.setValue("email", loginEmail, { shouldValidate: true });
+      }
+    } else {
+      const regEmail = registerForm.getValues("email");
+      if (regEmail && !loginForm.getValues("email")) {
+        loginForm.setValue("email", regEmail, { shouldValidate: true });
+      }
+    }
+
     setMode(target);
 
-    // Update URL smoothly without unmounting the animated component
-    navigate(target === "register" ? "/register" : "/login", {
-      replace: true,
-      state: location.state,
-    });
+    // Update browser URL without triggering unmount or Suspense fallback
+    try {
+      window.history.replaceState(
+        window.history.state,
+        "",
+        target === "register" ? "/register" : "/login"
+      );
+    } catch {
+      navigate(target === "register" ? "/register" : "/login", { replace: true });
+    }
   };
 
   // Submit Handlers
@@ -221,42 +251,6 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     setTimeout(() => setResetSent(false), 6000);
   };
 
-  // Directional Slide Animation Variants:
-  // Login -> Register: direction = +1 (Slides from left to right: enters from x: -50, exits to x: 50)
-  // Register -> Login: direction = -1 (Slides from right to left: enters from x: 50, exits to x: -50)
-  const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? -45 : 45,
-      opacity: 0,
-      filter: "blur(6px)",
-      scale: 0.98,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      filter: "blur(0px)",
-      scale: 1,
-      transition: {
-        x: { type: "spring", stiffness: 380, damping: 28 },
-        opacity: { duration: 0.24 },
-        filter: { duration: 0.24 },
-        scale: { duration: 0.24 },
-      },
-    },
-    exit: (dir: number) => ({
-      x: dir > 0 ? 45 : -45,
-      opacity: 0,
-      filter: "blur(6px)",
-      scale: 0.98,
-      transition: {
-        x: { type: "spring", stiffness: 380, damping: 28 },
-        opacity: { duration: 0.18 },
-        filter: { duration: 0.18 },
-        scale: { duration: 0.18 },
-      },
-    }),
-  };
-
   return (
     <div className="min-h-[88vh] flex items-center justify-center py-8 sm:py-14 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F6F6F4]">
       {/* Dynamic Ambient Blur Spheres */}
@@ -269,34 +263,31 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 rounded-[2rem] overflow-hidden bg-white border border-gray-200/90 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.1)] relative z-10"
       >
-        {/* Left Editorial Visual Column (5 Cols) with Directional Crossfade */}
+        {/* ========================================================= */}
+        {/* Left Editorial Visual Column (5 Cols) with Dual-Pane Glide */}
+        {/* ========================================================= */}
         <div className="relative hidden lg:flex lg:col-span-5 bg-[#0B0B0B] text-white p-10 flex-col justify-between overflow-hidden group">
-          {/* Background Images with Cross-Fade */}
-          <AnimatePresence mode="wait">
-            {mode === "login" ? (
-              <motion.img
-                key="img-login"
-                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=85"
-                alt="Atelier Paris Autumn Runway"
-                initial={{ opacity: 0, scale: 1.05 }}
-                animate={{ opacity: 0.52, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                transition={{ duration: 0.4 }}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            ) : (
-              <motion.img
-                key="img-register"
-                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=85"
-                alt="Atelier Paris Couture Model"
-                initial={{ opacity: 0, scale: 1.05 }}
-                animate={{ opacity: 0.52, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                transition={{ duration: 0.4 }}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            )}
-          </AnimatePresence>
+          {/* Persistent Background Images with Seamless Cross-Fade (Zero Blank Frame) */}
+          <motion.img
+            src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=85"
+            alt="Atelier Paris Couture Model"
+            animate={{
+              opacity: mode === "register" ? 0.52 : 0,
+              scale: mode === "register" ? 1 : 1.05,
+            }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <motion.img
+            src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=85"
+            alt="Atelier Paris Autumn Runway"
+            animate={{
+              opacity: mode === "login" ? 0.52 : 0,
+              scale: mode === "login" ? 1 : 1.05,
+            }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/60 to-black/35" />
 
           {/* Header Brand Bar */}
@@ -317,111 +308,99 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
             </span>
           </div>
 
-          {/* Middle Editorial Narrative & Privileges */}
-          <div className="relative z-10 my-auto pt-8">
-            <AnimatePresence mode="wait" custom={direction}>
-              {mode === "login" ? (
-                <motion.div
-                  key="editorial-login"
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  className="space-y-6"
-                >
-                  <div className="space-y-3">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D6FF00] text-black text-[10px] font-black uppercase tracking-widest shadow-xs">
-                      <Crown className="w-3 h-3" />
-                      <span>Patron Sanctuary • AW26</span>
+          {/* Middle Editorial Narrative & Privileges - Dual-Pane Sliding Track */}
+          <div className="relative z-10 my-auto pt-6 overflow-hidden w-full">
+            <motion.div
+              animate={{ x: mode === "register" ? "0%" : "-50%" }}
+              transition={glideSpring}
+              className="flex w-[200%] items-start"
+            >
+              {/* Left Editorial: Register (Slides in from Left to Right when x goes -50% -> 0%) */}
+              <div className="w-1/2 pr-6 shrink-0 space-y-6">
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D6FF00] text-black text-[10px] font-black uppercase tracking-widest shadow-xs">
+                    <Crown className="w-3 h-3" />
+                    <span>Private Membership Privileges</span>
+                  </div>
+                  <h2 className="text-3xl font-black uppercase tracking-tight leading-[1.08] text-white">
+                    Begin Your Journey With Atelier.
+                  </h2>
+                  <p className="text-xs text-neutral-300 font-normal leading-relaxed">
+                    Register your patron profile for one-click Bakong KHQR checkout, saved runway lookbooks, and private seasonal previews.
+                  </p>
+                </div>
+
+                {/* Highlights */}
+                <div className="space-y-2.5 pt-1">
+                  <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0">
+                      <Gift className="w-4 h-4" />
                     </div>
-                    <h2 className="text-3xl font-black uppercase tracking-tight leading-[1.08] text-white">
-                      Step Inside The Private Salon.
-                    </h2>
-                    <p className="text-xs text-neutral-300 font-normal leading-relaxed">
-                      Access your archived runway lookbooks, expedited NBC Bakong KHQR settlement, and real-time courier milestone updates.
-                    </p>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">20% Welcome Voucher (ATELIER20)</h4>
+                      <p className="text-[11px] text-neutral-300">
+                        Instant discount privilege applicable across the entire catalog
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Highlights */}
-                  <div className="space-y-2.5 pt-1">
-                    <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0 font-black">
-                        <QrCode className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-white">Instant NBC Bakong KHQR</h4>
-                        <p className="text-[11px] text-neutral-300">
-                          Dual USD &amp; KHR checkout with luxury digital vouchers
-                        </p>
-                      </div>
+                  <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-white/15 text-[#D6FF00] flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4" />
                     </div>
-
-                    <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-white/15 text-[#D6FF00] flex items-center justify-center shrink-0">
-                        <Truck className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-white">White-Glove Express Dispatch</h4>
-                        <p className="text-[11px] text-neutral-300">
-                          Complimentary worldwide shipping milestone tracking
-                        </p>
-                      </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Official Tax Receipts &amp; Tracker</h4>
+                      <p className="text-[11px] text-neutral-300">
+                        Permanent access to thermal invoices and 5-stage logistics
+                      </p>
                     </div>
                   </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="editorial-register"
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  className="space-y-6"
-                >
-                  <div className="space-y-3">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D6FF00] text-black text-[10px] font-black uppercase tracking-widest shadow-xs">
-                      <Crown className="w-3 h-3" />
-                      <span>Private Membership Privileges</span>
+                </div>
+              </div>
+
+              {/* Right Editorial: Login (Slides in from Right to Left when x goes 0% -> -50%) */}
+              <div className="w-1/2 pl-6 shrink-0 space-y-6">
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D6FF00] text-black text-[10px] font-black uppercase tracking-widest shadow-xs">
+                    <Crown className="w-3 h-3" />
+                    <span>Patron Sanctuary • AW26</span>
+                  </div>
+                  <h2 className="text-3xl font-black uppercase tracking-tight leading-[1.08] text-white">
+                    Step Inside The Private Salon.
+                  </h2>
+                  <p className="text-xs text-neutral-300 font-normal leading-relaxed">
+                    Access your archived runway lookbooks, expedited NBC Bakong KHQR settlement, and real-time courier milestone updates.
+                  </p>
+                </div>
+
+                {/* Highlights */}
+                <div className="space-y-2.5 pt-1">
+                  <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0 font-black">
+                      <QrCode className="w-4 h-4" />
                     </div>
-                    <h2 className="text-3xl font-black uppercase tracking-tight leading-[1.08] text-white">
-                      Begin Your Journey With Atelier.
-                    </h2>
-                    <p className="text-xs text-neutral-300 font-normal leading-relaxed">
-                      Register your patron profile for one-click Bakong KHQR checkout, saved runway lookbooks, and private seasonal previews.
-                    </p>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Instant NBC Bakong KHQR</h4>
+                      <p className="text-[11px] text-neutral-300">
+                        Dual USD &amp; KHR checkout with luxury digital vouchers
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Highlights */}
-                  <div className="space-y-2.5 pt-1">
-                    <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0">
-                        <Gift className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-white">20% Welcome Voucher (ATELIER20)</h4>
-                        <p className="text-[11px] text-neutral-300">
-                          Instant discount privilege applicable across the entire catalog
-                        </p>
-                      </div>
+                  <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-white/15 text-[#D6FF00] flex items-center justify-center shrink-0">
+                      <Truck className="w-4 h-4" />
                     </div>
-
-                    <div className="p-3 rounded-2xl bg-white/8 backdrop-blur-md border border-white/10 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-white/15 text-[#D6FF00] flex items-center justify-center shrink-0">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-white">Official Tax Receipts &amp; Tracker</h4>
-                        <p className="text-[11px] text-neutral-300">
-                          Permanent access to thermal invoices and 5-stage logistics
-                        </p>
-                      </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">White-Glove Express Dispatch</h4>
+                      <p className="text-[11px] text-neutral-300">
+                        Complimentary worldwide shipping milestone tracking
+                      </p>
                     </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
           {/* Bottom Social Proof */}
@@ -445,7 +424,9 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
           </div>
         </div>
 
-        {/* Right Form Column (7 Cols) with Directional Slide Transitions */}
+        {/* ========================================================= */}
+        {/* Right Form Column (7 Cols) with Dual-Pane Continuous Track */}
+        {/* ========================================================= */}
         <div className="lg:col-span-7 p-6 sm:p-10 md:p-12 flex flex-col justify-between bg-white relative overflow-hidden">
           <div className="space-y-6">
             {/* Top Navigation & Fluid Animated Pill Switcher */}
@@ -515,166 +496,23 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
               </div>
             )}
 
-            {/* Directional Slide Form Content */}
-            <div className="relative overflow-hidden min-h-[360px]">
-              <AnimatePresence mode="wait" custom={direction}>
-                {mode === "login" ? (
-                  /* ================= LOGIN FORM ================= */
-                  <motion.div
-                    key="login-content"
-                    custom={direction}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    className="space-y-4"
-                  >
-                    {/* Header Titles */}
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                        Atelier Client Portal
-                      </span>
-                      <h1 className="text-2xl sm:text-3xl font-black text-black uppercase tracking-tight">
-                        Welcome Back
-                      </h1>
-                      <p className="text-xs text-gray-500 font-normal">
-                        Enter your patron credentials to manage orders, invoices, and saved pieces.
-                      </p>
-                    </div>
-
-                    <form
-                      onSubmit={loginForm.handleSubmit(onLoginSubmit)}
-                      className="space-y-4 pt-1"
-                    >
-                      {/* Email Address */}
-                      <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
-                          Email Address
-                        </label>
-                        <div className="relative group">
-                          <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
-                            <Mail className="w-4 h-4" />
-                          </div>
-                          <input
-                            type="email"
-                            autoComplete="email"
-                            {...loginForm.register("email")}
-                            placeholder="name@atelier.com"
-                            className="w-full pl-13 pr-4 py-3 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
-                          />
-                        </div>
-                        {loginForm.formState.errors.email && (
-                          <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                            {loginForm.formState.errors.email.message}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Password */}
-                      <div>
-                        <div className="flex justify-between items-center mb-1.5">
-                          <label className="text-[11px] font-extrabold uppercase tracking-wider text-gray-700">
-                            Security Passkey
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handleForgotPassword}
-                            className="text-[11px] text-gray-500 hover:text-black font-semibold underline underline-offset-2 transition-colors cursor-pointer"
-                          >
-                            Forgot passkey?
-                          </button>
-                        </div>
-                        <div className="relative group">
-                          <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
-                            <Lock className="w-4 h-4" />
-                          </div>
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            autoComplete="current-password"
-                            {...loginForm.register("password")}
-                            placeholder="Enter your passkey"
-                            className="w-full pl-13 pr-11 py-3 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-black transition-colors cursor-pointer"
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                        {loginForm.formState.errors.password && (
-                          <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                            {loginForm.formState.errors.password.message}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Reset Feedback */}
-                      {resetSent && (
-                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>Password recovery instructions sent. Check your inbox.</span>
-                        </div>
-                      )}
-
-                      {/* Remember Me & Demo Fill */}
-                      <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
-                        <label
-                          htmlFor="rememberMe"
-                          className="flex items-center gap-2 text-xs text-gray-600 font-medium cursor-pointer select-none"
-                        >
-                          <input
-                            type="checkbox"
-                            id="rememberMe"
-                            {...loginForm.register("rememberMe")}
-                            className="w-4 h-4 accent-black rounded cursor-pointer"
-                          />
-                          <span>Remember this device for 30 days</span>
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={handleQuickDemoFillLogin}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold text-xs transition-all cursor-pointer shadow-2xs"
-                          title="Auto-fill Demo Patron Credentials for quick evaluation"
-                        >
-                          <KeyRound className="w-3.5 h-3.5" />
-                          <span>Demo VIP Login</span>
-                        </button>
-                      </div>
-
-                      {/* Submit CTA */}
-                      <button
-                        type="submit"
-                        disabled={loginForm.formState.isSubmitting}
-                        className="w-full mt-2 py-3.5 px-6 rounded-2xl bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:scale-[1.008] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60"
-                      >
-                        <span>
-                          {loginForm.formState.isSubmitting
-                            ? "Authenticating..."
-                            : "Sign In to Atelier"}
-                        </span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                    </form>
-                  </motion.div>
-                ) : (
-                  /* ================= REGISTER FORM ================= */
-                  <motion.div
-                    key="register-content"
-                    custom={direction}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    className="space-y-4"
-                  >
+            {/* Continuous Dual-Pane Track (Zero Blank Frames & Zero White Screen) */}
+            <div className="relative overflow-hidden w-full min-h-[460px]">
+              <motion.div
+                animate={{ x: mode === "register" ? "0%" : "-50%" }}
+                transition={glideSpring}
+                className="flex w-[200%] items-start"
+              >
+                {/* ======================================================== */}
+                {/* Left Pane (Pane 1): Register Form */}
+                {/* Slides in from Left to Right when switching to Register */}
+                {/* ======================================================== */}
+                <div
+                  className={`w-1/2 pr-3 sm:pr-6 shrink-0 transition-opacity duration-200 ${
+                    mode === "register" ? "opacity-100" : "opacity-40 pointer-events-none select-none"
+                  }`}
+                >
+                  <div className="space-y-4">
                     {/* Header Titles */}
                     <div className="space-y-1">
                       <span className="text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
@@ -690,7 +528,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
 
                     <form
                       onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
-                      className="space-y-3.5 pt-1"
+                      className="space-y-3 pt-1"
                     >
                       {/* Full Name & Phone */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -838,7 +676,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
 
                       {/* Security Strength Gauge */}
                       {watchedRegisterPassword.length > 0 && (
-                        <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 space-y-1.5">
+                        <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 space-y-1.5">
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="font-bold text-gray-600 uppercase tracking-wider">
                               Passkey Strength:{" "}
@@ -931,9 +769,156 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </form>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </div>
+                </div>
+
+                {/* ======================================================== */}
+                {/* Right Pane (Pane 2): Login Form */}
+                {/* Slides in from Right to Left when switching to Login */}
+                {/* ======================================================== */}
+                <div
+                  className={`w-1/2 pl-3 sm:pr-2 pl-4 sm:pl-6 shrink-0 transition-opacity duration-200 ${
+                    mode === "login" ? "opacity-100" : "opacity-40 pointer-events-none select-none"
+                  }`}
+                >
+                  <div className="space-y-4">
+                    {/* Header Titles */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                        Atelier Client Portal
+                      </span>
+                      <h1 className="text-2xl sm:text-3xl font-black text-black uppercase tracking-tight">
+                        Welcome Back
+                      </h1>
+                      <p className="text-xs text-gray-500 font-normal">
+                        Enter your patron credentials to manage orders, invoices, and saved pieces.
+                      </p>
+                    </div>
+
+                    <form
+                      onSubmit={loginForm.handleSubmit(onLoginSubmit)}
+                      className="space-y-4 pt-1"
+                    >
+                      {/* Email Address */}
+                      <div>
+                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                          Email Address
+                        </label>
+                        <div className="relative group">
+                          <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
+                            <Mail className="w-4 h-4" />
+                          </div>
+                          <input
+                            type="email"
+                            autoComplete="email"
+                            {...loginForm.register("email")}
+                            placeholder="name@atelier.com"
+                            className="w-full pl-13 pr-4 py-3 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
+                          />
+                        </div>
+                        {loginForm.formState.errors.email && (
+                          <p className="text-[11px] text-rose-600 mt-1 font-semibold">
+                            {loginForm.formState.errors.email.message}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Password */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="text-[11px] font-extrabold uppercase tracking-wider text-gray-700">
+                            Security Passkey
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleForgotPassword}
+                            className="text-[11px] text-gray-500 hover:text-black font-semibold underline underline-offset-2 transition-colors cursor-pointer"
+                          >
+                            Forgot passkey?
+                          </button>
+                        </div>
+                        <div className="relative group">
+                          <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 group-focus-within:bg-black group-focus-within:text-[#D6FF00] flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 transition-all">
+                            <Lock className="w-4 h-4" />
+                          </div>
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            autoComplete="current-password"
+                            {...loginForm.register("password")}
+                            placeholder="Enter your passkey"
+                            className="w-full pl-13 pr-11 py-3 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-black transition-colors cursor-pointer"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                        {loginForm.formState.errors.password && (
+                          <p className="text-[11px] text-rose-600 mt-1 font-semibold">
+                            {loginForm.formState.errors.password.message}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Reset Feedback */}
+                      {resetSent && (
+                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Password recovery instructions sent. Check your inbox.</span>
+                        </div>
+                      )}
+
+                      {/* Remember Me & Demo Fill */}
+                      <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                        <label
+                          htmlFor="rememberMe"
+                          className="flex items-center gap-2 text-xs text-gray-600 font-medium cursor-pointer select-none"
+                        >
+                          <input
+                            type="checkbox"
+                            id="rememberMe"
+                            {...loginForm.register("rememberMe")}
+                            className="w-4 h-4 accent-black rounded cursor-pointer"
+                          />
+                          <span>Remember this device for 30 days</span>
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={handleQuickDemoFillLogin}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold text-xs transition-all cursor-pointer shadow-2xs"
+                          title="Auto-fill Demo Patron Credentials for quick evaluation"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          <span>Demo VIP Login</span>
+                        </button>
+                      </div>
+
+                      {/* Submit CTA */}
+                      <button
+                        type="submit"
+                        disabled={loginForm.formState.isSubmitting}
+                        className="w-full mt-2 py-3.5 px-6 rounded-2xl bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:scale-[1.008] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60"
+                      >
+                        <span>
+                          {loginForm.formState.isSubmitting
+                            ? "Authenticating..."
+                            : "Sign In to Atelier"}
+                        </span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
 
@@ -980,5 +965,3 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
 };
 
 export default Login;
-
-
