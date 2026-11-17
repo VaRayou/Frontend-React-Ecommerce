@@ -37,7 +37,7 @@ const Settings = lazy(() => import("../pages/admin/Settings"));
 
 export const AppRoutes: React.FC = () => {
   return (
-    <Suspense fallback={<Loader message="Loading Atelier Experience..." />}>
+    <Suspense fallback={<Loader message="Loading STEAV Experience..." />}>
       <Routes>
         {/* 1. Customer Storefront (Wrapped in MainLayout) */}
         <Route element={<MainLayout />}>

@@ -110,7 +110,7 @@ export const Profile: React.FC = () => {
           Authentication Required
         </h2>
         <p className="text-xs text-gray-500 mb-6">
-          Please sign in to access your Atelier VIP membership profile and
+          Please sign in to access your STEAV VIP membership profile and
           addresses.
         </p>
         <Link
@@ -139,7 +139,7 @@ export const Profile: React.FC = () => {
     nextTierName: "Silver VIP ($50)",
     threshold: 50,
     progress: Math.min(100, Math.round((totalLifetimeSpend / 50) * 100)),
-    perk: "Welcome access to Atelier seasonal collections & express checkout.",
+    perk: "Welcome access to STEAV seasonal collections & express checkout.",
   };
 
   if (totalLifetimeSpend >= 500) {
@@ -232,7 +232,7 @@ export const Profile: React.FC = () => {
       });
 
       if (error) {
-        if (user?.email === "camille@atelier.com") {
+        if (user?.email === "camille@steav.com" || user?.email === "camille@atelier.com") {
           setPasswordForm({
             currentPassword: "",
             newPassword: "",

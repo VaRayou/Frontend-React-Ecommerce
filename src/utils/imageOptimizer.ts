@@ -1,5 +1,5 @@
 /**
- * ATELIER PARIS — HAUTE COUTURE IMAGE OPTIMIZER
+ * STEAV PARIS — HAUTE COUTURE IMAGE OPTIMIZER
  * Serves optimized images across Unsplash, Supabase Storage, and local static assets.
  */
 

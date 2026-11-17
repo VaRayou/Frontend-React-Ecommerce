@@ -12,12 +12,12 @@ const SETTINGS_CACHE_TTL = 300000; // 5 minutes
 export const useStoreSettings = create(
   persist(
     (set, get) => ({
-      storeName: "ATELIER PARIS — Flagship Studio",
-      storeEmail: "concierge@atelier.com",
+      storeName: "STEAV PARIS — Flagship Studio",
+      storeEmail: "concierge@steav.com",
       storePhone: "+855 96 835 0317",
       storeAddress: "Phnom Penh • Paris • Global Flagship",
       storeTaxId: "VAT REG: KH-8840291-A",
-      receiptFooterMessage: "*** THANK YOU FOR PATRONIZING ATELIER ***",
+      receiptFooterMessage: "*** THANK YOU FOR PATRONIZING STEAV ***",
       currency: "USD ($)",
       orderNotification: true,
       stockAlertNotification: true,
@@ -31,7 +31,7 @@ export const useStoreSettings = create(
       resendSenderEmail: String(env.VITE_RESEND_SENDER_EMAIL || "onboarding@resend.dev").trim(),
       brevoApiKey: String(env.VITE_BREVO_API_KEY || "").trim(),
       brevoSenderEmail: String(env.VITE_BREVO_SENDER_EMAIL || "varayouk@gmail.com").trim(),
-      brevoSenderName: String(env.VITE_BREVO_SENDER_NAME || "ATELIER PARIS").trim(),
+      brevoSenderName: String(env.VITE_BREVO_SENDER_NAME || "STEAV PARIS").trim(),
       emailJsServiceId: String(env.VITE_EMAILJS_SERVICE_ID || "").trim(),
       emailJsTemplateId: String(env.VITE_EMAILJS_TEMPLATE_ID || "").trim(),
       emailJsPublicKey: String(env.VITE_EMAILJS_PUBLIC_KEY || "").trim(),

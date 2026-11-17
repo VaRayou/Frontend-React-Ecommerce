@@ -278,7 +278,7 @@ export const TrackOrder: React.FC = () => {
     {
       step: 1,
       title: "Order Placed",
-      desc: "Logged in Atelier ledger",
+      desc: "Logged in STEAV ledger",
       icon: Package,
     },
     {
@@ -331,9 +331,9 @@ export const TrackOrder: React.FC = () => {
           Track Your Runway Order
         </h1>
         <p className="text-xs sm:text-sm text-gray-500 font-light">
-          Enter your Atelier order reference (e.g.{" "}
+          Enter your STEAV order reference (e.g.{" "}
           <span className="font-mono font-bold text-gray-900">
-            ATL-2026-2592
+            STV-2026-2592
           </span>
           ), customer email, or phone number — or send{" "}
           <code className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-gray-900 font-bold">
@@ -553,7 +553,7 @@ export const TrackOrder: React.FC = () => {
                   </h3>
                   <p className="text-xs text-rose-700 mt-0.5">
                     This order has been cancelled and is no longer scheduled for
-                    courier dispatch. Contact Atelier Concierge if you need
+                    courier dispatch. Contact STEAV Concierge if you need
                     assistance.
                   </p>
                 </div>
@@ -727,7 +727,7 @@ export const TrackOrder: React.FC = () => {
                 </span>
                 <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
                   <Truck className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Atelier Express Dispatch</span>
+                  <span>STEAV Express Dispatch</span>
                 </p>
                 <p className="font-mono text-xs font-bold text-indigo-700">
                   AWB-882-{activeOrderNum.replace(/\D/g, "") || "90218"}

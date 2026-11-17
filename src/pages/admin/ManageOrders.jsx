@@ -94,7 +94,7 @@ export function ManageOrders() {
         escapeCell(o.orderNumber || o.id),
         escapeCell(o.date || (o.createdAt ? o.createdAt.split("T")[0] : "")),
         escapeCell(o.customerName || o.shippingAddress?.fullName || "Patron Client"),
-        escapeCell(o.customerEmail || "patron@atelier.com"),
+        escapeCell(o.customerEmail || "patron@steav.com"),
         escapeCell(o.customerPhone || ""),
         escapeCell(typeof o.shippingAddress === "string" ? o.shippingAddress : (o.shippingAddress?.street || "")),
         escapeCell(o.paymentMethod || "Bakong KHQR"),
@@ -368,7 +368,7 @@ export function ManageOrders() {
             {item.customerName || item.shippingAddress?.fullName || "Patron Client"}
           </div>
           <span className="text-[11px] text-gray-500">
-            {item.customerEmail || "patron@atelier.com"}
+            {item.customerEmail || "patron@steav.com"}
           </span>
         </div>
       ),
@@ -698,7 +698,7 @@ export function ManageOrders() {
                     {item.customerName || item.shippingAddress?.fullName || "Patron Client"}
                   </div>
                   <div className="text-[11px] text-gray-500 truncate">
-                    {item.customerEmail || "patron@atelier.com"}
+                    {item.customerEmail || "patron@steav.com"}
                   </div>
                 </div>
                 <div className="text-right shrink-0">

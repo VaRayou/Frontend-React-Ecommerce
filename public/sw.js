@@ -1,4 +1,4 @@
-// Atelier Studio Progressive Web App (PWA) Service Worker
+// STEAV Studio Progressive Web App (PWA) Service Worker
 const CACHE_NAME = "atelier-cache-v1";
 const ASSETS_TO_CACHE = [
   "/",

@@ -452,7 +452,7 @@ export const Checkout: React.FC = () => {
             Thank You, {placedOrder.shippingAddress.fullName.split(" ")[0]}!
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-2 font-light">
-            Your runway order <strong>#{placedOrder.orderNumber}</strong> has been received by our Paris Atelier.
+            Your runway order <strong>#{placedOrder.orderNumber}</strong> has been received by our STEAV Studio.
             A confirmation dispatch was sent to <strong>{placedOrder.shippingAddress.email}</strong>.
           </p>
         </div>
@@ -635,7 +635,7 @@ export const Checkout: React.FC = () => {
                     <input
                       type="email"
                       {...register("email")}
-                      placeholder="e.g. camille@atelier.com"
+                      placeholder="e.g. camille@steav.com"
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                     />
                     {errors.email && (
@@ -854,7 +854,7 @@ export const Checkout: React.FC = () => {
                           Direct Bank Wire / SWIFT
                         </strong>
                         <span className="text-[11px] text-gray-500">
-                          Transfer directly to Atelier Paris Treasury with IBAN
+                          Transfer directly to STEAV Paris Treasury with IBAN
                         </span>
                       </div>
                     </div>
@@ -1053,7 +1053,7 @@ export const Checkout: React.FC = () => {
                       type="text"
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value)}
-                      placeholder="Promo code (e.g. ATELIER20)"
+                      placeholder="Promo code (e.g. STEAV20)"
                       className="flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:border-black uppercase font-medium placeholder:normal-case"
                     />
                     <button
@@ -1068,10 +1068,10 @@ export const Checkout: React.FC = () => {
                     <span>Try:</span>
                     <button
                       type="button"
-                      onClick={() => setCouponInput("ATELIER20")}
+                      onClick={() => setCouponInput("STEAV20")}
                       className="font-mono font-bold text-black hover:underline cursor-pointer"
                     >
-                      ATELIER20
+                      STEAV20
                     </button>
                     <span>•</span>
                     <button

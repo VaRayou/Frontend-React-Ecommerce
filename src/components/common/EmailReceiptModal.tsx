@@ -38,7 +38,7 @@ export const EmailReceiptModal: React.FC<EmailReceiptModalProps> = ({
     order.customer_email ||
     order.shippingAddress?.email ||
     order.email ||
-    "client@atelier.com";
+    "client@steav.com";
 
   const customerName =
     order.customerName ||
@@ -47,7 +47,7 @@ export const EmailReceiptModal: React.FC<EmailReceiptModalProps> = ({
     order.name ||
     "Patron Client";
 
-  const orderNumber = order.orderNumber || order.order_number || order.id || "ATL-2026-9999";
+  const orderNumber = order.orderNumber || order.order_number || order.id || "STV-2026-9999";
   const items = Array.isArray(order.items) ? order.items : [];
   const subtotal = Number(order.subtotal ?? 0);
   const shippingFee = Number(order.shippingFee ?? order.shipping_fee ?? 0);

@@ -51,7 +51,7 @@ export const normalizeOrder = (order, idx = 0) => {
   }
 
   customerName = customerName || "Patron Client";
-  customerEmail = customerEmail || "patron@atelier.com";
+  customerEmail = customerEmail || "patron@steav.com";
   customerPhone = customerPhone || "";
   shippingAddressStr = shippingAddressStr || "Phnom Penh, Cambodia";
 
@@ -584,7 +584,7 @@ export const orderService = {
         customer_email:
           orderData.customerEmail ||
           orderData.customer_email ||
-          "patron@atelier.com",
+          "patron@steav.com",
         customer_phone:
           orderData.customerPhone ||
           orderData.customer_phone ||
@@ -715,11 +715,11 @@ export const orderService = {
                   prodRow.name ||
                   item.productName ||
                   item.name ||
-                  "Atelier Piece",
+                  "STEAV Piece",
                 remainingStock: nextStock,
                 previousStock: prevStock,
                 productId: rawProdId,
-                brand: prodRow.brand || "ATELIER",
+                brand: prodRow.brand || "STEAV",
                 price: Number(prodRow.price ?? item.price ?? 0),
                 triggerSource: `Order #${orderNumber} Purchase (${orderedQty} sold)`,
               });

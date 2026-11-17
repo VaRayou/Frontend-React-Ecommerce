@@ -133,7 +133,7 @@ const INITIAL_PRODUCT_FORM = {
   name: "",
   subtitle: "",
   category: "Women",
-  brand: "ATELIER",
+  brand: "STEAV",
   price: "",
   originalPrice: "",
   discount: "",
@@ -318,7 +318,7 @@ export function ManageProducts() {
         escapeCell(p.id || p._id),
         escapeCell(p.name),
         escapeCell(p.category || "Apparel"),
-        escapeCell(p.brand || "ATELIER PARIS"),
+        escapeCell(p.brand || "STEAV PARIS"),
         escapeCell(priceUSD.toFixed(2)),
         escapeCell(priceKHR.toLocaleString()),
         escapeCell(stock),
@@ -337,10 +337,10 @@ export function ManageProducts() {
     const today = new Date().toISOString().split("T")[0];
     const filename =
       stockFilter === "low"
-        ? `Atelier_Low_Stock_Restock_Report_${today}.csv`
+        ? `STEAV_Low_Stock_Restock_Report_${today}.csv`
         : stockFilter === "out"
-          ? `Atelier_Out_Of_Stock_Report_${today}.csv`
-          : `Atelier_Catalog_Inventory_Report_${today}.csv`;
+          ? `STEAV_Out_Of_Stock_Report_${today}.csv`
+          : `STEAV_Catalog_Inventory_Report_${today}.csv`;
 
     link.href = url;
     link.setAttribute("download", filename);
@@ -552,7 +552,7 @@ export function ManageProducts() {
       name: product.name || "",
       subtitle: product.subtitle || "",
       category: product.category || categories[0]?.name || "Women",
-      brand: product.brand || "ATELIER",
+      brand: product.brand || "STEAV",
       price: product.price !== undefined ? String(product.price) : "",
       originalPrice:
         product.originalPrice !== undefined
@@ -868,7 +868,7 @@ export function ManageProducts() {
             <div className="text-[11px] text-gray-500 flex items-center gap-1.5 mt-0.5">
               <span>Brand:</span>
               <strong className="text-gray-700 font-semibold">
-                {item.brand || "ATELIER"}
+                {item.brand || "STEAV"}
               </strong>
               {Array.isArray(item.colors) && item.colors.length > 0 && (
                 <div className="flex items-center gap-1 ml-1.5">
@@ -1212,7 +1212,7 @@ export function ManageProducts() {
                       {item.category || "Collection"}
                     </span>
                     <span>•</span>
-                    <span className="truncate">{item.brand || "ATELIER"}</span>
+                    <span className="truncate">{item.brand || "STEAV"}</span>
                   </div>
                 </div>
               </div>
@@ -1437,7 +1437,7 @@ export function ManageProducts() {
                   <div>
                     <Input
                       label="Brand / Label"
-                      placeholder="e.g. ATELIER, Acne, Prada"
+                      placeholder="e.g. STEAV, Acne, Prada"
                       value={formData.brand}
                       onChange={(e) =>
                         setFormData({ ...formData, brand: e.target.value })
@@ -1779,7 +1779,7 @@ export function ManageProducts() {
                 <div className="flex items-center justify-between border-b border-gray-200 pb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-black" />
-                    <span>Craftsmanship &amp; Atelier Details</span>
+                    <span>Craftsmanship &amp; STEAV Details</span>
                   </span>
                   <span className="text-[11px] text-gray-500 font-semibold">
                     Quick View &amp; Accordion
@@ -2329,7 +2329,7 @@ export function ManageProducts() {
                     Brand:
                   </span>
                   <strong className="text-gray-900 font-semibold">
-                    {selectedProduct.brand || "ATELIER"}
+                    {selectedProduct.brand || "STEAV"}
                   </strong>
                 </div>
                 <div>

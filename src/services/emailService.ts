@@ -1,5 +1,5 @@
 /**
- * ATELIER PARIS — HAUTE COUTURE TRANSACTIONAL CUSTOMER EMAIL SERVICE
+ * STEAV PARIS — HAUTE COUTURE TRANSACTIONAL CUSTOMER EMAIL SERVICE
  * Supports Resend, Brevo (Sendinblue), EmailJS, and Mailto Fallback.
  */
 
@@ -86,7 +86,7 @@ export const emailService = {
           <tr>
             <td style="background-color: #111111; padding: 32px 40px; text-align: center;">
               <div style="color: #D6FF00; font-size: 24px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;">
-                ✦ ATELIER PARIS ✦
+                ✦ STEAV PARIS ✦
               </div>
               <div style="color: #A0A0A0; font-size: 10px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px;">
                 Haute Couture • Flagship Studio
@@ -98,13 +98,13 @@ export const emailService = {
           <tr>
             <td style="padding: 36px 40px 24px 40px;">
               <div style="display: inline-block; padding: 4px 12px; background-color: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 999px; color: #166534; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">
-                ✓ Order Confirmed &amp; Dispatched to Atelier
+                ✓ Order Confirmed &amp; Dispatched to STEAV
               </div>
               <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 900; color: #111111; text-transform: uppercase; letter-spacing: 0.5px;">
                 Thank You, ${order.customerName}!
               </h1>
               <p style="margin: 0; font-size: 13px; line-height: 20px; color: #555555;">
-                Your runway acquisition has been accepted by our master craft atelier. Below is your official digital dispatch receipt and logistics voucher.
+                Your runway acquisition has been accepted by our master craft studio. Below is your official digital dispatch receipt and logistics voucher.
               </p>
             </td>
           </tr>
@@ -205,11 +205,11 @@ export const emailService = {
           <tr>
             <td style="background-color: #F8F8F8; border-top: 1px solid #EAEAEA; padding: 24px 40px; text-align: center; font-size: 11px; color: #777777; line-height: 18px;">
               <div style="font-weight: 700; color: #111111; margin-bottom: 4px;">
-                ATELIER PARIS CONCIERGE &amp; CLIENT SERVICES
+                STEAV PARIS CONCIERGE &amp; CLIENT SERVICES
               </div>
-              <div>Phone: +855 96 835 0317 • Email: concierge@atelier.com</div>
+              <div>Phone: +855 96 835 0317 • Email: concierge@steav.com</div>
               <div style="margin-top: 10px; color: #AAAAAA; font-size: 10px;">
-                © ${new Date().getFullYear()} ATELIER PARIS. All Rights Reserved. VAT REG: KH-8840291-A
+                © ${new Date().getFullYear()} STEAV PARIS. All Rights Reserved. VAT REG: KH-8840291-A
               </div>
             </td>
           </tr>
@@ -232,11 +232,11 @@ export const emailService = {
         : "https://youngsteav.site";
     const trackingLink = `${origin}/track?id=${encodeURIComponent(order.orderNumber)}`;
     const subject = encodeURIComponent(
-      `✦ Order Confirmation #${order.orderNumber} — ATELIER PARIS`
+      `✦ Order Confirmation #${order.orderNumber} — STEAV PARIS`
     );
     const body = encodeURIComponent(
       `Dear ${order.customerName},\n\n` +
-        `Thank you for your order with ATELIER PARIS.\n\n` +
+        `Thank you for your order with STEAV PARIS.\n\n` +
         `Order Number: #${order.orderNumber}\n` +
         `Payment Method: ${order.paymentMethod}\n` +
         `Total: $${Number(order.total).toFixed(2)}\n` +
@@ -244,7 +244,7 @@ export const emailService = {
         `Track your runway order in real-time:\n` +
         `${trackingLink}\n\n` +
         `Best regards,\n` +
-        `ATELIER PARIS Concierge`
+        `STEAV PARIS Concierge`
     );
     return `mailto:${order.customerEmail}?subject=${subject}&body=${body}`;
   },
@@ -329,10 +329,10 @@ export const emailService = {
         settings.brevoSenderName ||
         settings.storeName ||
         env.VITE_BREVO_SENDER_NAME ||
-        "ATELIER PARIS"
+        "STEAV PARIS"
       ).trim();
 
-      const subject = `✦ Runway Order Confirmation #${order.orderNumber} | ATELIER PARIS`;
+      const subject = `✦ Runway Order Confirmation #${order.orderNumber} | STEAV PARIS`;
       const brevoPayload = {
         sender: {
           name: brevoSenderName,
@@ -538,9 +538,9 @@ export const emailService = {
             Authorization: `Bearer ${resendKey}`,
           },
           body: JSON.stringify({
-            from: "ATELIER Concierge <onboarding@resend.dev>",
+            from: "STEAV Concierge <onboarding@resend.dev>",
             to: [order.customerEmail],
-            subject: `✦ Runway Order Confirmation #${order.orderNumber} | ATELIER PARIS`,
+            subject: `✦ Runway Order Confirmation #${order.orderNumber} | STEAV PARIS`,
             html: htmlContent,
           }),
         });

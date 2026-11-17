@@ -200,7 +200,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
       showToast(res.message || "Invalid email or password", "error");
       return;
     }
-    showToast(`Welcome back to Atelier Paris, ${data.email.split("@")[0]}!`, "success");
+    showToast(`Welcome back to STEAV Paris, ${data.email.split("@")[0]}!`, "success");
     navigate(from, { replace: true });
   };
 
@@ -215,13 +215,13 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
       showToast(res.message || "Could not create account", "error");
       return;
     }
-    showToast(`Welcome to the House of Atelier Paris, ${data.fullName}!`, "success");
+    showToast(`Welcome to the House of STEAV Paris, ${data.fullName}!`, "success");
     navigate(from, { replace: true });
   };
 
   // Quick Demo Auto-fill
   const handleQuickDemoFillLogin = () => {
-    loginForm.setValue("email", "camille@atelier.com", { shouldValidate: true });
+    loginForm.setValue("email", "camille@steav.com", { shouldValidate: true });
     loginForm.setValue("password", "password123", { shouldValidate: true });
     showToast("VIP Patron credentials loaded — click 'Sign In' to proceed", "info");
   };
@@ -229,12 +229,12 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
   const handleQuickDemoFillRegister = () => {
     const randomSuffix = Math.floor(100 + Math.random() * 900);
     registerForm.setValue("fullName", "Margot Fontaine", { shouldValidate: true });
-    registerForm.setValue("email", `margot${randomSuffix}@atelier.com`, {
+    registerForm.setValue("email", `margot${randomSuffix}@steav.com`, {
       shouldValidate: true,
     });
     registerForm.setValue("phone", "+855 96 835 0317", { shouldValidate: true });
-    registerForm.setValue("password", "AtelierPass2026!", { shouldValidate: true });
-    registerForm.setValue("confirmPassword", "AtelierPass2026!", {
+    registerForm.setValue("password", "SteavPass2026!", { shouldValidate: true });
+    registerForm.setValue("confirmPassword", "SteavPass2026!", {
       shouldValidate: true,
     });
     showToast("Demo Patron credentials generated — ready to register", "info");
@@ -270,7 +270,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
           {/* Persistent Background Images with Seamless Cross-Fade (Zero Blank Frame) */}
           <motion.img
             src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=85"
-            alt="Atelier Paris Couture Model"
+            alt="STEAV Paris Couture Model"
             animate={{
               opacity: mode === "register" ? 0.52 : 0,
               scale: mode === "register" ? 1 : 1.05,
@@ -280,7 +280,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
           />
           <motion.img
             src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=85"
-            alt="Atelier Paris Autumn Runway"
+            alt="STEAV Paris Autumn Runway"
             animate={{
               opacity: mode === "login" ? 0.52 : 0,
               scale: mode === "login" ? 1 : 1.05,
@@ -295,7 +295,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
             <Link to="/" className="inline-flex items-center gap-2.5 group/logo">
               <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-[0_0_8px_#D6FF00]" />
               <span className="font-black tracking-[-0.04em] text-xl text-white">
-                ATELIER
+                STEAV
               </span>
               <span className="text-[10px] font-extrabold tracking-[0.26em] text-neutral-400 uppercase">
                 PARIS
@@ -323,7 +323,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                     <span>Private Membership Privileges</span>
                   </div>
                   <h2 className="text-3xl font-black uppercase tracking-tight leading-[1.08] text-white">
-                    Begin Your Journey With Atelier.
+                    Begin Your Journey With STEAV.
                   </h2>
                   <p className="text-xs text-neutral-300 font-normal leading-relaxed">
                     Register your patron profile for one-click Bakong KHQR checkout, saved runway lookbooks, and private seasonal previews.
@@ -337,7 +337,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                       <Gift className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-white">20% Welcome Voucher (ATELIER20)</h4>
+                      <h4 className="text-xs font-bold text-white">20% Welcome Voucher (STEAV20)</h4>
                       <p className="text-[11px] text-neutral-300">
                         Instant discount privilege applicable across the entire catalog
                       </p>
@@ -588,7 +588,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                             type="email"
                             autoComplete="email"
                             {...registerForm.register("email")}
-                            placeholder="name@atelier.com"
+                            placeholder="name@steav.com"
                             className="w-full pl-13 pr-4 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                           />
                         </div>
@@ -764,7 +764,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                         <span>
                           {registerForm.formState.isSubmitting
                             ? "Creating Patron Account..."
-                            : "Create Atelier Account"}
+                            : "Create STEAV Account"}
                         </span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </button>
@@ -785,7 +785,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                     {/* Header Titles */}
                     <div className="space-y-1">
                       <span className="text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                        Atelier Client Portal
+                        STEAV Client Portal
                       </span>
                       <h1 className="text-2xl sm:text-3xl font-black text-black uppercase tracking-tight">
                         Welcome Back
@@ -812,7 +812,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                             type="email"
                             autoComplete="email"
                             {...loginForm.register("email")}
-                            placeholder="name@atelier.com"
+                            placeholder="name@steav.com"
                             className="w-full pl-13 pr-4 py-3 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                           />
                         </div>
@@ -911,7 +911,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                         <span>
                           {loginForm.formState.isSubmitting
                             ? "Authenticating..."
-                            : "Sign In to Atelier"}
+                            : "Sign In to STEAV"}
                         </span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </button>
@@ -927,7 +927,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
             <div>
               {mode === "login" ? (
                 <>
-                  <span>New to the House of Atelier? </span>
+                  <span>New to the House of STEAV? </span>
                   <button
                     type="button"
                     onClick={() => handleSwitchMode("register")}
@@ -938,7 +938,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                 </>
               ) : (
                 <>
-                  <span>Already an Atelier patron? </span>
+                  <span>Already an STEAV patron? </span>
                   <button
                     type="button"
                     onClick={() => handleSwitchMode("login")}

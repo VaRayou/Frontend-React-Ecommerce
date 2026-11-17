@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const MESSAGES = [
   { text: "COMPLIMENTARY EXPRESS WORLDWIDE SHIPPING ON ORDERS OVER $200", link: "/shop" },
-  { text: "USE CODE 'ATELIER15' AT CHECKOUT FOR 15% OFF YOUR FIRST ORDER", link: "/shop" },
+  { text: "USE CODE 'STEAV15' AT CHECKOUT FOR 15% OFF YOUR FIRST ORDER", link: "/shop" },
   { text: "AUTUMN/WINTER RUNWAY CAPSULE COLLECTION — NOW AVAILABLE", link: "/shop?category=new-arrivals" },
 ];
 

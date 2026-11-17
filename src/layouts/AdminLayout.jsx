@@ -75,6 +75,11 @@ function AdminLayout() {
             role.includes("super_admin") ||
             role.includes("catalog") ||
             role.includes("controller") ||
+            email === "controller@steav.com" ||
+            email === "rayou@steav.com" ||
+            email === "admin@steav.com" ||
+            email === "catalog@steav.com" ||
+            email === "manager@steav.com" ||
             email === "controller@atelier.com" ||
             email === "rayou@atelier.com" ||
             email === "admin@atelier.com" ||
@@ -260,7 +265,7 @@ function AdminLayout() {
           >
             <span>
               &copy; {new Date().getFullYear()}{" "}
-              <strong>ATELIER PARIS STUDIO</strong> • Commercial Management
+              <strong>STEAV PARIS STUDIO</strong> • Commercial Management
               Controller.
             </span>
             <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600 }}>

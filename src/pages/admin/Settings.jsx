@@ -41,14 +41,14 @@ export function Settings() {
 
   const storedBranding = useStoreSettings();
   const [storeSettings, setStoreSettings] = useState({
-    storeName: storedBranding.storeName || "ATELIER PARIS — Flagship Studio",
-    storeEmail: storedBranding.storeEmail || "concierge@atelier.com",
+    storeName: storedBranding.storeName || "STEAV PARIS — Flagship Studio",
+    storeEmail: storedBranding.storeEmail || "concierge@steav.com",
     storePhone: storedBranding.storePhone || "+855 96 835 0317",
     storeAddress: storedBranding.storeAddress || "Phnom Penh • Paris • Global Flagship",
     storeTaxId: storedBranding.storeTaxId || "VAT REG: KH-8840291-A",
     receiptFooterMessage:
       storedBranding.receiptFooterMessage ||
-      "*** THANK YOU FOR PATRONIZING ATELIER ***",
+      "*** THANK YOU FOR PATRONIZING STEAV ***",
     currency: storedBranding.currency || "USD ($)",
     orderNotification: storedBranding.orderNotification ?? true,
     stockAlertNotification: storedBranding.stockAlertNotification ?? true,
@@ -91,7 +91,7 @@ export function Settings() {
       storedBranding.brevoSenderEmail ||
       storedBranding.storeEmail ||
       "varayouk@gmail.com",
-    brevoSenderName: storedBranding.brevoSenderName || "ATELIER PARIS",
+    brevoSenderName: storedBranding.brevoSenderName || "STEAV PARIS",
     emailJsServiceId: storedBranding.emailJsServiceId || "",
     emailJsTemplateId: storedBranding.emailJsTemplateId || "",
     emailJsPublicKey: storedBranding.emailJsPublicKey || "",
@@ -207,7 +207,7 @@ export function Settings() {
               brevoSenderName:
                 data.settings.brevoSenderName ||
                 prev.brevoSenderName ||
-                "ATELIER PARIS",
+                "STEAV PARIS",
               emailJsServiceId: data.settings.emailJsServiceId || "",
               emailJsTemplateId: data.settings.emailJsTemplateId || "",
               emailJsPublicKey: data.settings.emailJsPublicKey || "",
@@ -361,7 +361,7 @@ export function Settings() {
     }));
 
     const testHtml =
-      `🔔 <b>ATELIER TELEGRAM BOT CONNECTED</b>\n` +
+      `🔔 <b>STEAV TELEGRAM BOT CONNECTED</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `<b>Store:</b> ${storeSettings.storeName}\n` +
       `<b>Bakong Merchant:</b> <code>rayou_va@bkrt</code>\n` +
@@ -424,12 +424,12 @@ export function Settings() {
     }));
 
     const res = await telegramService.sendLowStockAlert({
-      productName: "Atelier Cashmere Double-Breasted Coat",
+      productName: "STEAV Cashmere Double-Breasted Coat",
       remainingStock: 2,
       previousStock: 6,
-      productId: "ATL-COAT-092",
+      productId: "STV-COAT-092",
       category: "Women",
-      brand: "ATELIER PARIS",
+      brand: "STEAV PARIS",
       price: 240,
       triggerSource: "Admin Configuration Test Alert",
       forceSend: true,
@@ -558,7 +558,7 @@ export function Settings() {
       const res = await emailService.sendCustomerOrderConfirmation(
         {
           orderNumber: "TEST-" + Math.floor(1000 + Math.random() * 9000),
-          customerName: "Atelier Test Patron",
+          customerName: "STEAV Test Patron",
           customerEmail: targetRecipient,
           shippingAddress: storeSettings.storeAddress || "Preah Norodom Blvd, Phnom Penh, Cambodia",
           items: [
@@ -1271,7 +1271,7 @@ export function Settings() {
                             brevoSenderName: e.target.value,
                           })
                         }
-                        placeholder="ATELIER PARIS"
+                        placeholder="STEAV PARIS"
                       />
                     </div>
                   </div>
@@ -1316,7 +1316,7 @@ export function Settings() {
                     onChange={(e) =>
                       setEmailForm({ ...emailForm, emailJsServiceId: e.target.value })
                     }
-                    placeholder="e.g. service_atelier"
+                    placeholder="e.g. service_steav"
                   />
                   <Input
                     label="EmailJS Template ID"
@@ -1561,7 +1561,7 @@ export function Settings() {
                 {adminUser?.name || "Administrator"}
               </h4>
               <span className="text-xs text-gray-500">
-                {adminUser?.email || "controller@atelier.com"}
+                {adminUser?.email || "controller@steav.com"}
               </span>
             </div>
 
@@ -1653,7 +1653,7 @@ export function Settings() {
           total: 129.6,
           items: [
             {
-              name: "Atelier Runway Tailored Blazer",
+              name: "STEAV Runway Tailored Blazer",
               quantity: 1,
               price: 120,
               size: "M",

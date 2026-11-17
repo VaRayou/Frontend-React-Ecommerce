@@ -440,7 +440,7 @@ export const useCartStore = create<CartState>()(
         }
 
         // 2. Offline fallback validation
-        if (cleanCode === "ATELIER20" || cleanCode === "VIP20") {
+        if (cleanCode === "STEAV20" || cleanCode === "ATELIER20" || cleanCode === "VIP20") {
           const disc = Math.round(subtotal * 0.2);
           set({
             promoCode: cleanCode,
@@ -452,6 +452,18 @@ export const useCartStore = create<CartState>()(
             promoError: null,
           });
           return { success: true, message: "20% discount applied!" };
+        } else if (cleanCode === "STEAV15" || cleanCode === "ATELIER15") {
+          const disc = Math.round(subtotal * 0.15);
+          set({
+            promoCode: cleanCode,
+            discountPercent: 15,
+            discountAmount: disc,
+            discountType: "percentage",
+            minSpend: 40,
+            promoDescription: "15% Off First Order",
+            promoError: null,
+          });
+          return { success: true, message: "15% discount applied!" };
         } else if (cleanCode === "WELCOME10") {
           set({
             promoCode: cleanCode,

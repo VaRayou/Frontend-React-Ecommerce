@@ -107,7 +107,7 @@ export function AdminHeader({ onToggleMobile, onToggleCollapse, isCollapsed }) {
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-black tracking-tight text-gray-900 uppercase">
-              ATELIER STUDIO
+              STEAV STUDIO
             </span>
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] tracking-wider uppercase border border-emerald-200/60">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

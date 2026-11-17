@@ -403,7 +403,7 @@ export const telegramService = {
     });
 
     const itemsSummary =
-      itemLines.length > 0 ? itemLines.join("\n") : "  • Atelier Runway Piece";
+      itemLines.length > 0 ? itemLines.join("\n") : "  • STEAV Runway Piece";
 
     const isPos =
       String(method).toLowerCase().includes("pos") ||
@@ -411,7 +411,7 @@ export const telegramService = {
 
     const headerTitle = isPos
       ? "🧾 <b>NEW POS COUNTER SALE</b>"
-      : "🛍 <b>NEW ATELIER ORDER RECEIVED</b>";
+      : "🛍 <b>NEW STEAV ORDER RECEIVED</b>";
 
     const msg =
       `${headerTitle}\n` +
@@ -579,7 +579,7 @@ export const telegramService = {
       typeof productOrName === "object" && productOrName !== null
         ? productOrName
         : {
-            productName: String(productOrName || "Atelier Piece"),
+            productName: String(productOrName || "STEAV Piece"),
             remainingStock: Number(remainingStockArg ?? 0),
             productId: productIdArg,
           };
@@ -620,7 +620,7 @@ export const telegramService = {
     const categoryLine =
       opts.category || opts.brand
         ? `<b>Collection:</b> ${escapeHtml(opts.category || "Runway")} • ${escapeHtml(
-            opts.brand || "ATELIER"
+            opts.brand || "STEAV"
           )}\n`
         : "";
 
@@ -710,7 +710,7 @@ export const telegramService = {
     });
 
     const msg =
-      `📊 <b>ATELIER INVENTORY HEALTH &amp; LOW-STOCK AUDIT</b>\n` +
+      `📊 <b>STEAV INVENTORY HEALTH &amp; LOW-STOCK AUDIT</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `<b>Total Catalog SKUs:</b> <b>${list.length} pieces</b>\n` +
       `✅ <b>Healthy Stock (&gt;5):</b> ${healthyItems.length} pieces\n` +
@@ -778,7 +778,7 @@ export const telegramService = {
     const replyMarkup = {
       inline_keyboard: [
         [
-          { text: "✉️ Email Client", url: `mailto:${encodeURIComponent(inquiry.email)}?subject=Re:%20${encodeURIComponent(inquiry.subject || "Atelier Inquiry")}` },
+          { text: "✉️ Email Client", url: `mailto:${encodeURIComponent(inquiry.email)}?subject=Re:%20${encodeURIComponent(inquiry.subject || "STEAV Inquiry")}` },
           { text: "🛍️ View Boutique", url: ADMIN_ORDERS_URL },
         ],
       ],
@@ -810,7 +810,7 @@ export const telegramService = {
         : `📞 <b>Contact Phone:</b> <code>${escapeHtml(data.contact)}</code>\n`) +
       `🕒 <b>Requested At:</b> ${formatCambodiaTimestamp()}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `💡 <i>High demand detected. Consider restocking this piece in the Atelier catalog.</i>`;
+      `💡 <i>High demand detected. Consider restocking this piece in the STEAV catalog.</i>`;
 
     const replyMarkup = {
       inline_keyboard: [

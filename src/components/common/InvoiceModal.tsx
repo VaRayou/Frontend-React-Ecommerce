@@ -119,7 +119,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
     order.customerEmail ||
     order.customer_email ||
     order.shippingAddress?.email ||
-    "patron@atelier.com";
+    "patron@steav.com";
   const customerPhone =
     order.customerPhone ||
     order.customer_phone ||
@@ -154,7 +154,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
   const handlePrint = () => {
     const safeCustomer = (customerName || "Patron").replace(/[^a-zA-Z0-9]/g, "_");
-    const docTitle = `Atelier_Invoice_${invoiceNumber}_${safeCustomer}`;
+    const docTitle = `STEAV_Invoice_${invoiceNumber}_${safeCustomer}`;
     const originalTitle = document.title;
     document.title = docTitle;
     setTimeout(() => {
@@ -262,7 +262,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #D6FF00;"></span>
               <span style="font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #D6FF00;">
-                Atelier Tax Invoice &bull; ${invoiceNumber}
+                STEAV Tax Invoice &bull; ${invoiceNumber}
               </span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -286,7 +286,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
           <div class="no-print" style="max-width: 800px; margin: 32px auto 0 auto; padding: 18px 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
             <div>
               <div style="font-weight: 900; font-size: 13px; color: #0f172a; text-transform: uppercase;">
-                Atelier Studio Official Platform
+                STEAV Studio Official Platform
               </div>
               <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
                 Verified Digital Tax Invoice &bull; Preah Norodom Blvd, Phnom Penh
@@ -364,7 +364,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               type="button"
               onClick={handleBackToStore}
               className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#D6FF00] font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all cursor-pointer border border-[#D6FF00]/40"
-              title="Return to Atelier Storefront"
+              title="Return to STEAV Storefront"
             >
               <Store className="w-3.5 h-3.5 text-[#D6FF00]" />
               <span className="hidden xs:inline sm:inline">Back to Store</span>
@@ -408,17 +408,17 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-lg bg-black text-[#D6FF00] flex items-center justify-center font-black text-sm">
-                    A
+                    S
                   </div>
                   <h1 className="text-2xl font-black uppercase tracking-tight text-black">
-                    Atelier Studio
+                    STEAV Studio
                   </h1>
                 </div>
                 <p className="text-xs text-gray-500 font-medium">Haute Couture &amp; Modern Streetwear Platform</p>
                 <div className="text-[11px] text-gray-500 mt-2 space-y-0.5">
                   <p>Preah Norodom Blvd, Daun Penh, Phnom Penh, Cambodia</p>
                   <p>VAT Registration No: K008-9824-771</p>
-                  <p>support@atelier.com | +855 (0) 23 888 999</p>
+                  <p>support@steav.com | +855 (0) 23 888 999</p>
                 </div>
               </div>
 
@@ -590,12 +590,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   <p className="text-xs font-bold text-gray-900 uppercase tracking-wider">
                     Verified Digital Record
                   </p>
-                  <p className="text-[10px] text-gray-400">Atelier Studio E-Commerce Core v2.0</p>
+                  <p className="text-[10px] text-gray-400">STEAV Studio E-Commerce Core v2.0</p>
                 </div>
               </div>
 
               <p className="text-xs font-semibold text-gray-400">
-                Thank you for patronizing Atelier Studio.
+                Thank you for patronizing STEAV Studio.
               </p>
             </div>
 

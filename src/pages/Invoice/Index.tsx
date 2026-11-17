@@ -96,7 +96,7 @@ export const InvoicePage: React.FC = () => {
   const handlePrint = () => {
     const rawNumber = order?.orderNumber || order?.order_number || order?.id || "INV";
     const originalTitle = document.title;
-    document.title = `Atelier_Invoice_${rawNumber}`;
+    document.title = `STEAV_Invoice_${rawNumber}`;
     setTimeout(() => {
       document.title = originalTitle;
     }, 3000);
@@ -146,18 +146,18 @@ export const InvoicePage: React.FC = () => {
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest hover:bg-neutral-800 transition-colors"
         >
           <Store className="w-4 h-4" />
-          <span>← Return to Atelier Store</span>
+          <span>← Return to STEAV Store</span>
         </Link>
       </div>
     );
   }
 
-  const orderNum = order.orderNumber || order.order_number || (order.id ? `ORD-${order.id}` : "ATL-2026-INV");
-  const invoiceNum = `INV-${orderNum.replace(/^ORD-/, "").replace(/^ATL-/, "ATL-")}`;
+  const orderNum = order.orderNumber || order.order_number || (order.id ? `ORD-${order.id}` : "STV-2026-INV");
+  const invoiceNum = `INV-${orderNum.replace(/^ORD-/, "").replace(/^STV-/, "STV-").replace(/^ATL-/, "STV-")}`;
   const invoiceDate = order.date || (order.createdAt ? String(order.createdAt).split("T")[0] : new Date().toISOString().split("T")[0]);
 
   const customerName = order.customerName || order.customer_name || order.shippingAddress?.fullName || "Patron Client";
-  const customerEmail = order.customerEmail || order.customer_email || order.shippingAddress?.email || "patron@atelier.com";
+  const customerEmail = order.customerEmail || order.customer_email || order.shippingAddress?.email || "patron@steav.com";
   const customerPhone = order.customerPhone || order.customer_phone || order.shippingAddress?.phone || "+855 (0) 23 888 999";
 
   let shippingAddressText = "Phnom Penh, Kingdom of Cambodia";
@@ -250,17 +250,17 @@ export const InvoicePage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-9 h-9 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center font-black text-base">
-                  A
+                  S
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black">
-                  Atelier Studio
+                  STEAV Studio
                 </h1>
               </div>
               <p className="text-xs text-gray-500 font-medium">Haute Couture &amp; Modern Streetwear Platform</p>
               <div className="text-[11px] text-gray-500 mt-2 space-y-0.5">
                 <p>Preah Norodom Blvd, Daun Penh, Phnom Penh, Cambodia</p>
                 <p>VAT Registration No: K008-9824-771</p>
-                <p>support@atelier.com | +855 (0) 23 888 999</p>
+                <p>support@steav.com | +855 (0) 23 888 999</p>
               </div>
             </div>
 
@@ -323,7 +323,7 @@ export const InvoicePage: React.FC = () => {
                 {items.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="py-4 text-center text-gray-400">
-                      Standard Atelier Studio Piece • Direct Dispatch
+                      Standard STEAV Studio Piece • Direct Dispatch
                     </td>
                   </tr>
                 ) : (
@@ -396,12 +396,12 @@ export const InvoicePage: React.FC = () => {
                 <p className="text-xs font-bold text-gray-900 uppercase tracking-wider">
                   Verified Digital Record
                 </p>
-                <p className="text-[10px] text-gray-400">Atelier Studio E-Commerce Core v2.0</p>
+                <p className="text-[10px] text-gray-400">STEAV Studio E-Commerce Core v2.0</p>
               </div>
             </div>
 
             <p className="text-xs font-semibold text-gray-400">
-              Thank you for patronizing Atelier Studio.
+              Thank you for patronizing STEAV Studio.
             </p>
           </div>
         </div>
@@ -421,7 +421,7 @@ export const InvoicePage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-black hover:bg-neutral-800 text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all cursor-pointer shadow-md"
           >
             <ShoppingBag className="w-4 h-4" />
-            <span>← Return to Atelier Store</span>
+            <span>← Return to STEAV Store</span>
           </Link>
         </div>
       </div>

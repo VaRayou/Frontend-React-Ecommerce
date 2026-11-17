@@ -59,7 +59,7 @@ export const formatProductForDisplay = (p) => {
     subtitle: p.subtitle || "",
     category: categoryName,
     categoryId: p.category_id || p.categories?.id,
-    brand: p.brand || "ATELIER",
+    brand: p.brand || "STEAV",
     price: Number(p.price || 0),
     originalPrice: Number(p.original_price ?? p.originalPrice ?? p.price ?? 0),
     discount: p.discount || "",
@@ -458,7 +458,7 @@ export const productService = {
         name: productData.name,
         subtitle: productData.subtitle || "",
         category_id: categoryId || null,
-        brand: productData.brand || "ATELIER",
+        brand: productData.brand || "STEAV",
         price: Number(productData.price) || 0,
         original_price:
           Number(productData.originalPrice) || Number(productData.price) || 0,

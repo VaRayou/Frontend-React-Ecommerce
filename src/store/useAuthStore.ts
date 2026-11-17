@@ -18,7 +18,7 @@ interface AuthState {
 const DEMO_USER: User = {
   id: "usr-01",
   name: "Camille Laurent",
-  email: "camille@atelier.com",
+  email: "camille@steav.com",
   phone: "+1 (555) 349-2810",
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
   address: {
@@ -52,6 +52,11 @@ export const useAuthStore = create<AuthState>()(
               (u as any).app_metadata?.role || u.user_metadata?.role || ""
             ).toLowerCase();
             const isAdminEmail = [
+              "controller@steav.com",
+              "admin@steav.com",
+              "rayou@steav.com",
+              "catalog@steav.com",
+              "manager@steav.com",
               "controller@atelier.com",
               "admin@atelier.com",
               "rayou@atelier.com",
@@ -90,10 +95,10 @@ export const useAuthStore = create<AuthState>()(
               } catch {}
             }
 
-            return { success: true, message: "Welcome back to Atelier Studio." };
+            return { success: true, message: "Welcome back to STEAV Studio." };
           }
           if (error) {
-            if (cleanEmail === "camille@atelier.com") {
+            if (cleanEmail === "camille@steav.com" || cleanEmail === "camille@atelier.com") {
               set({ user: DEMO_USER, isAuthenticated: true });
               return { success: true, message: "Welcome back, Camille!" };
             }
@@ -103,8 +108,8 @@ export const useAuthStore = create<AuthState>()(
           console.warn("[Supabase] login notice:", err.message);
         }
 
-        // Demo account fallback if camille@atelier.com is used
-        if (cleanEmail === "camille@atelier.com") {
+        // Demo account fallback if camille@steav.com is used
+        if (cleanEmail === "camille@steav.com" || cleanEmail === "camille@atelier.com") {
           set({ user: DEMO_USER, isAuthenticated: true });
           return { success: true, message: "Welcome back, Camille!" };
         }

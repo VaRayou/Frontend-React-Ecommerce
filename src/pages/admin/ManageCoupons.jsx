@@ -24,8 +24,16 @@ import Loader from "../../components/common/Loader";
 
 const FALLBACK_COUPONS = [
   {
-    code: "ATELIER20",
+    code: "STEAV20",
     description: "20% Off Runway Collection",
+    type: "percentage",
+    value: 20,
+    min_spend: 50,
+    is_active: true,
+  },
+  {
+    code: "ATELIER20",
+    description: "20% Off Legacy Collection",
     type: "percentage",
     value: 20,
     min_spend: 50,
@@ -599,7 +607,7 @@ export function ManageCoupons() {
             onChange={(e) =>
               setFormData({ ...formData, code: e.target.value.toUpperCase() })
             }
-            placeholder="e.g. KHQR25 or ATELIER20"
+            placeholder="e.g. KHQR25 or STEAV20"
             error={errors.code}
             required
           />

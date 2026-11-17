@@ -18,7 +18,7 @@ export const About: React.FC = () => {
           animate={{ scale: 1, opacity: 0.5 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=2000&q=80"
-          alt="Atelier Paris Studio"
+          alt="STEAV Paris Studio"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
@@ -30,7 +30,7 @@ export const About: React.FC = () => {
           className="relative z-10 max-w-4xl mx-auto px-4 text-center space-y-4"
         >
           <span className="px-3.5 py-1 rounded-full bg-[#D6FF00] text-black font-black text-xs uppercase tracking-widest inline-block shadow-sm">
-            The Atelier Manifesto
+            The STEAV Manifesto
           </span>
           <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight">
             Enduring Form. <br />
@@ -60,7 +60,7 @@ export const About: React.FC = () => {
               A Wardrobe Designed As Living Architecture.
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-light">
-              Atelier operates at the intersection of haute couture precision and relaxed streetwear
+              STEAV operates at the intersection of haute couture precision and relaxed streetwear
               proportions. Every dropped shoulder, curved seam, and jetted pocket is drafted through
               months of draping iterations on the human body.
             </p>
@@ -89,7 +89,7 @@ export const About: React.FC = () => {
           >
             <img
               src="https://images.unsplash.com/photo-1544022613-e87ce7526edb?auto=format&fit=crop&w=1200&q=80"
-              alt="Atelier Tailoring"
+              alt="STEAV Tailoring"
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-700 ease-out"
             />
           </motion.div>
@@ -128,7 +128,7 @@ export const About: React.FC = () => {
             {
               icon: Globe,
               title: "Circular Care",
-              text: "Every Atelier piece includes lifetime complimentary repairs at our Paris and New York studios. When garments reach their twilight, we repurpose fibers into new knits.",
+              text: "Every STEAV piece includes lifetime complimentary repairs at our Paris and New York studios. When garments reach their twilight, we repurpose fibers into new knits.",
             },
           ].map((pillar, idx) => (
             <motion.div

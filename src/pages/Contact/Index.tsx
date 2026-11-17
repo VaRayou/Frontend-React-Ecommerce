@@ -16,7 +16,7 @@ import { telegramService } from "../../services/telegramService";
 const FAQS = [
   {
     q: "How does complimentary express worldwide shipping work?",
-    a: "Orders over $200 qualify for complimentary courier delivery via DHL Express. Deliveries typically arrive within 2–4 business days across North America, Europe, and Asia-Pacific. Duties and import taxes are pre-calculated and covered by Atelier.",
+    a: "Orders over $200 qualify for complimentary courier delivery via DHL Express. Deliveries typically arrive within 2–4 business days across North America, Europe, and Asia-Pacific. Duties and import taxes are pre-calculated and covered by STEAV.",
   },
   {
     q: "What is the return and exchange window?",
@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "Can I book a private styling session at your flagship boutiques?",
-    a: "Yes. Private appointments are available in Paris (Place Vendôme) and New York (Madison Avenue). Please select 'Private Styling Appointment' in the contact inquiry dropdown or email concierge@atelier.com.",
+    a: "Yes. Private appointments are available in Paris (Place Vendôme) and New York (Madison Avenue). Please select 'Private Styling Appointment' in the contact inquiry dropdown or email concierge@steav.com.",
   },
   {
     q: "How should I care for virgin wool and cashmere pieces?",
@@ -97,7 +97,7 @@ export const Contact: React.FC = () => {
       setSubmitting(false);
       setFormSent(true);
       showToast(
-        "Your inquiry has been delivered to the Atelier concierge.",
+        "Your inquiry has been delivered to the STEAV concierge.",
         "success",
       );
     }
@@ -201,7 +201,7 @@ export const Contact: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    placeholder="camille@atelier.com"
+                    placeholder="camille@steav.com"
                     required
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black outline-none font-medium"
                   />

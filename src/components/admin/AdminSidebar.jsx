@@ -168,7 +168,7 @@ export function AdminSidebar({
           {!isCollapsed && (
             <div className="sidebar-brand-text">
               <span className="brand-main tracking-tight font-black">
-                ATELIER
+                STEAV
               </span>
               <span className="brand-sub font-mono font-bold tracking-widest text-[#D6FF00]">
                 CONTROLLER

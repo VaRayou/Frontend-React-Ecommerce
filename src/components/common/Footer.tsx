@@ -8,7 +8,7 @@ export const Footer: React.FC = () => {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [promoCode, setPromoCode] = useState("ATELIER20");
+  const [promoCode, setPromoCode] = useState("STEAV20");
   const [copiedCode, setCopiedCode] = useState(false);
   const { showToast } = useUIStore();
 
@@ -18,27 +18,27 @@ export const Footer: React.FC = () => {
     if (!cleanEmail || !cleanEmail.includes("@")) return;
     setSubmitting(true);
     try {
-      const subs = JSON.parse(localStorage.getItem("atelier_newsletter_subscribers") || "[]");
+      const subs = JSON.parse(localStorage.getItem("steav_newsletter_subscribers") || localStorage.getItem("atelier_newsletter_subscribers") || "[]");
       if (!subs.includes(cleanEmail)) {
         subs.push(cleanEmail);
-        localStorage.setItem("atelier_newsletter_subscribers", JSON.stringify(subs.slice(0, 500)));
+        localStorage.setItem("steav_newsletter_subscribers", JSON.stringify(subs.slice(0, 500)));
         telegramService
           .sendMessage(
             `📬 <b>NEW NEWSLETTER SUBSCRIBER</b>\n` +
               `━━━━━━━━━━━━━━━━━━━━━━\n` +
               `✉️ <b>Email:</b> <code>${cleanEmail}</code>\n` +
-              `🏷️ <b>Granted Promo:</b> <code>ATELIER20</code> (20% off)\n` +
+              `🏷️ <b>Granted Promo:</b> <code>STEAV20</code> (20% off)\n` +
               `🕒 <b>Time:</b> ${new Date().toLocaleTimeString()} ICT`
           )
           .catch(() => {});
       }
       setSubscribed(true);
       setEmail("");
-      showToast("Subscribed to The Atelier Dispatch! Use code ATELIER20 for 20% off.", "success");
+      showToast("Subscribed to The STEAV Dispatch! Use code STEAV20 for 20% off.", "success");
     } catch {
       setSubscribed(true);
       setEmail("");
-      showToast("Welcome to The Atelier Dispatch! Use code ATELIER20 for 20% off.", "success");
+      showToast("Welcome to The STEAV Dispatch! Use code STEAV20 for 20% off.", "success");
     } finally {
       setSubmitting(false);
     }
@@ -60,7 +60,7 @@ export const Footer: React.FC = () => {
             <Link to="/" className="inline-flex items-center gap-2 group">
               <span className="w-3 h-3 rounded-full bg-[#D6FF00] inline-block shadow-xs group-hover:scale-125 transition-transform" />
               <span className="font-extrabold tracking-[-0.05em] text-2xl sm:text-3xl text-white">
-                ATELIER
+                STEAV
               </span>
             </Link>
             <p className="text-gray-400 text-xs sm:text-sm leading-relaxed max-w-md">
@@ -77,7 +77,7 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-7 lg:pl-8 flex flex-col justify-center">
             <div className="max-w-md ml-auto w-full space-y-3">
               <span className="text-[11px] font-bold tracking-widest text-[#D6FF00] uppercase block">
-                The Atelier Dispatch
+                The STEAV Dispatch
               </span>
               <h4 className="text-lg font-bold text-white tracking-tight">
                 Receive private capsule drops and editorial invitations.
@@ -203,7 +203,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5 text-gray-400">
               <li>
                 <Link to="/about" className="hover:text-white transition-colors">
-                  Atelier Manifesto
+                  STEAV Manifesto
                 </Link>
               </li>
               <li>
@@ -254,7 +254,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar: Copyright, Socials, Payments */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <div className="flex items-center gap-6">
-            <span>&copy; {new Date().getFullYear()} ATELIER PARIS S.A. ALL RIGHTS RESERVED.</span>
+            <span>&copy; {new Date().getFullYear()} STEAV PARIS S.A. ALL RIGHTS RESERVED.</span>
             <div className="hidden md:flex items-center gap-4 text-gray-400">
               <Link to="/about" className="hover:text-white transition-colors">Terms of Service</Link>
               <span>•</span>

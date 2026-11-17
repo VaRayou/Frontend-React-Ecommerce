@@ -480,7 +480,7 @@ export function ManageUsers() {
           <Input
             label="Email Address"
             type="email"
-            placeholder="camille@atelier.com"
+            placeholder="camille@steav.com"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             error={errors.email}

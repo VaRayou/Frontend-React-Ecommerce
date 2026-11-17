@@ -332,8 +332,8 @@ export const ProductDetails: React.FC = () => {
     if (!product) return;
     const url = window.location.href;
     const shareData = {
-      title: `${product.name} — ATELIER PARIS`,
-      text: `Discover the ${product.name} (${formatPrice(product.price)}) from the ATELIER PARIS Runway Collection.`,
+      title: `${product.name} — STEAV PARIS`,
+      text: `Discover the ${product.name} (${formatPrice(product.price)}) from the STEAV PARIS Runway Collection.`,
       url,
     };
 
@@ -362,7 +362,7 @@ export const ProductDetails: React.FC = () => {
   // Dynamic OpenGraph Metadata & Document Title
   useEffect(() => {
     if (!product) return;
-    document.title = `${product.name} — ${formatPrice(product.price)} | ATELIER PARIS`;
+    document.title = `${product.name} — ${formatPrice(product.price)} | STEAV PARIS`;
 
     const setMeta = (property: string, content: string) => {
       let tag = document.querySelector(`meta[property='${property}']`);
@@ -375,10 +375,10 @@ export const ProductDetails: React.FC = () => {
     };
 
     const mainImg = product.image || (product.images && product.images[0]) || "";
-    setMeta("og:title", `${product.name} | ATELIER PARIS`);
+    setMeta("og:title", `${product.name} | STEAV PARIS`);
     setMeta(
       "og:description",
-      product.description || "Exclusive luxury haute couture piece crafted by Atelier Paris."
+      product.description || "Exclusive luxury haute couture piece crafted by STEAV Paris."
     );
     setMeta("og:image", mainImg);
     setMeta("og:url", window.location.href);
@@ -387,7 +387,7 @@ export const ProductDetails: React.FC = () => {
     setMeta("product:price:currency", "USD");
 
     return () => {
-      document.title = "ATELIER — Luxury Fashion & Modern Lifestyle";
+      document.title = "STEAV — Luxury Fashion & Modern Lifestyle";
     };
   }, [product, formatPrice]);
 
@@ -441,7 +441,7 @@ export const ProductDetails: React.FC = () => {
             product_id: product.id,
             user_id: session?.user?.id || user?.id,
             author_name: newReviewAuthor.trim(),
-            author_email: user?.email || "patron@atelier.com",
+            author_email: user?.email || "patron@steav.com",
             rating: newReviewRating,
             comment: newReviewComment.trim(),
             title: "Verified Patron Review",
@@ -753,7 +753,7 @@ export const ProductDetails: React.FC = () => {
               <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs font-bold text-rose-600 shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-rose-500" />
                 <span>
-                  Out of Stock — Currently Unavailable in Atelier Vault
+                  Out of Stock — Currently Unavailable in STEAV Vault
                 </span>
               </div>
             ) : stockCount <= 3 ? (
@@ -777,7 +777,7 @@ export const ProductDetails: React.FC = () => {
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>
                   In Stock ({stockCount} available) — Ships within 24 hours from
-                  Flagship Atelier
+                  Flagship STEAV Studio
                 </span>
               </div>
             )}
@@ -972,7 +972,7 @@ export const ProductDetails: React.FC = () => {
                     🔔 Priority Restock Alert
                   </span>
                   <span className="text-[10px] text-neutral-400 font-semibold">
-                    Paris Atelier Vault
+                    Paris STEAV Vault
                   </span>
                 </div>
                 {waitlistJoined ? (
@@ -1072,7 +1072,7 @@ export const ProductDetails: React.FC = () => {
               </button>
               {activeAccordion === "craft" && (
                 <div className="px-4 pb-4 text-gray-600 space-y-2 border-t border-gray-50 pt-3 text-xs leading-relaxed">
-                  Every Atelier garment is shaped in family-owned workshops in
+                  Every STEAV garment is shaped in family-owned workshops in
                   Biella and Florence. All fabrics carry OEKO-TEX Standard 100
                   non-toxic certifications and traceability back to source.
                 </div>
@@ -1503,7 +1503,7 @@ export const ProductDetails: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Ruler className="w-4 h-4 text-[#D6FF00]" />
                 <span className="text-xs font-black uppercase tracking-widest text-[#D6FF00]">
-                  Atelier Paris • Size Guide
+                  STEAV Paris • Size Guide
                 </span>
               </div>
               <button
@@ -1518,7 +1518,7 @@ export const ProductDetails: React.FC = () => {
 
             <div className="p-5 sm:p-6 overflow-y-auto overscroll-contain space-y-4 text-xs text-gray-600">
               <p className="font-medium text-gray-700 leading-relaxed">
-                All <strong className="text-black">ATELIER PARIS</strong>{" "}
+                All <strong className="text-black">STEAV PARIS</strong>{" "}
                 garments are tailored to standard European luxury proportions.
                 Take your normal size for a signature silhouette, or size up for
                 a relaxed fit.

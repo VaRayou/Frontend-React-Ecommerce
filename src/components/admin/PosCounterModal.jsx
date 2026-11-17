@@ -220,12 +220,12 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
     try {
       const orderNum =
         pendingOrderNumber ||
-        `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+        `STV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const created = await orderService.createOrder({
         orderNumber: orderNum,
         customerName: customerName.trim() || "Walk-In Patron",
-        customerEmail: "pos-counter@atelier.com",
+        customerEmail: "pos-counter@steav.com",
         customerPhone: customerPhone.trim(),
         shippingAddress: "In-Store POS Counter Pickup • Phnom Penh",
         items: cart,
@@ -268,7 +268,7 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
     // Bakong KHQR flow
     setIsSubmitting(true);
     try {
-      const orderNum = `ATL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const orderNum = `STV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       setPendingOrderNumber(orderNum);
       const res = await khqrService.createPayment({
         amount: total,
@@ -276,7 +276,7 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
         orderNumber: orderNum,
         customerName: customerName.trim() || "Walk-In Patron",
         customerPhone: customerPhone.trim(),
-        customerEmail: "pos-counter@atelier.com",
+        customerEmail: "pos-counter@steav.com",
       });
       setKhqrData(res);
       setIsKhqrOpen(true);
@@ -308,7 +308,7 @@ export function PosCounterModal({ isOpen, onClose, onOrderCompleted }) {
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm sm:text-lg font-black tracking-tight text-white truncate">
-                  ATELIER POS COUNTER TERMINAL
+                  STEAV POS COUNTER TERMINAL
                 </h2>
                 <span className="text-[10px] sm:text-[11px] text-neutral-400 font-mono block truncate">
                   Instant In-Store Checkout • Auto Stock &amp; Thermal Receipt

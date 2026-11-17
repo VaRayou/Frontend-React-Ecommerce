@@ -76,7 +76,7 @@ export const Navbar: React.FC = () => {
           <Link to="/" className="flex items-center gap-1.5 group">
             <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-xs group-hover:scale-125 transition-transform" />
             <span className="font-extrabold tracking-[-0.05em] text-lg sm:text-2xl text-black">
-              ATELIER
+              STEAV
             </span>
             <span className="text-[9px] font-bold tracking-widest text-gray-400 uppercase hidden sm:inline ml-1">
               PARIS
@@ -210,6 +210,8 @@ export const Navbar: React.FC = () => {
                     </Link>
                     {((user as any).role === "admin" ||
                       (user as any).isAdmin === true ||
+                      user.email.toLowerCase() === "controller@steav.com" ||
+                      user.email.toLowerCase() === "admin@steav.com" ||
                       user.email.toLowerCase() === "controller@atelier.com" ||
                       user.email.toLowerCase() === "admin@atelier.com") && (
                       <Link
@@ -239,7 +241,7 @@ export const Navbar: React.FC = () => {
                 ) : (
                   <>
                     <div className="p-3 border-b border-gray-100 mb-1">
-                      <p className="font-bold text-black text-sm">Welcome to Atelier</p>
+                      <p className="font-bold text-black text-sm">Welcome to STEAV</p>
                       <p className="text-[11px] text-gray-500">Sign in to view orders & wishlist</p>
                     </div>
                     <Link
@@ -286,6 +288,9 @@ export const Navbar: React.FC = () => {
           {(isAdminAuthenticated ||
             (user as any)?.role === "admin" ||
             (user as any)?.isAdmin === true ||
+            user?.email?.toLowerCase() === "controller@steav.com" ||
+            user?.email?.toLowerCase() === "admin@steav.com" ||
+            user?.email?.toLowerCase() === "rayou@steav.com" ||
             user?.email?.toLowerCase() === "controller@atelier.com" ||
             user?.email?.toLowerCase() === "admin@atelier.com" ||
             user?.email?.toLowerCase() === "rayou@atelier.com") && (

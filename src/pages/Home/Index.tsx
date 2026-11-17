@@ -79,7 +79,7 @@ const MARQUEE_ITEMS = [
   "INSTANT NBC BAKONG KHQR SETTLEMENT",
   "COMPLIMENTARY WHITE-GLOVE EXPRESS COURIER",
   "100% TRACEABLE ITALIAN VIRGIN WOOL & SILK",
-  "USE CODE ATELIER20 FOR 20% OFF YOUR FIRST ORDER",
+  "USE CODE STEAV20 FOR 20% OFF YOUR FIRST ORDER",
 ];
 
 export const Home: React.FC = () => {
@@ -818,7 +818,7 @@ export const Home: React.FC = () => {
       </motion.section>
 
       {/* =====================================================================
-          7. ATELIER HOUSE PHILOSOPHY & ARCHITECTURAL METRICS
+          7. STEAV HOUSE PHILOSOPHY & ARCHITECTURAL METRICS
           ===================================================================== */}
       <motion.section
         initial={{ opacity: 0, y: 32 }}

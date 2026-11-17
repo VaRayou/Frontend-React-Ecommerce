@@ -277,7 +277,7 @@ function normalizeInvoiceData(raw, storeBranding = {}) {
     formattedDate = String(rawDate);
   }
 
-  const storeName = raw.storeName || storeBranding.storeName || "ATELIER STUDIO";
+  const storeName = raw.storeName || storeBranding.storeName || "STEAV STUDIO";
   const storeAddress =
     raw.storeAddress || storeBranding.storeAddress || "Preah Norodom Blvd, Phnom Penh, KH";
   const storePhone = raw.storePhone || storeBranding.storePhone || "+855 (0) 23 888 999";
@@ -285,7 +285,7 @@ function normalizeInvoiceData(raw, storeBranding = {}) {
   const receiptFooterMessage =
     raw.receiptFooterMessage ||
     storeBranding.receiptFooterMessage ||
-    "*** THANK YOU FOR PATRONIZING ATELIER ***";
+    "*** THANK YOU FOR PATRONIZING STEAV ***";
 
   const cashier = raw.cashier || raw.terminal || "POS-01 / ONLINE";
   const customerName =
@@ -450,7 +450,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
 
   const handleSystemPrint = () => {
     const originalTitle = document.title;
-    const receiptDocTitle = `Atelier_POS_Receipt_${normalized?.invoiceNumber || "Receipt"}`;
+    const receiptDocTitle = `STEAV_POS_Receipt_${normalized?.invoiceNumber || "Receipt"}`;
     document.title = receiptDocTitle;
     setTimeout(() => {
       document.title = originalTitle;
@@ -556,7 +556,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
           <!-- Screen-only Bottom Return Link -->
           <div class="no-print" style="margin-top: 16px; padding: 12px; text-align: center; border-top: 1px dashed #cbd5e1; font-family: -apple-system, sans-serif;">
             <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="receipt-return-link" style="padding: 8px 16px; font-size: 12px;">
-              &larr; Return to Atelier Store
+              &larr; Return to STEAV Store
             </a>
           </div>
 
@@ -618,7 +618,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
                     window.location.href = "/shop";
                   }}
                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-[#D6FF00] border border-[#D6FF00]/40 text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer"
-                  title="Return to Atelier Store"
+                  title="Return to STEAV Store"
                 >
                   <Store className="w-3.5 h-3.5 text-[#D6FF00]" />
                   <span className="hidden xs:inline">Back to Store</span>
@@ -652,7 +652,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
                   </span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-                  ATELIER-POS V2
+                  STEAV-POS V2
                 </span>
               </div>
 
@@ -909,7 +909,7 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
                   window.location.href = "/shop";
                 }}
                 className="py-3 px-4 rounded-2xl bg-black hover:bg-neutral-900 text-[#D6FF00] border border-[#D6FF00]/40 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-transform active:scale-95 cursor-pointer"
-                title="Return to Atelier Storefront"
+                title="Return to STEAV Storefront"
               >
                 <Store className="w-3.5 h-3.5 text-[#D6FF00]" />
                 <span>Back to Store</span>

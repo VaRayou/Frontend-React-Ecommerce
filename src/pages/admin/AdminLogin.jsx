@@ -71,7 +71,7 @@ export const AdminLogin = () => {
           <Link to="/" className="inline-flex items-center gap-2 group mb-2">
             <span className="w-3 h-3 rounded-full bg-[#D6FF00] inline-block shadow-xs group-hover:scale-125 transition-transform" />
             <span className="font-extrabold tracking-[-0.05em] text-2xl text-white">
-              ATELIER
+              STEAV
             </span>
             <span className="text-[10px] font-bold tracking-widest text-[#D6FF00] uppercase bg-[#D6FF00]/10 px-2 py-0.5 rounded-full border border-[#D6FF00]/30 ml-1">
               OFFICIAL CONTROLLER
@@ -208,7 +208,7 @@ export const AdminLogin = () => {
         {/* Security Disclosures */}
         <div className="text-center text-[11px] text-gray-500 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-[#D6FF00]" />
-          <span>Atelier Secure Administrative Gateway • Zero Demo Bypasses • RBAC Enforced</span>
+          <span>STEAV Secure Administrative Gateway • Zero Demo Bypasses • RBAC Enforced</span>
         </div>
       </div>
     </div>

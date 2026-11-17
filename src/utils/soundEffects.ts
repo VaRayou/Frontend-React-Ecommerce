@@ -1,5 +1,5 @@
 /**
- * Zero-dependency Web Audio API sound synthesizer for Atelier POS & Admin.
+ * Zero-dependency Web Audio API sound synthesizer for STEAV POS & Admin.
  * Produces crisp, professional tones without external audio assets or network latency.
  */
 class SoundEffects {

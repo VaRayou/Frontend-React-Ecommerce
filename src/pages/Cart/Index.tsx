@@ -339,7 +339,7 @@ export const Cart: React.FC = () => {
                       type="text"
                       value={inputCode}
                       onChange={(e) => setInputCode(e.target.value)}
-                      placeholder="Promo Code (try ATELIER15)"
+                      placeholder="Promo Code (try STEAV15)"
                       className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-xs text-black placeholder:text-gray-400 focus:border-black outline-none"
                     />
                     <button

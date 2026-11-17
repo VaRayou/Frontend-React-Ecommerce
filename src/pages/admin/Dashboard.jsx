@@ -306,7 +306,7 @@ function Dashboard() {
               Studio Controller Dashboard
             </h1>
             <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-gray-500 mt-0.5 truncate">
-              <span className="font-bold text-gray-900">ATELIER STUDIO</span>
+              <span className="font-bold text-gray-900">STEAV STUDIO</span>
               <span>/</span>
               <span className="truncate">Controller Overview</span>
             </div>
@@ -495,7 +495,7 @@ function Dashboard() {
               </div>
             </div>
             <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 bg-gray-100 px-2 sm:px-2.5 py-1 rounded-lg shrink-0 ml-2">
-              Atelier Vault
+              STEAV Vault
             </span>
           </div>
 

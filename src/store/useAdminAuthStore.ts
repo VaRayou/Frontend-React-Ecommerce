@@ -23,6 +23,11 @@ interface AdminAuthState {
 }
 
 const AUTHORIZED_ADMIN_EMAILS = new Set([
+  "controller@steav.com",
+  "admin@steav.com",
+  "rayou@steav.com",
+  "catalog@steav.com",
+  "manager@steav.com",
   "controller@atelier.com",
   "admin@atelier.com",
   "rayou@atelier.com",
@@ -84,18 +89,23 @@ export const useAdminAuthStore = create<AdminAuthState>()(
             let resolvedRole: AdminUser["role"] = "Store Controller";
             if (
               rawRole.includes("super") ||
+              cleanEmail === "controller@steav.com" ||
+              cleanEmail === "rayou@steav.com" ||
               cleanEmail === "controller@atelier.com" ||
               cleanEmail === "rayou@atelier.com"
             ) {
               resolvedRole = "Super Administrator";
             } else if (
               rawRole.includes("catalog") ||
+              cleanEmail === "catalog@steav.com" ||
+              cleanEmail === "manager@steav.com" ||
               cleanEmail === "catalog@atelier.com" ||
               cleanEmail === "manager@atelier.com"
             ) {
               resolvedRole = "Catalog Manager";
             } else if (
               rawRole.includes("controller") ||
+              cleanEmail === "admin@steav.com" ||
               cleanEmail === "admin@atelier.com"
             ) {
               resolvedRole = "Store Controller";
