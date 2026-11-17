@@ -20,6 +20,7 @@ import {
   Navigation,
   Loader2,
   Printer,
+  Mail,
 } from "lucide-react";
 import { useCartStore } from "../../store/useCartStore";
 import { useStoreSettings } from "../../store/useStoreSettings";
@@ -29,6 +30,7 @@ import { orderService } from "../../services/orderService";
 import { KhqrPaymentModal } from "../../components/checkout/KhqrPaymentModal";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
 import { InvoiceModal } from "../../components/common/InvoiceModal";
+import { EmailReceiptModal } from "../../components/common/EmailReceiptModal";
 import { khqrService, KhqrCreateResponse } from "../../services/khqrService";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 import { emailService } from "../../services/emailService";
@@ -63,6 +65,7 @@ export const Checkout: React.FC = () => {
   const [placedOrder, setPlacedOrder] = useState<any | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState<boolean>(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState<boolean>(false);
 
   const {
     items,
@@ -496,6 +499,14 @@ export const Checkout: React.FC = () => {
             <Printer className="w-4 h-4 text-[#D6FF00]" />
             <span>Print Tax Invoice</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setIsEmailModalOpen(true)}
+            className="px-6 py-3.5 rounded-full bg-neutral-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-all inline-flex items-center justify-center gap-2 cursor-pointer border border-neutral-700"
+          >
+            <Mail className="w-4 h-4 text-[#D6FF00]" />
+            <span>Email Receipt</span>
+          </button>
           <Link
             to="/orders"
             className="px-6 py-3.5 rounded-full bg-neutral-900 text-white font-black text-xs uppercase tracking-widest shadow-md hover:scale-105 transition-all inline-flex items-center justify-center"
@@ -521,6 +532,13 @@ export const Checkout: React.FC = () => {
         <InvoiceModal
           isOpen={isInvoiceModalOpen}
           onClose={() => setIsInvoiceModalOpen(false)}
+          order={placedOrder}
+        />
+
+        {/* Digital Email Receipt Modal */}
+        <EmailReceiptModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
           order={placedOrder}
         />
       </motion.div>

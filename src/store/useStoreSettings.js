@@ -27,6 +27,12 @@ export const useStoreSettings = create(
       freeShippingThreshold: 200,
       shippingCarrierName: "DHL Express Courier",
       enableFreeShipping: true,
+      resendApiKey: String(env.VITE_RESEND_API_KEY || "").trim(),
+      brevoApiKey: String(env.VITE_BREVO_API_KEY || "").trim(),
+      emailJsServiceId: String(env.VITE_EMAILJS_SERVICE_ID || "").trim(),
+      emailJsTemplateId: String(env.VITE_EMAILJS_TEMPLATE_ID || "").trim(),
+      emailJsPublicKey: String(env.VITE_EMAILJS_PUBLIC_KEY || "").trim(),
+      customerEmailNotification: true,
 
       updateStoreSettings: (updates) =>
         set((state) => ({

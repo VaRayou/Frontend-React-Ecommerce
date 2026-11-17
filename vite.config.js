@@ -39,6 +39,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/resend-api': {
+        target: 'https://api.resend.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/resend-api/, ''),
+      },
       '/bakong-api': {
         target: 'https://api-bakong.nbc.gov.kh',
         changeOrigin: true,

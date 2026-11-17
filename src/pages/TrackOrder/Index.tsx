@@ -19,10 +19,12 @@ import {
   Send,
   XCircle,
   Sparkles,
+  Mail,
 } from "lucide-react";
 import { orderService } from "../../services/orderService";
 import { InvoiceModal } from "../../components/common/InvoiceModal";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
+import { EmailReceiptModal } from "../../components/common/EmailReceiptModal";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { supabase } from "../../services/supabase";
@@ -50,6 +52,7 @@ export const TrackOrder: React.FC = () => {
   const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [isInvoiceOpen, setIsInvoiceOpen] = useState<boolean>(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState<boolean>(false);
+  const [isEmailOpen, setIsEmailOpen] = useState<boolean>(false);
   const { formatPrice } = useCurrencyStore();
 
   const copyText = (text: string, label: string) => {
@@ -528,6 +531,15 @@ export const TrackOrder: React.FC = () => {
                   <Printer className="w-3.5 h-3.5" />
                   <span>Tax Invoice</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEmailOpen(true)}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs border border-neutral-700"
+                >
+                  <Mail className="w-3.5 h-3.5 text-[#D6FF00]" />
+                  <span>Email Receipt</span>
+                </button>
               </div>
             </div>
 
@@ -788,6 +800,13 @@ export const TrackOrder: React.FC = () => {
         isOpen={isReceiptOpen}
         onClose={() => setIsReceiptOpen(false)}
         invoiceData={order}
+      />
+
+      {/* Digital Email Receipt Modal */}
+      <EmailReceiptModal
+        isOpen={isEmailOpen}
+        onClose={() => setIsEmailOpen(false)}
+        order={order}
       />
     </motion.div>
   );

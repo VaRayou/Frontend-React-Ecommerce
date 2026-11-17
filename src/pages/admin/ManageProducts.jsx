@@ -75,7 +75,8 @@ const PRESET_IMAGES = [
   },
 ];
 
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80";
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80";
 
 const LUXURY_PALETTES = [
   { name: "Obsidian Black", hex: "#111111" },
@@ -96,12 +97,36 @@ const SIZE_PRESETS = {
 };
 
 const BADGE_OPTIONS = [
-  { value: "NONE", label: "No Badge", pill: "bg-gray-100 text-gray-700 hover:bg-gray-200" },
-  { value: "HOT", label: "⚡ HOT", pill: "bg-[#D6FF00] text-black font-black hover:bg-[#c6ef00]" },
-  { value: "NEW", label: "✨ NEW", pill: "bg-black text-[#D6FF00] font-black hover:bg-neutral-800" },
-  { value: "SALE", label: "🏷️ SALE", pill: "bg-rose-500 text-white font-black hover:bg-rose-600" },
-  { value: "LIMITED", label: "👑 LIMITED", pill: "bg-amber-400 text-black font-black hover:bg-amber-500" },
-  { value: "BEST SELLER", label: "⭐ BEST SELLER", pill: "bg-neutral-900 text-white font-black hover:bg-black" },
+  {
+    value: "NONE",
+    label: "No Badge",
+    pill: "bg-gray-100 text-gray-700 hover:bg-gray-200",
+  },
+  {
+    value: "HOT",
+    label: "⚡ HOT",
+    pill: "bg-[#D6FF00] text-black font-black hover:bg-[#c6ef00]",
+  },
+  {
+    value: "NEW",
+    label: "✨ NEW",
+    pill: "bg-black text-[#D6FF00] font-black hover:bg-neutral-800",
+  },
+  {
+    value: "SALE",
+    label: "🏷️ SALE",
+    pill: "bg-rose-500 text-white font-black hover:bg-rose-600",
+  },
+  {
+    value: "LIMITED",
+    label: "👑 LIMITED",
+    pill: "bg-amber-400 text-black font-black hover:bg-amber-500",
+  },
+  {
+    value: "BEST SELLER",
+    label: "⭐ BEST SELLER",
+    pill: "bg-neutral-900 text-white font-black hover:bg-black",
+  },
 ];
 
 const INITIAL_PRODUCT_FORM = {
@@ -171,11 +196,11 @@ export function ManageProducts() {
       const res = await telegramService.sendInventoryAuditReport(products);
       if (res.ok) {
         showNotification(
-          `Inventory Audit sent to Telegram (${res.lowCount} Low Stock, ${res.outCount} Out of Stock)`
+          `Inventory Audit sent to Telegram (${res.lowCount} Low Stock, ${res.outCount} Out of Stock)`,
         );
       } else {
         showNotification(
-          `Telegram Notice: ${res.description || "Check Bot Token & Chat ID in Settings"}`
+          `Telegram Notice: ${res.description || "Check Bot Token & Chat ID in Settings"}`,
         );
       }
     } finally {
@@ -198,7 +223,9 @@ export function ManageProducts() {
     if (res.ok) {
       showNotification(`Low-stock alert for "${item.name}" sent to Telegram!`);
     } else {
-      showNotification(`Telegram Error: ${res.description || "Check Settings"}`);
+      showNotification(
+        `Telegram Error: ${res.description || "Check Settings"}`,
+      );
     }
   };
 
@@ -218,11 +245,13 @@ export function ManageProducts() {
       showNotification(
         nextStock > 0
           ? `Restocked "${item.name}" → ${nextStock} in stock (${nextStatus})`
-          : `"${item.name}" marked Out of Stock (0 units)`
+          : `"${item.name}" marked Out of Stock (0 units)`,
       );
       await loadData();
     } catch (err) {
-      alert("Quick restock failed: " + (err.response?.data?.error || err.message));
+      alert(
+        "Quick restock failed: " + (err.response?.data?.error || err.message),
+      );
     } finally {
       setRestockingId(null);
     }
@@ -242,7 +271,8 @@ export function ManageProducts() {
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const s = Number(p.stock ?? p.quantity ?? 0);
-      const isOut = s <= 0 || String(p.status || "").toLowerCase() === "out of stock";
+      const isOut =
+        s <= 0 || String(p.status || "").toLowerCase() === "out of stock";
       if (stockFilter === "out") return isOut;
       if (stockFilter === "low") return !isOut && s <= 5;
       if (stockFilter === "active") return !isOut && s > 5;
@@ -251,7 +281,10 @@ export function ManageProducts() {
   }, [products, stockFilter]);
 
   const handleExportCSV = () => {
-    const listToExport = filteredProducts && filteredProducts.length > 0 ? filteredProducts : products;
+    const listToExport =
+      filteredProducts && filteredProducts.length > 0
+        ? filteredProducts
+        : products;
     if (!listToExport || listToExport.length === 0) {
       alert("No products available to export.");
       return;
@@ -306,8 +339,8 @@ export function ManageProducts() {
       stockFilter === "low"
         ? `Atelier_Low_Stock_Restock_Report_${today}.csv`
         : stockFilter === "out"
-        ? `Atelier_Out_Of_Stock_Report_${today}.csv`
-        : `Atelier_Catalog_Inventory_Report_${today}.csv`;
+          ? `Atelier_Out_Of_Stock_Report_${today}.csv`
+          : `Atelier_Catalog_Inventory_Report_${today}.csv`;
 
     link.href = url;
     link.setAttribute("download", filename);
@@ -316,7 +349,7 @@ export function ManageProducts() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     showNotification(
-      `Exported ${listToExport.length} ${stockFilter === "low" ? "low-stock" : "catalog"} items to CSV successfully`
+      `Exported ${listToExport.length} ${stockFilter === "low" ? "low-stock" : "catalog"} items to CSV successfully`,
     );
   };
 
@@ -358,7 +391,9 @@ export function ManageProducts() {
           if (!active) return;
           if (payload.eventType === "INSERT") {
             soundEffects.playOrderChime();
-            showNotification(`✨ New piece added to catalog: "${payload.new?.name || "Product"}"`);
+            showNotification(
+              `✨ New piece added to catalog: "${payload.new?.name || "Product"}"`,
+            );
           } else if (payload.eventType === "UPDATE") {
             const pName = payload.new?.name || "Product";
             const stock = payload.new?.stock;
@@ -366,13 +401,13 @@ export function ManageProducts() {
               soundEffects.playOrderChime();
             }
             showNotification(
-              `📦 Inventory Synced: "${pName}" (${stock !== undefined ? stock + " units" : "Updated"})`
+              `📦 Inventory Synced: "${pName}" (${stock !== undefined ? stock + " units" : "Updated"})`,
             );
           } else if (payload.eventType === "DELETE") {
             showNotification(`🗑 Product removed from cloud database`);
           }
           loadData(true);
-        }
+        },
       )
       .subscribe();
 
@@ -387,13 +422,17 @@ export function ManageProducts() {
   const handleToggleColorPreset = (preset) => {
     setFormData((prev) => {
       const exists = (prev.colors || []).some(
-        (c) => c.hex.toLowerCase() === preset.hex.toLowerCase() || c.name.toLowerCase() === preset.name.toLowerCase()
+        (c) =>
+          c.hex.toLowerCase() === preset.hex.toLowerCase() ||
+          c.name.toLowerCase() === preset.name.toLowerCase(),
       );
       if (exists) {
         return {
           ...prev,
           colors: (prev.colors || []).filter(
-            (c) => c.hex.toLowerCase() !== preset.hex.toLowerCase() && c.name.toLowerCase() !== preset.name.toLowerCase()
+            (c) =>
+              c.hex.toLowerCase() !== preset.hex.toLowerCase() &&
+              c.name.toLowerCase() !== preset.name.toLowerCase(),
           ),
         };
       } else {
@@ -410,7 +449,10 @@ export function ManageProducts() {
     if (!cleanName) return;
     setFormData((prev) => ({
       ...prev,
-      colors: [...(prev.colors || []), { name: cleanName, hex: customColorHex }],
+      colors: [
+        ...(prev.colors || []),
+        { name: cleanName, hex: customColorHex },
+      ],
     }));
     setCustomColorName("");
     setCustomColorHex("#111111");
@@ -499,11 +541,12 @@ export function ManageProducts() {
   const handleOpenEdit = (product) => {
     setIsEditing(true);
     setSelectedProduct(product);
-    const existingImgs = Array.isArray(product.images) && product.images.length > 0
-      ? product.images
-      : product.image
-      ? [product.image]
-      : [];
+    const existingImgs =
+      Array.isArray(product.images) && product.images.length > 0
+        ? product.images
+        : product.image
+          ? [product.image]
+          : [];
 
     setFormData({
       name: product.name || "",
@@ -511,14 +554,17 @@ export function ManageProducts() {
       category: product.category || categories[0]?.name || "Women",
       brand: product.brand || "ATELIER",
       price: product.price !== undefined ? String(product.price) : "",
-      originalPrice: product.originalPrice !== undefined ? String(product.originalPrice) : "",
+      originalPrice:
+        product.originalPrice !== undefined
+          ? String(product.originalPrice)
+          : "",
       discount: product.discount || "",
       stock:
         product.stock !== undefined
           ? String(product.stock)
           : product.quantity !== undefined
-          ? String(product.quantity)
-          : "10",
+            ? String(product.quantity)
+            : "10",
       image: product.image || existingImgs[0] || "",
       images: existingImgs,
       status: product.status || "Active",
@@ -538,11 +584,21 @@ export function ManageProducts() {
       details:
         Array.isArray(product.details) && product.details.length > 0
           ? product.details
-          : ["Bespoke Italian architectural tailoring", "Refined tactile hand-finished seams"],
+          : [
+              "Bespoke Italian architectural tailoring",
+              "Refined tactile hand-finished seams",
+            ],
       description: product.description || "",
-      isFeatured: product.isFeatured !== undefined ? Boolean(product.isFeatured) : true,
-      isRecommended: product.isRecommended !== undefined ? Boolean(product.isRecommended) : true,
-      isNewArrival: product.isNewArrival !== undefined ? Boolean(product.isNewArrival) : true,
+      isFeatured:
+        product.isFeatured !== undefined ? Boolean(product.isFeatured) : true,
+      isRecommended:
+        product.isRecommended !== undefined
+          ? Boolean(product.isRecommended)
+          : true,
+      isNewArrival:
+        product.isNewArrival !== undefined
+          ? Boolean(product.isNewArrival)
+          : true,
     });
     setImageTab(product.image ? "url" : "upload");
     setCustomColorName("");
@@ -581,7 +637,9 @@ export function ManageProducts() {
     try {
       const uploadedUrl = await productService.uploadImage(file);
       setFormData((prev) => {
-        const nextImgs = Array.from(new Set([...(prev.images || []), uploadedUrl]));
+        const nextImgs = Array.from(
+          new Set([...(prev.images || []), uploadedUrl]),
+        );
         return {
           ...prev,
           image: prev.image || uploadedUrl,
@@ -590,7 +648,10 @@ export function ManageProducts() {
       });
       showNotification("Product image uploaded successfully!");
     } catch (err) {
-      console.warn("Upload to backend media failed, falling back to local base64 preview:", err);
+      console.warn(
+        "Upload to backend media failed, falling back to local base64 preview:",
+        err,
+      );
       const reader = new FileReader();
       reader.onload = (e) => {
         const b64 = e.target.result;
@@ -671,14 +732,17 @@ export function ManageProducts() {
 
     setSaving(true);
     try {
-      const finalImages = Array.isArray(formData.images) && formData.images.length > 0
-        ? formData.images
-        : formData.image
-        ? [formData.image]
-        : [DEFAULT_IMAGE];
+      const finalImages =
+        Array.isArray(formData.images) && formData.images.length > 0
+          ? formData.images
+          : formData.image
+            ? [formData.image]
+            : [DEFAULT_IMAGE];
 
       const numPrice = Number(formData.price) || 0;
-      const numOrig = formData.originalPrice ? Number(formData.originalPrice) : numPrice;
+      const numOrig = formData.originalPrice
+        ? Number(formData.originalPrice)
+        : numPrice;
       const computedDiscount =
         numOrig > numPrice && numPrice > 0
           ? `${Math.round(((numOrig - numPrice) / numOrig) * 100)}% OFF`
@@ -693,7 +757,8 @@ export function ManageProducts() {
         quantity: Number(formData.stock),
         image: finalImages[0] || DEFAULT_IMAGE,
         images: finalImages,
-        badge: formData.badge && formData.badge !== "NONE" ? formData.badge : null,
+        badge:
+          formData.badge && formData.badge !== "NONE" ? formData.badge : null,
         isFeatured: Boolean(formData.isFeatured),
         isRecommended: Boolean(formData.isRecommended),
         isNewArrival: Boolean(formData.isNewArrival),
@@ -702,15 +767,21 @@ export function ManageProducts() {
       if (isEditing && selectedProduct) {
         const prodId = selectedProduct.id || selectedProduct._id;
         await productService.updateProduct(prodId, payload);
-        showNotification(`Product "${payload.name}" updated successfully in Supabase!`);
+        showNotification(
+          `Product "${payload.name}" updated successfully in Supabase!`,
+        );
       } else {
         await productService.createProduct(payload);
-        showNotification(`New product "${payload.name}" published to Supabase!`);
+        showNotification(
+          `New product "${payload.name}" published to Supabase!`,
+        );
       }
       setIsAddEditModalOpen(false);
       await loadData();
     } catch (err) {
-      alert("Failed to save product: " + (err.response?.data?.error || err.message));
+      alert(
+        "Failed to save product: " + (err.response?.data?.error || err.message),
+      );
     } finally {
       setSaving(false);
     }
@@ -722,10 +793,15 @@ export function ManageProducts() {
     setSaving(true);
     try {
       await productService.deleteProduct(prodId);
-      showNotification(`Product "${selectedProduct.name}" removed from catalog.`);
+      showNotification(
+        `Product "${selectedProduct.name}" removed from catalog.`,
+      );
       setIsDeleteModalOpen(false);
       setProducts((prev) =>
-        prev.filter((p) => String(p.id) !== String(prodId) && String(p._id) !== String(prodId))
+        prev.filter(
+          (p) =>
+            String(p.id) !== String(prodId) && String(p._id) !== String(prodId),
+        ),
       );
       await loadData();
     } catch (err) {
@@ -739,7 +815,9 @@ export function ManageProducts() {
   const numPrice = Number(formData.price);
   const numOrig = Number(formData.originalPrice);
   const hasDiscount = numOrig > numPrice && numPrice > 0;
-  const discountPercent = hasDiscount ? Math.round(((numOrig - numPrice) / numOrig) * 100) : 0;
+  const discountPercent = hasDiscount
+    ? Math.round(((numOrig - numPrice) / numOrig) * 100)
+    : 0;
   const discountSavings = hasDiscount ? (numOrig - numPrice).toFixed(2) : 0;
 
   // Table columns definition
@@ -750,7 +828,10 @@ export function ManageProducts() {
       width: 100,
       render: (item) => (
         <span className="font-mono text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-          #{String(item.id || item._id).slice(-6).toUpperCase()}
+          #
+          {String(item.id || item._id)
+            .slice(-6)
+            .toUpperCase()}
         </span>
       ),
     },
@@ -780,11 +861,15 @@ export function ManageProducts() {
               )}
             </div>
             {item.subtitle && (
-              <div className="text-[10px] text-gray-400 truncate">{item.subtitle}</div>
+              <div className="text-[10px] text-gray-400 truncate">
+                {item.subtitle}
+              </div>
             )}
             <div className="text-[11px] text-gray-500 flex items-center gap-1.5 mt-0.5">
               <span>Brand:</span>
-              <strong className="text-gray-700 font-semibold">{item.brand || "ATELIER"}</strong>
+              <strong className="text-gray-700 font-semibold">
+                {item.brand || "ATELIER"}
+              </strong>
               {Array.isArray(item.colors) && item.colors.length > 0 && (
                 <div className="flex items-center gap-1 ml-1.5">
                   {item.colors.slice(0, 3).map((c, i) => (
@@ -817,18 +902,27 @@ export function ManageProducts() {
       render: (item) => (
         <div className="flex flex-col">
           <div className="flex items-baseline gap-1.5">
-            <span className="font-bold text-gray-900 text-sm">${item.price}</span>
-            {item.originalPrice && Number(item.originalPrice) > Number(item.price) && (
-              <span className="text-[11px] text-gray-400 line-through">
-                ${item.originalPrice}
+            <span className="font-bold text-gray-900 text-sm">
+              ${item.price}
+            </span>
+            {item.originalPrice &&
+              Number(item.originalPrice) > Number(item.price) && (
+                <span className="text-[11px] text-gray-400 line-through">
+                  ${item.originalPrice}
+                </span>
+              )}
+          </div>
+          {item.originalPrice &&
+            Number(item.originalPrice) > Number(item.price) && (
+              <span className="text-[10px] font-bold text-emerald-600">
+                {Math.round(
+                  ((Number(item.originalPrice) - Number(item.price)) /
+                    Number(item.originalPrice)) *
+                    100,
+                )}
+                % OFF
               </span>
             )}
-          </div>
-          {item.originalPrice && Number(item.originalPrice) > Number(item.price) && (
-            <span className="text-[10px] font-bold text-emerald-600">
-              {Math.round(((Number(item.originalPrice) - Number(item.price)) / Number(item.originalPrice)) * 100)}% OFF
-            </span>
-          )}
         </div>
       ),
     },
@@ -840,9 +934,12 @@ export function ManageProducts() {
           item.stock !== undefined
             ? Number(item.stock)
             : item.quantity !== undefined
-            ? Number(item.quantity)
-            : 0;
-        const waitlistCount = Number(item.waitlistCount || (Array.isArray(item.waitlist) ? item.waitlist.length : 0));
+              ? Number(item.quantity)
+              : 0;
+        const waitlistCount = Number(
+          item.waitlistCount ||
+            (Array.isArray(item.waitlist) ? item.waitlist.length : 0),
+        );
         const prodId = item.id || item._id;
         const isBusy = restockingId === prodId;
 
@@ -948,7 +1045,10 @@ export function ManageProducts() {
       <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-            <Link to="/admin/dashboard" className="hover:text-black font-semibold">
+            <Link
+              to="/admin/dashboard"
+              className="hover:text-black font-semibold"
+            >
               Admin
             </Link>
             <span>/</span>
@@ -958,7 +1058,8 @@ export function ManageProducts() {
             Product Catalog Management
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Manage your boutique inventory, pricing, computer image uploads, and Supabase records.
+            Manage your boutique inventory, pricing, computer image uploads, and
+            Supabase records.
           </p>
         </div>
 
@@ -1009,7 +1110,9 @@ export function ManageProducts() {
           {
             id: "active",
             label: "In Stock",
-            count: products.filter((p) => Number(p.stock ?? p.quantity ?? 0) > 5).length,
+            count: products.filter(
+              (p) => Number(p.stock ?? p.quantity ?? 0) > 5,
+            ).length,
             badge: "bg-emerald-100 text-emerald-800",
           },
           {
@@ -1027,7 +1130,7 @@ export function ManageProducts() {
             count: products.filter(
               (p) =>
                 Number(p.stock ?? p.quantity ?? 0) <= 0 ||
-                String(p.status || "").toLowerCase() === "out of stock"
+                String(p.status || "").toLowerCase() === "out of stock",
             ).length,
             badge: "bg-red-100 text-red-700",
           },
@@ -1066,12 +1169,13 @@ export function ManageProducts() {
             item.stock !== undefined
               ? Number(item.stock)
               : item.quantity !== undefined
-              ? Number(item.quantity)
-              : 0;
+                ? Number(item.quantity)
+                : 0;
           const prodId = item.id || item._id;
           const isBusy = restockingId === prodId;
           const hasDisc =
-            item.originalPrice && Number(item.originalPrice) > Number(item.price);
+            item.originalPrice &&
+            Number(item.originalPrice) > Number(item.price);
 
           return (
             <div className="space-y-3">
@@ -1137,8 +1241,8 @@ export function ManageProducts() {
                       qty <= 0
                         ? "bg-red-50 text-red-700 border-red-200"
                         : qty <= 5
-                        ? "bg-amber-50 text-amber-700 border-amber-200"
-                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
                     }`}
                   >
                     {qty} in stock
@@ -1222,11 +1326,17 @@ export function ManageProducts() {
         title={
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
-              {isEditing ? <Pencil className="w-4 h-4 sm:w-5 sm:h-5" /> : <Layers className="w-4 h-4 sm:w-5 sm:h-5" />}
+              {isEditing ? (
+                <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : (
+                <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
             </div>
             <div className="min-w-0">
               <div className="text-sm sm:text-base font-extrabold text-gray-900 truncate">
-                {isEditing ? `Edit Runway Piece: ${selectedProduct?.name}` : "Create New Runway Product"}
+                {isEditing
+                  ? `Edit Runway Piece: ${selectedProduct?.name}`
+                  : "Create New Runway Product"}
               </div>
               <p className="text-[11px] sm:text-xs text-gray-500 font-normal truncate">
                 {isEditing
@@ -1288,7 +1398,9 @@ export function ManageProducts() {
                   label="Product Title"
                   placeholder="e.g. Sculptural Trench Coat in Virgin Wool"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   error={errors.name}
                   required
                 />
@@ -1297,7 +1409,9 @@ export function ManageProducts() {
                   label="Silhouette Subtitle / Tagline"
                   placeholder="e.g. Oversized Tailored Wool Silhouette or SS26 Runway Capsule"
                   value={formData.subtitle}
-                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, subtitle: e.target.value })
+                  }
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1307,7 +1421,9 @@ export function ManageProducts() {
                     </label>
                     <select
                       value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, category: e.target.value })
+                      }
                       className="w-full px-3 py-2 text-xs sm:text-sm bg-white rounded-xl border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-black/15 font-semibold"
                     >
                       {categories.map((cat) => (
@@ -1323,7 +1439,9 @@ export function ManageProducts() {
                       label="Brand / Label"
                       placeholder="e.g. ATELIER, Acne, Prada"
                       value={formData.brand}
-                      onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, brand: e.target.value })
+                      }
                     />
                   </div>
                 </div>
@@ -1339,14 +1457,25 @@ export function ManageProducts() {
                       setFormData((prev) => ({
                         ...prev,
                         status: nextStatus,
-                        stock: nextStatus === "Out of Stock" ? "0" : (Number(prev.stock) <= 0 && nextStatus === "Active" ? "10" : prev.stock),
+                        stock:
+                          nextStatus === "Out of Stock"
+                            ? "0"
+                            : Number(prev.stock) <= 0 && nextStatus === "Active"
+                              ? "10"
+                              : prev.stock,
                       }));
                     }}
                     className="w-full px-3 py-2 text-xs sm:text-sm bg-white rounded-xl border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-black/15 font-semibold"
                   >
-                    <option value="Active">🟢 Active (Visible &amp; In Stock)</option>
-                    <option value="Out of Stock">🔴 Out of Stock (Sold Out)</option>
-                    <option value="Inactive">⚪ Inactive (Draft / Archived)</option>
+                    <option value="Active">
+                      🟢 Active (Visible &amp; In Stock)
+                    </option>
+                    <option value="Out of Stock">
+                      🔴 Out of Stock (Sold Out)
+                    </option>
+                    <option value="Inactive">
+                      ⚪ Inactive (Draft / Archived)
+                    </option>
                   </select>
                 </div>
 
@@ -1356,14 +1485,18 @@ export function ManageProducts() {
                   type="textarea"
                   rows={2}
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                 />
 
                 <Input
                   label="Fabrication &amp; Material Composition"
                   placeholder="e.g. 100% Organic Virgin Wool &amp; Mulberry Silk Blend"
                   value={formData.material}
-                  onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, material: e.target.value })
+                  }
                 />
               </div>
 
@@ -1374,7 +1507,9 @@ export function ManageProducts() {
                     <Sparkles className="w-3.5 h-3.5 text-black" />
                     <span>Storefront Badges &amp; Placements</span>
                   </span>
-                  <span className="text-[11px] text-gray-500 font-semibold">Home Page Sync</span>
+                  <span className="text-[11px] text-gray-500 font-semibold">
+                    Home Page Sync
+                  </span>
                 </div>
 
                 <div>
@@ -1386,10 +1521,13 @@ export function ManageProducts() {
                       <button
                         key={opt.value}
                         type="button"
-                        onClick={() => setFormData({ ...formData, badge: opt.value })}
+                        onClick={() =>
+                          setFormData({ ...formData, badge: opt.value })
+                        }
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                           formData.badge === opt.value
-                            ? "border-black ring-2 ring-black/20 scale-102 " + opt.pill
+                            ? "border-black ring-2 ring-black/20 scale-102 " +
+                              opt.pill
                             : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                         }`}
                       >
@@ -1404,30 +1542,51 @@ export function ManageProducts() {
                     <input
                       type="checkbox"
                       checked={formData.isFeatured}
-                      onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          isFeatured: e.target.checked,
+                        })
+                      }
                       className="w-4 h-4 rounded text-black focus:ring-black accent-black"
                     />
-                    <span className="text-xs font-bold text-gray-800">⭐ Hero Spotlight Carousel</span>
+                    <span className="text-xs font-bold text-gray-800">
+                      ⭐ Hero Spotlight Carousel
+                    </span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={formData.isNewArrival}
-                      onChange={(e) => setFormData({ ...formData, isNewArrival: e.target.checked })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          isNewArrival: e.target.checked,
+                        })
+                      }
                       className="w-4 h-4 rounded text-black focus:ring-black accent-black"
                     />
-                    <span className="text-xs font-bold text-gray-800">✨ Home "New Arrivals" Section</span>
+                    <span className="text-xs font-bold text-gray-800">
+                      ✨ Home "New Arrivals" Section
+                    </span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={formData.isRecommended}
-                      onChange={(e) => setFormData({ ...formData, isRecommended: e.target.checked })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          isRecommended: e.target.checked,
+                        })
+                      }
                       className="w-4 h-4 rounded text-black focus:ring-black accent-black"
                     />
-                    <span className="text-xs font-bold text-gray-800">🔥 Best Seller Recommendation</span>
+                    <span className="text-xs font-bold text-gray-800">
+                      🔥 Best Seller Recommendation
+                    </span>
                   </label>
                 </div>
               </div>
@@ -1439,7 +1598,9 @@ export function ManageProducts() {
                     <Palette className="w-3.5 h-3.5 text-black" />
                     <span>Garment Color Swatches</span>
                   </span>
-                  <span className="text-[11px] text-gray-500 font-semibold">Home Card Dots</span>
+                  <span className="text-[11px] text-gray-500 font-semibold">
+                    Home Card Dots
+                  </span>
                 </div>
 
                 {/* Selected Color Chips */}
@@ -1465,7 +1626,9 @@ export function ManageProducts() {
                     </div>
                   ))}
                   {(!formData.colors || formData.colors.length === 0) && (
-                    <span className="text-xs text-gray-400 italic">No colors selected (default will apply)</span>
+                    <span className="text-xs text-gray-400 italic">
+                      No colors selected (default will apply)
+                    </span>
                   )}
                 </div>
 
@@ -1477,7 +1640,7 @@ export function ManageProducts() {
                   <div className="flex flex-wrap gap-1.5">
                     {LUXURY_PALETTES.map((preset) => {
                       const isSelected = (formData.colors || []).some(
-                        (c) => c.hex.toLowerCase() === preset.hex.toLowerCase()
+                        (c) => c.hex.toLowerCase() === preset.hex.toLowerCase(),
                       );
                       return (
                         <button
@@ -1495,7 +1658,9 @@ export function ManageProducts() {
                             style={{ backgroundColor: preset.hex }}
                           />
                           <span>{preset.name}</span>
-                          {isSelected && <Check className="w-3 h-3 text-[#D6FF00]" />}
+                          {isSelected && (
+                            <Check className="w-3 h-3 text-[#D6FF00]" />
+                          )}
                         </button>
                       );
                     })}
@@ -1535,7 +1700,9 @@ export function ManageProducts() {
                     <Scissors className="w-3.5 h-3.5 text-black" />
                     <span>Size Variants</span>
                   </span>
-                  <span className="text-[11px] text-gray-500 font-semibold">Storefront Quick Add</span>
+                  <span className="text-[11px] text-gray-500 font-semibold">
+                    Storefront Quick Add
+                  </span>
                 </div>
 
                 {/* Active Sizes */}
@@ -1556,7 +1723,9 @@ export function ManageProducts() {
 
                 {/* Presets */}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Presets:</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">
+                    Presets:
+                  </span>
                   <button
                     type="button"
                     onClick={() => handleApplySizePreset("apparel")}
@@ -1612,7 +1781,9 @@ export function ManageProducts() {
                     <ShieldCheck className="w-3.5 h-3.5 text-black" />
                     <span>Craftsmanship &amp; Atelier Details</span>
                   </span>
-                  <span className="text-[11px] text-gray-500 font-semibold">Quick View &amp; Accordion</span>
+                  <span className="text-[11px] text-gray-500 font-semibold">
+                    Quick View &amp; Accordion
+                  </span>
                 </div>
 
                 <div className="space-y-1.5">
@@ -1678,7 +1849,9 @@ export function ManageProducts() {
                     step="0.01"
                     placeholder="290.00"
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
                     error={errors.price}
                     required
                   />
@@ -1689,14 +1862,21 @@ export function ManageProducts() {
                     step="0.01"
                     placeholder="350.00"
                     value={formData.originalPrice}
-                    onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        originalPrice: e.target.value,
+                      })
+                    }
                   />
                 </div>
 
                 {hasDiscount && (
                   <div className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200 flex items-center justify-between">
                     <span>Discount Savings:</span>
-                    <span>{discountPercent}% OFF (Save ${discountSavings})</span>
+                    <span>
+                      {discountPercent}% OFF (Save ${discountSavings})
+                    </span>
                   </div>
                 )}
 
@@ -1716,8 +1896,8 @@ export function ManageProducts() {
                         val !== "" && num <= 0
                           ? "Out of Stock"
                           : prev.status === "Out of Stock" && num > 0
-                          ? "Active"
-                          : prev.status,
+                            ? "Active"
+                            : prev.status,
                     }));
                   }}
                   error={errors.stock}
@@ -1745,7 +1925,9 @@ export function ManageProducts() {
                     type="button"
                     onClick={() => setImageTab("upload")}
                     className={`py-1.5 px-1 sm:px-2 rounded-lg text-center transition-all cursor-pointer truncate ${
-                      imageTab === "upload" ? "bg-white text-black shadow-xs" : "text-gray-600 hover:text-black"
+                      imageTab === "upload"
+                        ? "bg-white text-black shadow-xs"
+                        : "text-gray-600 hover:text-black"
                     }`}
                   >
                     Computer Upload
@@ -1754,7 +1936,9 @@ export function ManageProducts() {
                     type="button"
                     onClick={() => setImageTab("preset")}
                     className={`py-1.5 px-1 sm:px-2 rounded-lg text-center transition-all cursor-pointer truncate ${
-                      imageTab === "preset" ? "bg-white text-black shadow-xs" : "text-gray-600 hover:text-black"
+                      imageTab === "preset"
+                        ? "bg-white text-black shadow-xs"
+                        : "text-gray-600 hover:text-black"
                     }`}
                   >
                     Runway Presets
@@ -1763,7 +1947,9 @@ export function ManageProducts() {
                     type="button"
                     onClick={() => setImageTab("url")}
                     className={`py-1.5 px-1 sm:px-2 rounded-lg text-center transition-all cursor-pointer truncate ${
-                      imageTab === "url" ? "bg-white text-black shadow-xs" : "text-gray-600 hover:text-black"
+                      imageTab === "url"
+                        ? "bg-white text-black shadow-xs"
+                        : "text-gray-600 hover:text-black"
                     }`}
                   >
                     Web URL
@@ -1777,19 +1963,34 @@ export function ManageProducts() {
                     {formData.images && formData.images.length > 0 && (
                       <div className="space-y-2 mb-3">
                         <div className="text-[11px] font-bold text-gray-700 flex items-center justify-between">
-                          <span>Uploaded Gallery Angles ({formData.images.length}/5)</span>
-                          <span className="text-[10px] text-gray-400">Click photo to set as cover</span>
+                          <span>
+                            Uploaded Gallery Angles ({formData.images.length}/5)
+                          </span>
+                          <span className="text-[10px] text-gray-400">
+                            Click photo to set as cover
+                          </span>
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                           {formData.images.map((imgUrl, iIdx) => (
                             <div
                               key={iIdx}
-                              onClick={() => setFormData((prev) => ({ ...prev, image: imgUrl }))}
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  image: imgUrl,
+                                }))
+                              }
                               className={`relative group aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${
-                                formData.image === imgUrl ? "border-black ring-2 ring-black/20" : "border-gray-200 opacity-75 hover:opacity-100"
+                                formData.image === imgUrl
+                                  ? "border-black ring-2 ring-black/20"
+                                  : "border-gray-200 opacity-75 hover:opacity-100"
                               }`}
                             >
-                              <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                              <img
+                                src={imgUrl}
+                                alt="Thumbnail"
+                                className="w-full h-full object-cover"
+                              />
                               {formData.image === imgUrl && (
                                 <span className="absolute bottom-1 left-1 bg-black text-[#D6FF00] text-[9px] font-black uppercase px-1 rounded">
                                   Cover
@@ -1817,7 +2018,9 @@ export function ManageProducts() {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
-                        onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                        onClick={() =>
+                          fileInputRef.current && fileInputRef.current.click()
+                        }
                         className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
                           dragActive
                             ? "border-black bg-neutral-100"
@@ -1832,10 +2035,13 @@ export function ManageProducts() {
                           )}
                         </div>
                         <div className="text-xs font-bold text-gray-900">
-                          {uploadingImage ? "Uploading from computer..." : "Add photos from computer"}
+                          {uploadingImage
+                            ? "Uploading from computer..."
+                            : "Add photos from computer"}
                         </div>
                         <p className="text-[11px] text-gray-500 mt-0.5">
-                          Drag and drop photo here, or click to browse (up to 5 angles)
+                          Drag and drop photo here, or click to browse (up to 5
+                          angles)
                         </p>
                         <span className="inline-block mt-2 px-2.5 py-1 rounded-md bg-neutral-100 text-[10px] font-bold text-neutral-700 uppercase tracking-wider">
                           PNG, JPG, WEBP (Max 10MB)
@@ -1865,9 +2071,16 @@ export function ManageProducts() {
                         return (
                           <div
                             key={preset.url}
-                            onClick={() => setFormData((prev) => ({ ...prev, image: preset.url }))}
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                image: preset.url,
+                              }))
+                            }
                             className={`group relative rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${
-                              isSelected ? "border-[#111111] ring-2 ring-[#D6FF00]" : "border-transparent opacity-80 hover:opacity-100"
+                              isSelected
+                                ? "border-[#111111] ring-2 ring-[#D6FF00]"
+                                : "border-transparent opacity-80 hover:opacity-100"
                             }`}
                           >
                             <img
@@ -1894,7 +2107,12 @@ export function ManageProducts() {
                       label="Paste Image URL"
                       placeholder="https://images.unsplash.com/photo-..."
                       value={formData.image}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, image: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          image: e.target.value,
+                        }))
+                      }
                     />
                     {formData.image && (
                       <div className="mt-2 text-center">
@@ -1921,14 +2139,21 @@ export function ManageProducts() {
                       Live Home Page Card Preview
                     </span>
                   </div>
-                  <span className="text-[10px] text-gray-400 font-mono">1:1 Storefront Sync</span>
+                  <span className="text-[10px] text-gray-400 font-mono">
+                    1:1 Storefront Sync
+                  </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-3 text-gray-900 shadow-xl max-w-xs mx-auto border border-gray-100">
                   {/* Product Image Frame */}
                   <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-gray-100">
                     <img
-                      src={formData.image || (Array.isArray(formData.images) && formData.images[0]) || DEFAULT_IMAGE}
+                      src={
+                        formData.image ||
+                        (Array.isArray(formData.images) &&
+                          formData.images[0]) ||
+                        DEFAULT_IMAGE
+                      }
                       alt={formData.name || "Preview"}
                       className="w-full h-full object-cover"
                     />
@@ -1940,8 +2165,8 @@ export function ManageProducts() {
                           formData.badge === "HOT" || formData.badge === "NEW"
                             ? "bg-[#D6FF00] text-black"
                             : formData.badge === "SALE"
-                            ? "bg-rose-500 text-white"
-                            : "bg-black text-[#D6FF00]"
+                              ? "bg-rose-500 text-white"
+                              : "bg-black text-[#D6FF00]"
                         }`}
                       >
                         {formData.badge}
@@ -1949,16 +2174,17 @@ export function ManageProducts() {
                     )}
 
                     {/* Multi-angle dots preview */}
-                    {Array.isArray(formData.images) && formData.images.length > 1 && (
-                      <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/50">
-                        {formData.images.slice(0, 4).map((_, i) => (
-                          <span
-                            key={i}
-                            className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-[#D6FF00] w-3" : "bg-white/60"}`}
-                          />
-                        ))}
-                      </div>
-                    )}
+                    {Array.isArray(formData.images) &&
+                      formData.images.length > 1 && (
+                        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/50">
+                          {formData.images.slice(0, 4).map((_, i) => (
+                            <span
+                              key={i}
+                              className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-[#D6FF00] w-3" : "bg-white/60"}`}
+                            />
+                          ))}
+                        </div>
+                      )}
 
                     {/* Heart icon */}
                     <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/85 flex items-center justify-center text-gray-600 shadow-xs">
@@ -1969,7 +2195,9 @@ export function ManageProducts() {
                   {/* Card Details */}
                   <div className="pt-2.5 space-y-1">
                     <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                      <span className="truncate">{formData.category || "Collection"}</span>
+                      <span className="truncate">
+                        {formData.category || "Collection"}
+                      </span>
                       {/* Color Dots */}
                       <div className="flex items-center gap-1 shrink-0">
                         {(formData.colors || []).slice(0, 4).map((c, i) => (
@@ -2014,7 +2242,8 @@ export function ManageProducts() {
 
                     {/* Stock Urgency Pill */}
                     <div className="pt-1">
-                      {Number(formData.stock) <= 0 || formData.status === "Out of Stock" ? (
+                      {Number(formData.stock) <= 0 ||
+                      formData.status === "Out of Stock" ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-[10px] font-bold text-rose-600">
                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                           Out of Stock
@@ -2075,7 +2304,8 @@ export function ManageProducts() {
 
             <div className="flex-1 space-y-2 text-xs text-gray-600">
               <div className="font-mono text-[11px] text-gray-400">
-                DATABASE ID: #{String(selectedProduct.id || selectedProduct._id)}
+                DATABASE ID: #
+                {String(selectedProduct.id || selectedProduct._id)}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg font-black text-gray-950">
@@ -2088,31 +2318,50 @@ export function ManageProducts() {
                 )}
               </div>
               {selectedProduct.subtitle && (
-                <p className="text-xs text-gray-500 font-medium">{selectedProduct.subtitle}</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  {selectedProduct.subtitle}
+                </p>
               )}
 
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                 <div>
-                  <span className="text-gray-400 block text-[11px]">Brand:</span>
-                  <strong className="text-gray-900 font-semibold">{selectedProduct.brand || "ATELIER"}</strong>
+                  <span className="text-gray-400 block text-[11px]">
+                    Brand:
+                  </span>
+                  <strong className="text-gray-900 font-semibold">
+                    {selectedProduct.brand || "ATELIER"}
+                  </strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block text-[11px]">Category:</span>
-                  <strong className="text-gray-900 font-semibold">{selectedProduct.category}</strong>
+                  <span className="text-gray-400 block text-[11px]">
+                    Category:
+                  </span>
+                  <strong className="text-gray-900 font-semibold">
+                    {selectedProduct.category}
+                  </strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block text-[11px]">Price:</span>
-                  <strong className="text-gray-900 text-sm font-bold">${selectedProduct.price}</strong>
-                  {selectedProduct.originalPrice && Number(selectedProduct.originalPrice) > Number(selectedProduct.price) && (
-                    <span className="text-gray-400 line-through ml-1.5 text-xs">
-                      ${selectedProduct.originalPrice}
-                    </span>
-                  )}
+                  <span className="text-gray-400 block text-[11px]">
+                    Price:
+                  </span>
+                  <strong className="text-gray-900 text-sm font-bold">
+                    ${selectedProduct.price}
+                  </strong>
+                  {selectedProduct.originalPrice &&
+                    Number(selectedProduct.originalPrice) >
+                      Number(selectedProduct.price) && (
+                      <span className="text-gray-400 line-through ml-1.5 text-xs">
+                        ${selectedProduct.originalPrice}
+                      </span>
+                    )}
                 </div>
                 <div>
-                  <span className="text-gray-400 block text-[11px]">Inventory Stock:</span>
+                  <span className="text-gray-400 block text-[11px]">
+                    Inventory Stock:
+                  </span>
                   <strong className="text-emerald-700 font-bold">
-                    {selectedProduct.stock || selectedProduct.quantity || 0} units
+                    {selectedProduct.stock || selectedProduct.quantity || 0}{" "}
+                    units
                   </strong>
                 </div>
               </div>
@@ -2120,7 +2369,9 @@ export function ManageProducts() {
               {/* Colors & Sizes in Inspect Modal */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-gray-400 text-[11px] font-bold">Colors:</span>
+                  <span className="text-gray-400 text-[11px] font-bold">
+                    Colors:
+                  </span>
                   <div className="flex items-center gap-1">
                     {(selectedProduct.colors || []).map((c, i) => (
                       <span
@@ -2134,10 +2385,15 @@ export function ManageProducts() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span className="text-gray-400 text-[11px] font-bold">Sizes:</span>
+                  <span className="text-gray-400 text-[11px] font-bold">
+                    Sizes:
+                  </span>
                   <div className="flex items-center gap-1 flex-wrap">
                     {(selectedProduct.sizes || []).map((s, i) => (
-                      <span key={i} className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 text-[10px] font-bold">
+                      <span
+                        key={i}
+                        className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 text-[10px] font-bold"
+                      >
                         {s}
                       </span>
                     ))}
@@ -2147,12 +2403,14 @@ export function ManageProducts() {
 
               {selectedProduct.material && (
                 <div className="text-[11px] text-gray-600">
-                  <strong className="text-gray-800">Material:</strong> {selectedProduct.material}
+                  <strong className="text-gray-800">Material:</strong>{" "}
+                  {selectedProduct.material}
                 </div>
               )}
 
               <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 leading-relaxed">
-                {selectedProduct.description || "No editorial description available."}
+                {selectedProduct.description ||
+                  "No editorial description available."}
               </div>
 
               <div className="pt-2">
@@ -2205,10 +2463,15 @@ export function ManageProducts() {
           <div>
             <p className="text-xs sm:text-sm text-gray-800 font-medium">
               Are you sure you want to permanently delete{" "}
-              <strong className="text-gray-950 font-bold">&ldquo;{selectedProduct?.name}&rdquo;</strong>?
+              <strong className="text-gray-950 font-bold">
+                &ldquo;{selectedProduct?.name}&rdquo;
+              </strong>
+              ?
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              This action cannot be undone. The product will be removed from the Supabase database catalog and will no longer appear on the customer storefront.
+              This action cannot be undone. The product will be removed from the
+              Supabase database catalog and will no longer appear on the
+              customer storefront.
             </p>
           </div>
         </div>

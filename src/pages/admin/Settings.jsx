@@ -15,12 +15,14 @@ import {
   Send,
   Sparkles,
   RefreshCw,
+  Mail,
 } from "lucide-react";
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
 import { useCartStore } from "../../store/useCartStore";
 import { useStoreSettings } from "../../store/useStoreSettings";
 import { ThermalReceiptModal } from "../../components/receipt/ThermalReceiptModal";
 import { telegramService } from "../../services/telegramService";
+import { emailService } from "../../services/emailService";
 import { supabase } from "../../services/supabase";
 import { ensureAdminSession } from "../../services/productService";
 import api from "../../services/api";
@@ -79,6 +81,16 @@ export function Settings() {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+  });
+
+  const [emailForm, setEmailForm] = useState({
+    provider: storedBranding.brevoApiKey ? "brevo" : "resend",
+    resendApiKey: storedBranding.resendApiKey || "",
+    brevoApiKey: storedBranding.brevoApiKey || "",
+    emailJsServiceId: storedBranding.emailJsServiceId || "",
+    emailJsTemplateId: storedBranding.emailJsTemplateId || "",
+    emailJsPublicKey: storedBranding.emailJsPublicKey || "",
+    customerEmailNotification: storedBranding.customerEmailNotification ?? true,
   });
 
   // Promotional Coupons Manager State
@@ -161,6 +173,25 @@ export function Settings() {
               threshold,
               carrierName,
             });
+          }
+
+          // Synchronize email gateway settings from cloud
+          if (
+            data.settings.resendApiKey ||
+            data.settings.brevoApiKey ||
+            data.settings.emailJsServiceId
+          ) {
+            setEmailForm((prev) => ({
+              ...prev,
+              resendApiKey: data.settings.resendApiKey || "",
+              brevoApiKey: data.settings.brevoApiKey || "",
+              emailJsServiceId: data.settings.emailJsServiceId || "",
+              emailJsTemplateId: data.settings.emailJsTemplateId || "",
+              emailJsPublicKey: data.settings.emailJsPublicKey || "",
+              customerEmailNotification:
+                data.settings.customerEmailNotification ?? true,
+              provider: data.settings.brevoApiKey ? "brevo" : "resend",
+            }));
           }
         }
       } catch (err) {
@@ -449,6 +480,61 @@ export function Settings() {
       console.error("Failed to sync shipping settings:", err);
       showNotification("Shipping rates updated locally.");
     }
+  };
+
+  const handleEmailSave = async (e) => {
+    e.preventDefault();
+    storedBranding.updateStoreSettings(emailForm);
+
+    try {
+      await ensureAdminSession();
+      const { data } = await supabase
+        .from("store_settings")
+        .select("settings")
+        .eq("id", "default")
+        .maybeSingle();
+
+      const merged = {
+        ...(data?.settings || {}),
+        ...emailForm,
+      };
+
+      await supabase.from("store_settings").upsert({
+        id: "default",
+        settings: merged,
+        updated_at: new Date().toISOString(),
+      });
+      showNotification("Email Gateway credentials saved & synced to cloud!");
+    } catch (err) {
+      showNotification("Email settings saved locally.");
+    }
+  };
+
+  const handleTestCustomerEmail = async () => {
+    const testRecipient = storeSettings.storeEmail || "concierge@atelier.com";
+    showNotification(`Dispatching test receipt to ${testRecipient}...`);
+    const res = await emailService.sendCustomerOrderConfirmation({
+      orderNumber: "TEST-" + Math.floor(1000 + Math.random() * 9000),
+      customerName: "Atelier Tester",
+      customerEmail: testRecipient,
+      shippingAddress: storeSettings.storeAddress || "Phnom Penh, Cambodia",
+      items: [
+        {
+          name: "Haute Couture Runway Trench Coat",
+          quantity: 1,
+          price: 480,
+          size: "M",
+          color: "Obsidian Black",
+        },
+      ],
+      subtotal: 480,
+      shippingFee: 0,
+      discount: 0,
+      total: 480,
+      paymentMethod: "Bakong KHQR Verified",
+    });
+
+    showNotification(res.message);
   };
 
   const handlePasswordSave = async (e) => {
@@ -980,6 +1066,159 @@ export function Settings() {
                 >
                   <Save className="w-4 h-4" />
                   <span>Update Shipping Rates</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Customer Email Gateway Configuration Card */}
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-neutral-900 text-[#D6FF00] flex items-center justify-center shrink-0 shadow-xs border border-neutral-800">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-gray-900">
+                    Customer Email Dispatch Gateway
+                  </h3>
+                  <span className="text-xs text-gray-400">
+                    Automated luxury HTML receipts sent to customer inboxes upon checkout
+                  </span>
+                </div>
+              </div>
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-black uppercase tracking-wider text-emerald-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Resend / Brevo
+              </span>
+            </div>
+
+            <form onSubmit={handleEmailSave} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Select Email Service Provider
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "resend", label: "Resend", sub: "3,000/mo Free" },
+                    { id: "brevo", label: "Brevo", sub: "300/day Free" },
+                    { id: "emailjs", label: "EmailJS", sub: "200/mo Free" },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setEmailForm({ ...emailForm, provider: p.id })}
+                      className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                        emailForm.provider === p.id
+                          ? "bg-black text-[#D6FF00] border-black shadow-xs"
+                          : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className="text-xs font-bold">{p.label}</div>
+                      <div className="text-[10px] text-gray-400 font-medium">{p.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {emailForm.provider === "resend" && (
+                <div className="space-y-2">
+                  <Input
+                    label="Resend API Key (from resend.com)"
+                    type="password"
+                    value={emailForm.resendApiKey}
+                    onChange={(e) =>
+                      setEmailForm({ ...emailForm, resendApiKey: e.target.value })
+                    }
+                    placeholder="re_123456789..."
+                  />
+                  <p className="text-[11px] text-gray-400">
+                    Get your free key at{" "}
+                    <a
+                      href="https://resend.com/api-keys"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-black font-semibold underline"
+                    >
+                      resend.com/api-keys
+                    </a>{" "}
+                    (100% free, 3,000 customer emails/month).
+                  </p>
+                </div>
+              )}
+
+              {emailForm.provider === "brevo" && (
+                <div className="space-y-2">
+                  <Input
+                    label="Brevo (Sendinblue) API Key"
+                    type="password"
+                    value={emailForm.brevoApiKey}
+                    onChange={(e) =>
+                      setEmailForm({ ...emailForm, brevoApiKey: e.target.value })
+                    }
+                    placeholder="xkeysib-..."
+                  />
+                  <p className="text-[11px] text-gray-400">
+                    Get your free API key from{" "}
+                    <a
+                      href="https://app.brevo.com/settings/keys/api"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-black font-semibold underline"
+                    >
+                      app.brevo.com
+                    </a>{" "}
+                    (Direct browser CORS supported, 300 free emails/day).
+                  </p>
+                </div>
+              )}
+
+              {emailForm.provider === "emailjs" && (
+                <div className="space-y-3">
+                  <Input
+                    label="EmailJS Service ID"
+                    value={emailForm.emailJsServiceId}
+                    onChange={(e) =>
+                      setEmailForm({ ...emailForm, emailJsServiceId: e.target.value })
+                    }
+                    placeholder="e.g. service_atelier"
+                  />
+                  <Input
+                    label="EmailJS Template ID"
+                    value={emailForm.emailJsTemplateId}
+                    onChange={(e) =>
+                      setEmailForm({ ...emailForm, emailJsTemplateId: e.target.value })
+                    }
+                    placeholder="e.g. template_order"
+                  />
+                  <Input
+                    label="EmailJS Public Key"
+                    value={emailForm.emailJsPublicKey}
+                    onChange={(e) =>
+                      setEmailForm({ ...emailForm, emailJsPublicKey: e.target.value })
+                    }
+                    placeholder="e.g. user_xxxxx"
+                  />
+                </div>
+              )}
+
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-2.5">
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-black text-[#D6FF00] hover:bg-neutral-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer shadow-xs"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Email Gateway</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleTestCustomerEmail}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-800 transition-all font-bold text-xs uppercase tracking-wider cursor-pointer"
+                  title="Send a sample receipt to the store email"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Send Test Email</span>
                 </button>
               </div>
             </form>
