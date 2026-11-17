@@ -8,7 +8,7 @@ import { useWishlistStore } from "../../store/useWishlistStore";
 import { useUIStore } from "../../store/useUIStore";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 import { useAuthStore } from "../../store/useAuthStore";
-import { imageOptimizer } from "../../utils/imageOptimizer";
+import { imageOptimizer, DEFAULT_FALLBACK_IMAGE } from "../../utils/imageOptimizer";
 
 interface ProductCardProps {
   product: Product;
@@ -110,6 +110,12 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, in
             alt={product.name}
             loading="lazy"
             decoding="async"
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (target.src !== DEFAULT_FALLBACK_IMAGE) {
+                target.src = DEFAULT_FALLBACK_IMAGE;
+              }
+            }}
             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106 transform-gpu"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />

@@ -158,6 +158,9 @@ export const CartDrawer: React.FC = () => {
                       <img
                         src={item.product?.images?.[0] || item.product?.image || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80"}
                         alt={item.product?.name || "Product"}
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80";
+                        }}
                         className="w-full h-full object-cover"
                       />
                     </Link>

@@ -33,7 +33,7 @@ import {
 } from "../../services/productService";
 import { supabase } from "../../services/supabase";
 import { Product } from "../../types";
-import { imageOptimizer } from "../../utils/imageOptimizer";
+import { imageOptimizer, DEFAULT_FALLBACK_IMAGE } from "../../utils/imageOptimizer";
 import { telegramService } from "../../services/telegramService";
 
 export const ProductDetails: React.FC = () => {
@@ -582,6 +582,12 @@ export const ProductDetails: React.FC = () => {
                     alt="Thumbnail"
                     loading="lazy"
                     decoding="async"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (target.src !== DEFAULT_FALLBACK_IMAGE) {
+                        target.src = DEFAULT_FALLBACK_IMAGE;
+                      }
+                    }}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -602,6 +608,12 @@ export const ProductDetails: React.FC = () => {
               )}
               alt={product.name}
               decoding="async"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== DEFAULT_FALLBACK_IMAGE) {
+                  target.src = DEFAULT_FALLBACK_IMAGE;
+                }
+              }}
               className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             />
             {isOutOfStock ? (
@@ -1421,6 +1433,12 @@ export const ProductDetails: React.FC = () => {
               alt={product.name}
               loading="lazy"
               decoding="async"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== DEFAULT_FALLBACK_IMAGE) {
+                  target.src = DEFAULT_FALLBACK_IMAGE;
+                }
+              }}
               className="w-10 h-12 rounded-lg object-cover border border-gray-200 shrink-0"
             />
             <div className="min-w-0">

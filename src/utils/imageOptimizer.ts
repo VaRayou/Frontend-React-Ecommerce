@@ -1,7 +1,6 @@
 /**
  * ATELIER PARIS — HAUTE COUTURE IMAGE OPTIMIZER
- * Dynamically downscales and requests modern WebP variants from CDNs (Unsplash, Supabase, Cloudinary)
- * to ensure 0ms latency and minimal Supabase egress bandwidth.
+ * Serves optimized images across Unsplash, Supabase Storage, and local static assets.
  */
 
 export const DEFAULT_FALLBACK_IMAGE =
@@ -33,21 +32,25 @@ export const imageOptimizer = {
       }
     }
 
-    // Handle Supabase Storage Transform URLs (if Image Transformation is enabled)
+    // Handle Supabase Storage:
+    // DO NOT rewrite to /render/image/public/ because Supabase Image Transformation
+    // is a paid Pro feature and returns 403 Forbidden on standard/free projects.
+    // If a render URL is encountered, safely revert it to the direct public object endpoint.
+    if (trimmed.includes(".supabase.co/storage/v1/render/image/public/")) {
+      return trimmed.replace(
+        "/storage/v1/render/image/public/",
+        "/storage/v1/object/public/"
+      ).split("?")[0];
+    }
+
+    // Direct Supabase Public Object URLs are served directly via Cloudflare CDN (200 OK)
     if (trimmed.includes(".supabase.co/storage/v1/object/public/")) {
-      // Supabase Pro transformation endpoint
-      const transformed = trimmed.replace(
-        "/storage/v1/object/public/",
-        `/storage/v1/render/image/public/`
-      );
-      try {
-        const u = new URL(transformed);
-        u.searchParams.set("width", String(width));
-        u.searchParams.set("quality", String(quality));
-        return u.toString();
-      } catch {
-        return trimmed;
-      }
+      return trimmed;
+    }
+
+    // Handle local relative uploads (e.g. "uploads/abc.jpg" -> "/uploads/abc.jpg")
+    if (trimmed.startsWith("uploads/")) {
+      return `/${trimmed}`;
     }
 
     // Return original if no transform parameters match
