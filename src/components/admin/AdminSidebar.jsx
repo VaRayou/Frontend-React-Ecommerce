@@ -15,6 +15,7 @@ import {
   Tag,
 } from "lucide-react";
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
+import { useAuthStore } from "../../store/useAuthStore";
 import { orderService } from "../../services/orderService";
 
 export function AdminSidebar({
@@ -50,7 +51,10 @@ export function AdminSidebar({
 
   const handleLogout = () => {
     adminLogout();
-    navigate("/admin/login");
+    try {
+      useAuthStore.getState().logout?.();
+    } catch {}
+    navigate("/");
   };
 
   const currentRole = adminUser?.role || "Super Administrator";

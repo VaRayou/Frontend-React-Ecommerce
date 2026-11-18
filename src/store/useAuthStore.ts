@@ -91,7 +91,7 @@ export const useAuthStore = create<AuthState>()(
             // Seamlessly cross-authenticate useAdminAuthStore so admin layout is unlocked immediately
             if (isAuthorizedAdmin && password) {
               try {
-                useAdminAuthStore.getState().adminLogin(cleanEmail, password).catch(() => {});
+                await useAdminAuthStore.getState().adminLogin(cleanEmail, password).catch(() => {});
               } catch {}
             }
 

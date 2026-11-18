@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminHeader from "../components/admin/AdminHeader";
+import { MainLayout } from "./MainLayout";
+import NotFound from "../pages/NotFound/Index";
 import { useAdminAuthStore } from "../store/useAdminAuthStore";
 import { useStoreSettings } from "../store/useStoreSettings";
 import { supabase } from "../services/supabase";
@@ -154,7 +156,11 @@ function AdminLayout() {
   }, [isAdminAuthenticated, adminUser?.email, location.pathname]);
 
   if (!isAdminAuthenticated || (!isVerifying && !isValidAdmin)) {
-    return <Navigate to="/admin/login" replace />;
+    return (
+      <MainLayout>
+        <NotFound />
+      </MainLayout>
+    );
   }
 
   const currentRole = adminUser?.role || "Super Administrator";

@@ -14,7 +14,11 @@ import { useStoreSettings } from "../store/useStoreSettings";
 import { useUIStore } from "../store/useUIStore";
 import { useAuthStore } from "../store/useAuthStore";
 
-export const MainLayout: React.FC = () => {
+interface MainLayoutProps {
+  children?: React.ReactNode;
+}
+
+export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
   const [showScrollTop, setShowScrollTop] = useState(false);
   const { getItemCount } = useCartStore();
@@ -59,20 +63,24 @@ export const MainLayout: React.FC = () => {
       <Navbar />
 
       <main className="flex-1 overflow-x-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{
-              duration: 0.24,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
+        {children ? (
+          children
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{
+                duration: 0.24,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        )}
       </main>
 
       <Footer />

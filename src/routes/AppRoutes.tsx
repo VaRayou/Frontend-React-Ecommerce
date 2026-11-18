@@ -25,7 +25,6 @@ const NotFound = lazy(() => import("../pages/NotFound/Index"));
 
 // Lazy-loaded Admin Management Portal Pages
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
-const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
 const Dashboard = lazy(() => import("../pages/admin/Dashboard"));
 const ManageProducts = lazy(() => import("../pages/admin/ManageProducts"));
 const ManageCategories = lazy(() => import("../pages/admin/ManageCategories"));
@@ -74,10 +73,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="*" element={<NotFound />} />
         </Route>
 
-        {/* 2. Admin Controller Authentication */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-
-        {/* 3. Admin Management Portal (Protected in AdminLayout) */}
+        {/* 2. Admin Management Portal (Completely Invisible: Protected in AdminLayout) */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
@@ -88,6 +84,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="payments" element={<ManagePayments />} />
           <Route path="coupons" element={<ManageCoupons />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>
       </Routes>
     </Suspense>

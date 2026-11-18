@@ -13,6 +13,7 @@ import {
   Sun,
 } from "lucide-react";
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
+import { useAuthStore } from "../../store/useAuthStore";
 import { orderService } from "../../services/orderService";
 import api from "../../services/api";
 
@@ -85,7 +86,10 @@ export function AdminHeader({
 
   const handleLogout = () => {
     adminLogout();
-    navigate("/admin/login");
+    try {
+      useAuthStore.getState().logout?.();
+    } catch {}
+    navigate("/");
   };
 
   return (

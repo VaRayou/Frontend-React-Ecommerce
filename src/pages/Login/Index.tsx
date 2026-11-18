@@ -100,6 +100,15 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
+  // If an authenticated admin visits login, route directly to dashboard
+  useEffect(() => {
+    const currentUser = useAuthStore.getState().user;
+    const isAuth = useAuthStore.getState().isAuthenticated;
+    if (isAuth && (currentUser?.isAdmin || currentUser?.role === "admin")) {
+      navigate("/admin/dashboard", { replace: true });
+    }
+  }, [navigate]);
+
   const from =
     typeof location.state?.from === "string"
       ? location.state.from
@@ -198,6 +207,19 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     const res = await login(data.email, data.password);
     if (!res.success) {
       showToast(res.message || "Invalid email or password", "error");
+      return;
+    }
+    const currentUser = useAuthStore.getState().user;
+    if (currentUser?.isAdmin || currentUser?.role === "admin") {
+      showToast(
+        `Welcome to Studio Controller, ${currentUser.name || data.email.split("@")[0]}!`,
+        "success"
+      );
+      const destination =
+        from && from !== "/" && from.startsWith("/admin")
+          ? from
+          : "/admin/dashboard";
+      navigate(destination, { replace: true });
       return;
     }
     showToast(`Welcome back to STEAV Paris, ${data.email.split("@")[0]}!`, "success");
