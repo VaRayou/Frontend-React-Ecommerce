@@ -25,8 +25,12 @@ import { Product } from "../../types";
 import api from "../../services/api";
 
 const normalizeCatKey = (val: string) => {
-  const s = String(val || "").trim().toLowerCase().replace(/['\s-]+/g, "");
-  if (s === "womens" || s === "woman" || s === "female" || s === "ladies") return "women";
+  const s = String(val || "")
+    .trim()
+    .toLowerCase()
+    .replace(/['\s-]+/g, "");
+  if (s === "womens" || s === "woman" || s === "female" || s === "ladies")
+    return "women";
   if (s === "mens" || s === "man" || s === "male") return "men";
   if (s === "bag" || s === "handbags") return "bags";
   if (s === "shoe" || s === "footwear") return "shoes";
@@ -56,7 +60,10 @@ const HERO_SLIDES = [
       "Minimalist silhouettes in organic silk, brushed mohair, and full-grain Tuscan calfskin. Engineered to outlast seasonal trends.",
     image:
       "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1600&q=80",
-    ctaPrimary: { label: "Discover Women's Edit", link: "/shop?category=women" },
+    ctaPrimary: {
+      label: "Discover Women's Edit",
+      link: "/shop?category=women",
+    },
     ctaSecondary: { label: "View Men's Tailoring", link: "/shop?category=men" },
   },
   {
@@ -68,7 +75,10 @@ const HERO_SLIDES = [
       "Hand-stitched leather goods and architectural footwear with instant NBC Bakong KHQR dual-currency checkout and white-glove delivery.",
     image:
       "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80",
-    ctaPrimary: { label: "Explore Leather & Bags", link: "/shop?category=bags" },
+    ctaPrimary: {
+      label: "Explore Leather & Bags",
+      link: "/shop?category=bags",
+    },
     ctaSecondary: { label: "Track Your Order", link: "/track-order" },
   },
 ];
@@ -120,13 +130,16 @@ export const Home: React.FC = () => {
             liveCats.map((c: any, idx: number) => ({
               id: String(c.id || c._id || idx),
               name: c.name || "Collection",
-              slug: c.slug || String(c.name || "").toLowerCase().replace(/\s+/g, "-"),
-              description: c.description || `Architectural ${c.name} collection`,
-              image:
-                c.image ||
-                "/uploads/bed6e30a33b2.jpg",
+              slug:
+                c.slug ||
+                String(c.name || "")
+                  .toLowerCase()
+                  .replace(/\s+/g, "-"),
+              description:
+                c.description || `Architectural ${c.name} collection`,
+              image: c.image || "/uploads/bed6e30a33b2.jpg",
               itemCount: c.itemCount ?? c.count ?? 0,
-            }))
+            })),
           );
         }
       } catch {
@@ -140,7 +153,9 @@ export const Home: React.FC = () => {
   const totalSpotlightCount = Math.max(1, productsList.length);
 
   const handlePrevSpotlight = () => {
-    setSpotlightIdx((prev) => (prev - 1 + totalSpotlightCount) % totalSpotlightCount);
+    setSpotlightIdx(
+      (prev) => (prev - 1 + totalSpotlightCount) % totalSpotlightCount,
+    );
   };
 
   const handleNextSpotlight = () => {
@@ -156,14 +171,19 @@ export const Home: React.FC = () => {
 
   const activeSlideIndex = spotlightIdx % HERO_SLIDES.length;
   const currentSlide = HERO_SLIDES[activeSlideIndex];
-  const spotlightProduct = productsList[spotlightIdx % totalSpotlightCount] || productsList[0];
+  const spotlightProduct =
+    productsList[spotlightIdx % totalSpotlightCount] || productsList[0];
   const heroBackgroundImg =
-    spotlightProduct?.images?.[0] || spotlightProduct?.image || currentSlide.image;
+    spotlightProduct?.images?.[0] ||
+    spotlightProduct?.image ||
+    currentSlide.image;
 
   const featuredProducts =
     activeTab === "All"
       ? productsList
-      : productsList.filter((p) => normalizeCatKey(p.category) === normalizeCatKey(activeTab));
+      : productsList.filter(
+          (p) => normalizeCatKey(p.category) === normalizeCatKey(activeTab),
+        );
 
   const newArrivals =
     productsList.filter((p) => p.isNewArrival).length > 0
@@ -171,7 +191,8 @@ export const Home: React.FC = () => {
       : productsList.slice(0, 4);
 
   const lookbookProducts = productsList.slice(0, 3);
-  const selectedLookProduct = lookbookProducts[activeHotspot] || productsList[0];
+  const selectedLookProduct =
+    lookbookProducts[activeHotspot] || productsList[0];
 
   // Build filter tabs dynamically from live categories + products
   const dynamicCatNames = Array.from(
@@ -179,10 +200,15 @@ export const Home: React.FC = () => {
       categoriesList
         .map((c) => String(c.name || "").trim())
         .filter(Boolean)
-        .slice(0, 6)
-    )
+        .slice(0, 6),
+    ),
   );
-  const filterTabs = ["All", ...(dynamicCatNames.length > 0 ? dynamicCatNames : ["Women", "Men", "Bags", "Shoes"])];
+  const filterTabs = [
+    "All",
+    ...(dynamicCatNames.length > 0
+      ? dynamicCatNames
+      : ["Women", "Men", "Bags", "Shoes"]),
+  ];
 
   const handleHeroMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -273,11 +299,17 @@ export const Home: React.FC = () => {
                   {/* Action CTAs */}
                   <div className="pt-1 grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
                     <Link
-                      to={spotlightProduct ? `/shop/${spotlightProduct.id}` : currentSlide.ctaPrimary.link}
+                      to={
+                        spotlightProduct
+                          ? `/shop/${spotlightProduct.id}`
+                          : currentSlide.ctaPrimary.link
+                      }
                       className="px-3.5 sm:px-5 py-2.5 rounded-full bg-[#D6FF00] hover:bg-[#c6ef00] text-black text-[10px] sm:text-[11px] font-black tracking-wider sm:tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(214,255,0,0.25)] hover:scale-[1.02] active:scale-98 flex items-center justify-center gap-1.5 group truncate"
                     >
                       <span className="truncate">
-                        {spotlightProduct ? `Shop ${spotlightProduct.name}` : currentSlide.ctaPrimary.label}
+                        {spotlightProduct
+                          ? `Shop ${spotlightProduct.name}`
+                          : currentSlide.ctaPrimary.label}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 shrink-0 group-hover:translate-x-1 transition-transform" />
                     </Link>
@@ -327,7 +359,8 @@ export const Home: React.FC = () => {
                     </button>
                   </div>
                   <span className="text-[9px] font-mono text-white/50 tracking-widest uppercase">
-                    0{(spotlightIdx % totalSpotlightCount) + 1} / 0{totalSpotlightCount}
+                    0{(spotlightIdx % totalSpotlightCount) + 1} / 0
+                    {totalSpotlightCount}
                   </span>
                 </div>
               </div>
@@ -351,7 +384,8 @@ export const Home: React.FC = () => {
                           <ChevronLeft className="w-3 h-3" />
                         </button>
                         <span className="text-white/70 font-mono text-[9px] px-0.5">
-                          {(spotlightIdx % totalSpotlightCount) + 1}/{totalSpotlightCount}
+                          {(spotlightIdx % totalSpotlightCount) + 1}/
+                          {totalSpotlightCount}
                         </span>
                         <button
                           type="button"
@@ -370,7 +404,9 @@ export const Home: React.FC = () => {
                     >
                       <img
                         key={spotlightProduct.id}
-                        src={spotlightProduct.images?.[0] || spotlightProduct.image}
+                        src={
+                          spotlightProduct.images?.[0] || spotlightProduct.image
+                        }
                         alt={spotlightProduct.name}
                         className="w-full h-full object-contain object-center transition-transform duration-700 group-hover:scale-105"
                       />
@@ -429,8 +465,12 @@ export const Home: React.FC = () => {
                   <Truck className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-[10px] leading-tight">
-                  <strong className="block font-bold text-white">Complimentary Courier</strong>
-                  <span className="text-[9px] text-gray-400">Express dispatch over $200</span>
+                  <strong className="block font-bold text-white">
+                    Complimentary Courier
+                  </strong>
+                  <span className="text-[9px] text-gray-400">
+                    Express dispatch over $200
+                  </span>
                 </div>
               </div>
 
@@ -439,8 +479,12 @@ export const Home: React.FC = () => {
                   <QrCode className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-[10px] leading-tight">
-                  <strong className="block font-bold text-white">NBC Bakong KHQR</strong>
-                  <span className="text-[9px] text-gray-400">Instant USD &amp; KHR settlement</span>
+                  <strong className="block font-bold text-white">
+                    NBC Bakong KHQR
+                  </strong>
+                  <span className="text-[9px] text-gray-400">
+                    Instant USD &amp; KHR settlement
+                  </span>
                 </div>
               </div>
 
@@ -449,8 +493,12 @@ export const Home: React.FC = () => {
                   <Shield className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-[10px] leading-tight">
-                  <strong className="block font-bold text-white">100% Authentic Craft</strong>
-                  <span className="text-[9px] text-gray-400">Traceable Italian provenance</span>
+                  <strong className="block font-bold text-white">
+                    100% Authentic Craft
+                  </strong>
+                  <span className="text-[9px] text-gray-400">
+                    Traceable Italian provenance
+                  </span>
                 </div>
               </div>
 
@@ -459,8 +507,12 @@ export const Home: React.FC = () => {
                   <RefreshCw className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-[10px] leading-tight">
-                  <strong className="block font-bold text-white">30-Day Free Returns</strong>
-                  <span className="text-[9px] text-gray-400">Effortless boutique exchange</span>
+                  <strong className="block font-bold text-white">
+                    30-Day Free Returns
+                  </strong>
+                  <span className="text-[9px] text-gray-400">
+                    Effortless boutique exchange
+                  </span>
                 </div>
               </div>
             </motion.div>
@@ -515,8 +567,10 @@ export const Home: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           {categoriesList.slice(0, 6).map((cat, idx) => {
             const dynamicCount =
-              productsList.filter((p) => normalizeCatKey(p.category) === normalizeCatKey(cat.name))
-                .length || cat.itemCount;
+              productsList.filter(
+                (p) =>
+                  normalizeCatKey(p.category) === normalizeCatKey(cat.name),
+              ).length || cat.itemCount;
             const isHeroTile = idx === 0 || idx === 1;
             return (
               <motion.div
@@ -524,8 +578,16 @@ export const Home: React.FC = () => {
                 initial={{ opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-30px" }}
-                transition={{ duration: 0.38, delay: idx * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                className={isHeroTile && categoriesList.length <= 4 ? "sm:col-span-1 lg:col-span-1" : ""}
+                transition={{
+                  duration: 0.38,
+                  delay: idx * 0.05,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className={
+                  isHeroTile && categoriesList.length <= 4
+                    ? "sm:col-span-1 lg:col-span-1"
+                    : ""
+                }
               >
                 <Link
                   to={`/shop?category=${cat.slug}`}
@@ -599,13 +661,19 @@ export const Home: React.FC = () => {
                   type="button"
                   onClick={() => setActiveTab(tab)}
                   className={`relative px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-extrabold uppercase tracking-wider transition-colors cursor-pointer z-10 shrink-0 whitespace-nowrap ${
-                    isActive ? "text-[#D6FF00]" : "text-gray-600 hover:text-black"
+                    isActive
+                      ? "text-[#D6FF00]"
+                      : "text-gray-600 hover:text-black"
                   }`}
                 >
                   {isActive && (
                     <motion.span
                       layoutId="homeActiveTabPill"
-                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 450,
+                        damping: 32,
+                      }}
                       className="absolute inset-0 rounded-full bg-[#111111] -z-10 shadow-sm"
                     />
                   )}
@@ -663,8 +731,9 @@ export const Home: React.FC = () => {
                 </h2>
 
                 <p className="text-gray-400 text-xs sm:text-sm font-light leading-relaxed max-w-md">
-                  Tap the interactive pins on the lookbook photography or select a numbered look below
-                  to inspect thefeatured runway piece in real time.
+                  Tap the interactive pins on the lookbook photography or select
+                  a numbered look below to inspect thefeatured runway piece in
+                  real time.
                 </p>
               </div>
 
@@ -679,7 +748,10 @@ export const Home: React.FC = () => {
                   className="p-4 sm:p-5 rounded-2xl bg-white/8 backdrop-blur-md border border-white/15 flex flex-col sm:flex-row items-start sm:items-center gap-4"
                 >
                   <img
-                    src={selectedLookProduct.images?.[0] || selectedLookProduct.image}
+                    src={
+                      selectedLookProduct.images?.[0] ||
+                      selectedLookProduct.image
+                    }
                     alt={selectedLookProduct.name}
                     className="w-20 h-24 rounded-xl object-cover bg-neutral-800 shrink-0 border border-white/10"
                   />
@@ -734,7 +806,9 @@ export const Home: React.FC = () => {
                     <span className="w-4 h-4 rounded-full bg-black text-[#D6FF00] text-[10px] font-black flex items-center justify-center shrink-0">
                       {idx + 1}
                     </span>
-                    <span className="truncate max-w-[95px] sm:max-w-[110px]">{lp.name}</span>
+                    <span className="truncate max-w-[95px] sm:max-w-[110px]">
+                      {lp.name}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -749,7 +823,9 @@ export const Home: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                  src={selectedLookProduct.images?.[0] || selectedLookProduct.image}
+                  src={
+                    selectedLookProduct.images?.[0] || selectedLookProduct.image
+                  }
                   alt={selectedLookProduct.name}
                   className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
                 />
@@ -840,7 +916,8 @@ export const Home: React.FC = () => {
                 OEKO-TEX® Fabrics
               </h4>
               <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-3 sm:line-clamp-none">
-                Every virgin wool, organic silk, and calfskin hide is ethically sourced from family-owned mills in Biella and Florence.
+                Every virgin wool, organic silk, and calfskin hide is ethically
+                sourced from family-owned mills in Biella and Florence.
               </p>
             </div>
 
@@ -855,7 +932,8 @@ export const Home: React.FC = () => {
                 NBC Bakong Direct
               </h4>
               <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-3 sm:line-clamp-none">
-                Seamless dual-currency ($ USD &amp; ៛ KHR) EMVCo QR settlement with real-time cryptographic verification and thermal receipts.
+                Seamless dual-currency ($ USD &amp; ៛ KHR) EMVCo QR settlement
+                with real-time cryptographic verification and thermal receipts.
               </p>
             </div>
 
@@ -870,7 +948,8 @@ export const Home: React.FC = () => {
                 Global Courier
               </h4>
               <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-3 sm:line-clamp-none">
-                Orders are inspected, steamed, and sealed in signature garment vaults with live milestone tracking from warehouse to door.
+                Orders are inspected, steamed, and sealed in signature garment
+                vaults with live milestone tracking from warehouse to door.
               </p>
             </div>
 
@@ -885,7 +964,8 @@ export const Home: React.FC = () => {
                 Patron Satisfaction
               </h4>
               <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-3 sm:line-clamp-none">
-                Trusted by discerning collectors across Paris, Phnom Penh, Tokyo, and New York with 24/7 private styling support.
+                Trusted by discerning collectors across Paris, Phnom Penh,
+                Tokyo, and New York with 24/7 private styling support.
               </p>
             </div>
           </div>
@@ -929,7 +1009,9 @@ export const Home: React.FC = () => {
               No customer reviews have been submitted yet
             </p>
             <p className="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">
-              We only display real, unedited reviews submitted by our customers. Visit any product page to share your review and see it featured here live!
+              We only display real, unedited reviews submitted by our customers.
+              Visit any product page to share your review and see it featured
+              here live!
             </p>
             <Link
               to="/shop"
@@ -968,12 +1050,16 @@ export const Home: React.FC = () => {
                           />
                         ))}
                       </div>
-                      <span className="text-[10px] text-gray-400 font-medium">{rev.date || "Recently"}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {rev.date || "Recently"}
+                      </span>
                     </div>
 
                     {rev.productName && (
                       <Link
-                        to={rev.productId ? `/product/${rev.productId}` : "/shop"}
+                        to={
+                          rev.productId ? `/product/${rev.productId}` : "/shop"
+                        }
                         className="inline-block text-[10px] font-black uppercase tracking-wider text-gray-500 hover:text-black bg-gray-100 px-2.5 py-1 rounded-full mb-3 transition-colors"
                       >
                         {rev.productName}
@@ -998,9 +1084,13 @@ export const Home: React.FC = () => {
                       </div>
                     )}
                     <div>
-                      <h4 className="text-xs font-bold text-black">{authorName}</h4>
+                      <h4 className="text-xs font-bold text-black">
+                        {authorName}
+                      </h4>
                       <span className="text-[10px] font-semibold text-emerald-600 block">
-                        {rev.isVerifiedBuyer ? "✓ Verified Buyer" : "✓ Real Customer Review"}
+                        {rev.isVerifiedBuyer
+                          ? "✓ Verified Buyer"
+                          : "✓ Real Customer Review"}
                       </span>
                     </div>
                   </div>

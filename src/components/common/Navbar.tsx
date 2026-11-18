@@ -73,8 +73,12 @@ export const Navbar: React.FC = () => {
             {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
           </button>
 
-          <Link to="/" className="flex items-center gap-1.5 group">
-            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-xs group-hover:scale-125 transition-transform" />
+          <Link to="/" className="flex items-center gap-2 group">
+            <img
+              src="/favicon-32x32.png"
+              alt="STEAV Logo"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-contain group-hover:scale-110 transition-transform shadow-xs"
+            />
             <span className="font-extrabold tracking-[-0.05em] text-lg sm:text-2xl text-black">
               STEAV
             </span>

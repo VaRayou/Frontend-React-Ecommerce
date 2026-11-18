@@ -8,7 +8,11 @@ export function AuthLayout() {
       {/* Brand Header */}
       <header className="px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200/80 flex items-center justify-between sticky top-0 z-30">
         <Link to="/" className="inline-flex items-center gap-2.5 group">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-[0_0_8px_#D6FF00]" />
+          <img
+            src="/favicon-32x32.png"
+            alt="STEAV Logo"
+            className="w-6 h-6 rounded-md object-contain group-hover:scale-110 transition-transform shadow-xs"
+          />
           <span className="font-black tracking-[-0.04em] text-lg text-black">
             STEAV
           </span>

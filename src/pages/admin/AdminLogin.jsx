@@ -68,8 +68,12 @@ export const AdminLogin = () => {
       <div className="max-w-md w-full relative z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2 group mb-2">
-            <span className="w-3 h-3 rounded-full bg-[#D6FF00] inline-block shadow-xs group-hover:scale-125 transition-transform" />
+          <Link to="/" className="inline-flex items-center gap-2.5 group mb-2">
+            <img
+              src="/favicon-32x32.png"
+              alt="STEAV Logo"
+              className="w-7 h-7 rounded-lg object-contain group-hover:scale-110 transition-transform shadow-xs"
+            />
             <span className="font-extrabold tracking-[-0.05em] text-2xl text-white">
               STEAV
             </span>

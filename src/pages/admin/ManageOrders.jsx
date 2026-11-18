@@ -85,7 +85,10 @@ export function ManageOrders() {
     const rows = listToExport.map((o) => {
       const itemsList = Array.isArray(o.items) ? o.items : [];
       const itemsSummary = itemsList
-        .map((i) => `${i.name || i.productName || "Fashion Piece"} (x${i.quantity || 1})`)
+        .map(
+          (i) =>
+            `${i.name || i.productName || "Fashion Piece"} (x${i.quantity || 1})`,
+        )
         .join("; ");
       const totalUSD = Number(o.total || 0);
       const totalKHR = Math.round(totalUSD * 4100);
@@ -93,10 +96,16 @@ export function ManageOrders() {
       return [
         escapeCell(o.orderNumber || o.id),
         escapeCell(o.date || (o.createdAt ? o.createdAt.split("T")[0] : "")),
-        escapeCell(o.customerName || o.shippingAddress?.fullName || "Patron Client"),
+        escapeCell(
+          o.customerName || o.shippingAddress?.fullName || "Patron Client",
+        ),
         escapeCell(o.customerEmail || "patron@steav.com"),
         escapeCell(o.customerPhone || ""),
-        escapeCell(typeof o.shippingAddress === "string" ? o.shippingAddress : (o.shippingAddress?.street || "")),
+        escapeCell(
+          typeof o.shippingAddress === "string"
+            ? o.shippingAddress
+            : o.shippingAddress?.street || "",
+        ),
         escapeCell(o.paymentMethod || "Bakong KHQR"),
         escapeCell(o.paymentStatus || "Paid"),
         escapeCell(o.orderStatus || o.status || "Processing"),
@@ -105,7 +114,9 @@ export function ManageOrders() {
         escapeCell(Number(o.tax || 0).toFixed(2)),
         escapeCell(totalUSD.toFixed(2)),
         escapeCell(totalKHR.toLocaleString()),
-        escapeCell(itemsList.reduce((sum, i) => sum + (Number(i.quantity) || 1), 0)),
+        escapeCell(
+          itemsList.reduce((sum, i) => sum + (Number(i.quantity) || 1), 0),
+        ),
         escapeCell(itemsSummary),
       ].join(",");
     });
@@ -116,12 +127,17 @@ export function ManageOrders() {
     const link = document.createElement("a");
     const today = new Date().toISOString().split("T")[0];
     link.href = url;
-    link.setAttribute("download", `Atelier_Orders_Financial_Report_${today}.csv`);
+    link.setAttribute(
+      "download",
+      `Atelier_Orders_Financial_Report_${today}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showNotification(`Exported ${listToExport.length} orders to CSV successfully`);
+    showNotification(
+      `Exported ${listToExport.length} orders to CSV successfully`,
+    );
   };
 
   const loadOrders = useCallback(async (silent = false) => {
@@ -168,19 +184,24 @@ export function ManageOrders() {
           if (!active) return;
           if (payload.eventType === "INSERT") {
             soundEffects.playOrderChime();
-            const ordNum = payload.new?.order_number || payload.new?.id || "New";
+            const ordNum =
+              payload.new?.order_number || payload.new?.id || "New";
             showNotification(`🛍 Live Order Received: #${ordNum}`);
           } else if (payload.eventType === "UPDATE") {
-            const ordNum = payload.new?.order_number || payload.new?.id || "Order";
-            const newSt = payload.new?.order_status || payload.new?.status || "Updated";
+            const ordNum =
+              payload.new?.order_number || payload.new?.id || "Order";
+            const newSt =
+              payload.new?.order_status || payload.new?.status || "Updated";
             const paySt = payload.new?.payment_status || "";
             if (paySt.toLowerCase() === "paid") {
               soundEffects.playOrderChime();
             }
-            showNotification(`🔄 Order #${ordNum} updated (${newSt} • ${paySt || "Pending"})`);
+            showNotification(
+              `🔄 Order #${ordNum} updated (${newSt} • ${paySt || "Pending"})`,
+            );
           }
           loadOrders(true);
-        }
+        },
       )
       .subscribe();
 
@@ -205,12 +226,14 @@ export function ManageOrders() {
 
   const handleClearAllOrders = async () => {
     if (orders.length === 0) {
-      alert("There are no order records to delete. Your ledger is already completely clean!");
+      alert(
+        "There are no order records to delete. Your ledger is already completely clean!",
+      );
       return;
     }
     if (
       !window.confirm(
-        `Are you sure you want to permanently clear all ${orders.length} order records to start completely fresh?\n\nThis will purge historical orders and reset your active order queue and revenue to $0.00.`
+        `Are you sure you want to permanently clear all ${orders.length} order records to start completely fresh?\n\nThis will purge historical orders and reset your active order queue and revenue to $0.00.`,
       )
     ) {
       return;
@@ -220,7 +243,9 @@ export function ManageOrders() {
       setIsRefreshing(true);
       await orderService.clearAllOrders();
       setOrders([]);
-      showNotification("All historical orders permanently cleared. Fresh start ready!");
+      showNotification(
+        "All historical orders permanently cleared. Fresh start ready!",
+      );
       await loadOrders(true);
     } catch {
       alert("Failed to clear all orders.");
@@ -247,7 +272,11 @@ export function ManageOrders() {
       await orderService.updateOrderStatus(targetId, newStatus);
       showNotification(`Order #${targetId} status updated to ${newStatus}`);
       await loadOrders(true);
-      if (selectedOrder && (selectedOrder.id === targetId || selectedOrder.orderNumber === targetId)) {
+      if (
+        selectedOrder &&
+        (selectedOrder.id === targetId ||
+          selectedOrder.orderNumber === targetId)
+      ) {
         const sLower = String(newStatus || "").toLowerCase();
         setSelectedOrder((prev) => ({
           ...prev,
@@ -256,10 +285,10 @@ export function ManageOrders() {
           ...(sLower === "delivered"
             ? { paymentStatus: "Paid" }
             : sLower === "pending"
-            ? { paymentStatus: "Pending" }
-            : sLower === "cancelled"
-            ? { paymentStatus: "Cancelled" }
-            : {}),
+              ? { paymentStatus: "Pending" }
+              : sLower === "cancelled"
+                ? { paymentStatus: "Cancelled" }
+                : {}),
         }));
       }
     } catch {
@@ -274,7 +303,8 @@ export function ManageOrders() {
       await loadOrders(true);
       if (
         selectedOrder &&
-        (selectedOrder.id === targetId || selectedOrder.orderNumber === targetId)
+        (selectedOrder.id === targetId ||
+          selectedOrder.orderNumber === targetId)
       ) {
         setSelectedOrder((prev) => ({
           ...prev,
@@ -355,7 +385,10 @@ export function ManageOrders() {
       width: 140,
       render: (item) => (
         <span className="font-mono text-xs font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded-md">
-          {item.orderNumber || `#${String(item.id || item._id).slice(-8).toUpperCase()}`}
+          {item.orderNumber ||
+            `#${String(item.id || item._id)
+              .slice(-8)
+              .toUpperCase()}`}
         </span>
       ),
     },
@@ -365,7 +398,9 @@ export function ManageOrders() {
       render: (item) => (
         <div>
           <div className="font-bold text-gray-900 text-xs sm:text-sm">
-            {item.customerName || item.shippingAddress?.fullName || "Patron Client"}
+            {item.customerName ||
+              item.shippingAddress?.fullName ||
+              "Patron Client"}
           </div>
           <span className="text-[11px] text-gray-500">
             {item.customerEmail || "patron@steav.com"}
@@ -379,7 +414,8 @@ export function ManageOrders() {
       width: 110,
       render: (item) => (
         <span className="text-xs text-gray-600">
-          {item.date || (item.createdAt ? item.createdAt.split("T")[0] : "Today")}
+          {item.date ||
+            (item.createdAt ? item.createdAt.split("T")[0] : "Today")}
         </span>
       ),
     },
@@ -399,14 +435,14 @@ export function ManageOrders() {
       render: (item) => {
         const paid = isOrderPaid(item);
         const ordStatus = String(
-          item.orderStatus || item.status || "Pending"
+          item.orderStatus || item.status || "Pending",
         ).toLowerCase();
         const isCancelled = ordStatus === "cancelled";
         const effectivePayStatus = isCancelled
           ? "Cancelled"
           : paid
-          ? "Paid"
-          : "Pending";
+            ? "Paid"
+            : "Pending";
 
         return (
           <div>
@@ -415,15 +451,15 @@ export function ManageOrders() {
               onChange={(e) =>
                 handlePaymentStatusChange(
                   item.id || item.orderNumber,
-                  e.target.value
+                  e.target.value,
                 )
               }
               className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border cursor-pointer focus:outline-hidden ${
                 effectivePayStatus === "Paid"
                   ? "bg-emerald-100 text-emerald-800 border-emerald-200"
                   : effectivePayStatus === "Cancelled"
-                  ? "bg-rose-100 text-rose-700 border-rose-200"
-                  : "bg-amber-100 text-amber-800 border-amber-200"
+                    ? "bg-rose-100 text-rose-700 border-rose-200"
+                    : "bg-amber-100 text-amber-800 border-amber-200"
               }`}
               title="Change Payment Status (Only PAID orders count toward Settled Revenue)"
             >
@@ -444,7 +480,9 @@ export function ManageOrders() {
       render: (item) => (
         <select
           value={item.orderStatus || item.status || "Pending"}
-          onChange={(e) => handleStatusChange(item.id || item.orderNumber, e.target.value)}
+          onChange={(e) =>
+            handleStatusChange(item.id || item.orderNumber, e.target.value)
+          }
           className="px-2.5 py-1 text-xs font-bold rounded-lg border border-gray-200 bg-white hover:border-black focus:outline-hidden cursor-pointer"
         >
           <option value="Pending">Pending</option>
@@ -474,7 +512,10 @@ export function ManageOrders() {
       <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-500 mb-1 flex-wrap">
-            <Link to="/admin/dashboard" className="hover:text-black font-semibold">
+            <Link
+              to="/admin/dashboard"
+              className="hover:text-black font-semibold"
+            >
               Admin
             </Link>
             <span>/</span>
@@ -489,7 +530,8 @@ export function ManageOrders() {
             Customer Orders Management
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Track runway order statuses, dispatch shipments, and review client transactions.
+            Track runway order statuses, dispatch shipments, and review client
+            transactions.
           </p>
         </div>
 
@@ -524,8 +566,12 @@ export function ManageOrders() {
               className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold text-[11px] sm:text-xs transition-colors cursor-pointer disabled:opacity-50"
               title="Refresh Orders"
             >
-              <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isRefreshing ? "animate-spin text-[#D6FF00]" : ""}`} />
-              <span className="truncate">{isRefreshing ? "Syncing..." : "Sync Orders"}</span>
+              <RefreshCw
+                className={`w-3.5 h-3.5 shrink-0 ${isRefreshing ? "animate-spin text-[#D6FF00]" : ""}`}
+              />
+              <span className="truncate">
+                {isRefreshing ? "Syncing..." : "Sync Orders"}
+              </span>
             </button>
 
             <button
@@ -601,7 +647,8 @@ export function ManageOrders() {
               {orders.length} Orders
             </span>
             <span className="text-[10px] font-semibold text-gray-400 block truncate mt-0.5">
-              {financials.paidCount} Paid • {financials.cancelledCount} Cancelled
+              {financials.paidCount} Paid • {financials.cancelledCount}{" "}
+              Cancelled
             </span>
           </div>
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center font-bold shrink-0">
@@ -670,9 +717,13 @@ export function ManageOrders() {
         itemsPerPage={7}
         renderMobileCard={(item) => {
           const orderNum =
-            item.orderNumber || `#${String(item.id || item._id).slice(-8).toUpperCase()}`;
+            item.orderNumber ||
+            `#${String(item.id || item._id)
+              .slice(-8)
+              .toUpperCase()}`;
           const orderDate =
-            item.date || (item.createdAt ? item.createdAt.split("T")[0] : "Today");
+            item.date ||
+            (item.createdAt ? item.createdAt.split("T")[0] : "Today");
 
           return (
             <div className="space-y-3">
@@ -695,7 +746,9 @@ export function ManageOrders() {
               <div className="flex items-center justify-between gap-2 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
                 <div className="min-w-0">
                   <div className="font-bold text-gray-900 text-xs truncate">
-                    {item.customerName || item.shippingAddress?.fullName || "Patron Client"}
+                    {item.customerName ||
+                      item.shippingAddress?.fullName ||
+                      "Patron Client"}
                   </div>
                   <div className="text-[11px] text-gray-500 truncate">
                     {item.customerEmail || "patron@steav.com"}
@@ -705,29 +758,29 @@ export function ManageOrders() {
                   {(() => {
                     const paid = isOrderPaid(item);
                     const ordStatus = String(
-                      item.orderStatus || item.status || "Pending"
+                      item.orderStatus || item.status || "Pending",
                     ).toLowerCase();
                     const effectivePayStatus =
                       ordStatus === "cancelled"
                         ? "Cancelled"
                         : paid
-                        ? "Paid"
-                        : "Pending";
+                          ? "Paid"
+                          : "Pending";
                     return (
                       <select
                         value={effectivePayStatus}
                         onChange={(e) =>
                           handlePaymentStatusChange(
                             item.id || item.orderNumber,
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border cursor-pointer focus:outline-hidden ${
                           effectivePayStatus === "Paid"
                             ? "bg-emerald-100 text-emerald-800 border-emerald-200"
                             : effectivePayStatus === "Cancelled"
-                            ? "bg-rose-100 text-rose-700 border-rose-200"
-                            : "bg-amber-100 text-amber-800 border-amber-200"
+                              ? "bg-rose-100 text-rose-700 border-rose-200"
+                              : "bg-amber-100 text-amber-800 border-amber-200"
                         }`}
                       >
                         <option value="Paid">PAID</option>
@@ -749,7 +802,12 @@ export function ManageOrders() {
                 </span>
                 <select
                   value={item.orderStatus || item.status || "Pending"}
-                  onChange={(e) => handleStatusChange(item.id || item.orderNumber, e.target.value)}
+                  onChange={(e) =>
+                    handleStatusChange(
+                      item.id || item.orderNumber,
+                      e.target.value,
+                    )
+                  }
                   className="px-3 py-1.5 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:border-black focus:outline-hidden cursor-pointer"
                 >
                   <option value="Pending">Pending</option>
@@ -858,7 +916,11 @@ export function ManageOrders() {
                 Order #{selectedOrder?.orderNumber || selectedOrder?.id}
               </div>
               <span className="text-xs text-gray-500 font-normal">
-                Placed on {selectedOrder?.date || (selectedOrder?.createdAt ? selectedOrder?.createdAt.split("T")[0] : "Today")}
+                Placed on{" "}
+                {selectedOrder?.date ||
+                  (selectedOrder?.createdAt
+                    ? selectedOrder?.createdAt.split("T")[0]
+                    : "Today")}
               </span>
             </div>
           </div>
@@ -900,19 +962,35 @@ export function ManageOrders() {
             {/* Status & Patron Summary */}
             <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-gray-50 border border-gray-100">
               <div>
-                <span className="text-gray-400 block text-[11px]">Patron Client:</span>
-                <strong className="text-gray-900 font-bold block">{selectedOrder.customerName}</strong>
-                <span className="text-gray-500 text-[11px] block">{selectedOrder.customerEmail}</span>
+                <span className="text-gray-400 block text-[11px]">
+                  Patron Client:
+                </span>
+                <strong className="text-gray-900 font-bold block">
+                  {selectedOrder.customerName}
+                </strong>
+                <span className="text-gray-500 text-[11px] block">
+                  {selectedOrder.customerEmail}
+                </span>
                 {selectedOrder.customerPhone && (
-                  <span className="text-gray-500 text-[11px] block">{selectedOrder.customerPhone}</span>
+                  <span className="text-gray-500 text-[11px] block">
+                    {selectedOrder.customerPhone}
+                  </span>
                 )}
                 {selectedOrder.shippingAddress && (
-                  <span className="text-gray-500 text-[10px] block mt-1">{selectedOrder.shippingAddress}</span>
+                  <span className="text-gray-500 text-[10px] block mt-1">
+                    {selectedOrder.shippingAddress}
+                  </span>
                 )}
               </div>
               <div>
-                <span className="text-gray-400 block text-[11px]">Delivery Status:</span>
-                <div className="mt-1">{getStatusBadge(selectedOrder.orderStatus || selectedOrder.status)}</div>
+                <span className="text-gray-400 block text-[11px]">
+                  Delivery Status:
+                </span>
+                <div className="mt-1">
+                  {getStatusBadge(
+                    selectedOrder.orderStatus || selectedOrder.status,
+                  )}
+                </div>
               </div>
             </div>
 
@@ -924,7 +1002,10 @@ export function ManageOrders() {
               <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
                 {selectedOrder.items && selectedOrder.items.length > 0 ? (
                   selectedOrder.items.map((item, idx) => (
-                    <div key={idx} className="p-3 flex items-center justify-between bg-white hover:bg-gray-50">
+                    <div
+                      key={idx}
+                      className="p-3 flex items-center justify-between bg-white hover:bg-gray-50"
+                    >
                       <div className="flex items-center gap-3">
                         <img
                           src={
@@ -939,15 +1020,20 @@ export function ManageOrders() {
                             {item.name || item.productName || "Fashion Piece"}
                           </strong>
                           <span className="text-[11px] text-gray-500">
-                            Qty: {item.quantity} {item.size ? `• Size: ${item.size}` : ""}
+                            Qty: {item.quantity}{" "}
+                            {item.size ? `• Size: ${item.size}` : ""}
                           </span>
                         </div>
                       </div>
-                      <span className="font-bold text-gray-900">${Number(item.price || 0).toFixed(2)}</span>
+                      <span className="font-bold text-gray-900">
+                        ${Number(item.price || 0).toFixed(2)}
+                      </span>
                     </div>
                   ))
                 ) : (
-                  <div className="p-3 text-gray-500 text-center">Runway package details logged</div>
+                  <div className="p-3 text-gray-500 text-center">
+                    Runway package details logged
+                  </div>
                 )}
               </div>
             </div>
@@ -956,15 +1042,21 @@ export function ManageOrders() {
             <div className="p-3.5 rounded-xl bg-neutral-900 text-white space-y-2">
               <div className="flex justify-between text-neutral-300">
                 <span>Payment Method</span>
-                <span className="font-semibold text-white">{selectedOrder.paymentMethod || "Bakong KHQR"}</span>
+                <span className="font-semibold text-white">
+                  {selectedOrder.paymentMethod || "Bakong KHQR"}
+                </span>
               </div>
               <div className="flex justify-between text-neutral-300">
                 <span>Payment Status</span>
-                <span className="text-[#D6FF00] font-bold">{selectedOrder.paymentStatus || "Paid"}</span>
+                <span className="text-[#D6FF00] font-bold">
+                  {selectedOrder.paymentStatus || "Paid"}
+                </span>
               </div>
               <div className="pt-2 border-t border-neutral-800 flex justify-between font-black text-sm">
                 <span>Total Amount</span>
-                <span className="text-[#D6FF00]">${Number(selectedOrder.total || 0).toFixed(2)}</span>
+                <span className="text-[#D6FF00]">
+                  ${Number(selectedOrder.total || 0).toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
@@ -992,7 +1084,9 @@ export function ManageOrders() {
         onOrderCompleted={(newOrder) => {
           loadOrders(true);
           setPosReceiptOrder(newOrder);
-          showNotification(`POS Order #${newOrder.orderNumber} completed & receipt printed`);
+          showNotification(
+            `POS Order #${newOrder.orderNumber} completed & receipt printed`,
+          );
         }}
       />
     </div>

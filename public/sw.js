@@ -1,9 +1,13 @@
 // STEAV Studio Progressive Web App (PWA) Service Worker
-const CACHE_NAME = "atelier-cache-v1";
+const CACHE_NAME = "steav-cache-v2";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
   "/manifest.json",
+  "/favicon.ico",
+  "/favicon.svg",
+  "/favicon-32x32.png",
+  "/favicon-192x192.png",
 ];
 
 // Install: pre-cache shell

@@ -163,7 +163,11 @@ export function AdminSidebar({
           onClick={onCloseMobile}
         >
           <div className="sidebar-brand-icon">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#D6FF00] inline-block shadow-xs" />
+            <img
+              src="/favicon-32x32.png"
+              alt="STEAV"
+              className="w-6 h-6 rounded-md object-contain"
+            />
           </div>
           {!isCollapsed && (
             <div className="sidebar-brand-text">

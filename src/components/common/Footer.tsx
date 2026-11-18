@@ -57,8 +57,12 @@ export const Footer: React.FC = () => {
         {/* Top Newsletter & Brand Manifesto Bar */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pb-16 border-b border-white/10">
           <div className="lg:col-span-5 space-y-4">
-            <Link to="/" className="inline-flex items-center gap-2 group">
-              <span className="w-3 h-3 rounded-full bg-[#D6FF00] inline-block shadow-xs group-hover:scale-125 transition-transform" />
+            <Link to="/" className="inline-flex items-center gap-2.5 group">
+              <img
+                src="/favicon-32x32.png"
+                alt="STEAV Logo"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-contain group-hover:scale-110 transition-transform shadow-xs"
+              />
               <span className="font-extrabold tracking-[-0.05em] text-2xl sm:text-3xl text-white">
                 STEAV
               </span>
