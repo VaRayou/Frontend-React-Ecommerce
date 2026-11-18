@@ -18,6 +18,9 @@ import {
   ShoppingBag,
   Star,
   Sparkles,
+  Zap,
+  Check,
+  Crown,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useUIStore } from "../../store/useUIStore";
@@ -51,6 +54,35 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 interface AuthProps {
   initialMode?: "login" | "register";
 }
+
+// Framer Motion Animation Variants for Staggered Fluidity
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.02,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    transition: { duration: 0.15, ease: "easeOut" },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.32,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
 
 export const Login: React.FC<AuthProps> = ({ initialMode }) => {
   const location = useLocation();
@@ -87,7 +119,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // If an authenticated admin visits login, route directly to dashboard
+  // If an authenticated admin visits login, route directly to dashboard (Option A)
   useEffect(() => {
     const currentUser = useAuthStore.getState().user;
     const isAuth = useAuthStore.getState().isAuthenticated;
@@ -147,9 +179,9 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     const colors = [
       "bg-rose-500",
       "bg-amber-500",
-      "bg-yellow-500",
+      "bg-yellow-400",
       "bg-emerald-500",
-      "bg-[#111111]",
+      "bg-[#D6FF00]",
     ];
     return {
       score,
@@ -177,7 +209,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
 
     setMode(target);
 
-    // Update browser URL without triggering unmount or Suspense fallback
+    // Update browser URL without triggering unmount
     try {
       window.history.replaceState(
         window.history.state,
@@ -252,98 +284,148 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     registerForm.setValue("confirmPassword", "SteavPass2026!", {
       shouldValidate: true,
     });
-    showToast("Sample Patron details filled — ready to submit", "info");
+    showToast("Sample Patron details loaded — ready to create", "info");
   };
 
   const handleForgotPassword = () => {
     setResetSent(true);
     showToast(
       watchedEmail && watchedEmail.includes("@")
-        ? `Security reset link dispatched to ${watchedEmail}`
-        : "Please enter your email address to receive a recovery link.",
+        ? `Security reset instructions sent to ${watchedEmail}`
+        : "Please enter your email above to receive a reset link.",
       "info"
     );
     setTimeout(() => setResetSent(false), 6000);
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-8 sm:py-14 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F6F6F4]">
-      {/* Dynamic Ambient Blur Accents */}
-      <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#D6FF00]/10 blur-[100px] animate-pulse" />
-      <div className="pointer-events-none absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-black/5 blur-[120px]" />
-
+    <div className="min-h-[88vh] flex items-center justify-center py-8 sm:py-14 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F6F6F4]">
+      {/* Dynamic Animated Ambient Orbs */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 rounded-[28px] overflow-hidden bg-white border border-gray-200/90 shadow-[0_20px_70px_-15px_rgba(0,0,0,0.08)] relative z-10"
+        animate={{
+          scale: [1, 1.15, 1],
+          opacity: [0.18, 0.28, 0.18],
+          x: [0, 20, 0],
+          y: [0, -20, 0],
+        }}
+        transition={{
+          duration: 9,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        className="pointer-events-none absolute -top-24 -left-24 w-[32rem] h-[32rem] rounded-full bg-[#D6FF00]/20 blur-[110px]"
+      />
+      <motion.div
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.12, 0.2, 0.12],
+          x: [0, -25, 0],
+          y: [0, 25, 0],
+        }}
+        transition={{
+          duration: 11,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        className="pointer-events-none absolute -bottom-24 -right-24 w-[34rem] h-[34rem] rounded-full bg-black/10 blur-[130px]"
+      />
+
+      {/* Main Unified Card Container */}
+      <motion.div
+        initial={{ opacity: 0, y: 22, scale: 0.99 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 rounded-[32px] overflow-hidden bg-white border border-gray-200/90 shadow-[0_25px_80px_-20px_rgba(0,0,0,0.1)] relative z-10"
       >
         {/* ========================================================= */}
-        {/* Left Editorial Visual Column (5 Cols)                     */}
+        {/* Left Column (5 Cols): Editorial Creative Fashion Showcase  */}
         {/* ========================================================= */}
-        <div className="relative hidden lg:flex lg:col-span-5 bg-[#0B0B0B] text-white p-10 flex-col justify-between overflow-hidden">
-          {/* High-Fashion Editorial Imagery with Smooth Transition */}
-          <img
-            src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=85"
-            alt="STEAV Paris Runway"
-            className="absolute inset-0 w-full h-full object-cover opacity-45 scale-105"
+        <div className="relative hidden lg:flex lg:col-span-5 bg-[#0A0A0A] text-white p-10 flex-col justify-between overflow-hidden group">
+          {/* Editorial Visual Backdrop with Subtle Ambient Zoom */}
+          <motion.img
+            src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1400&q=85"
+            alt="STEAV Paris Autumn Runway"
+            animate={{ scale: [1, 1.04, 1] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 w-full h-full object-cover opacity-50"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/60 to-[#0A0A0A]/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/70 to-[#0A0A0A]/35" />
 
-          {/* Header Brand Bar */}
+          {/* Top Brand Bar */}
           <div className="relative z-10 flex items-center justify-between">
             <Link to="/" className="inline-flex items-center gap-2.5 group/logo">
               <img
                 src="/navbar-logo.png?v=d6ff00"
                 alt="STEAV"
-                className="w-7 h-7 object-contain shrink-0 group-hover/logo:scale-110 transition-transform"
+                className="w-8 h-8 object-contain shrink-0 group-hover/logo:scale-110 transition-transform drop-shadow-[0_0_8px_rgba(214,255,0,0.4)]"
               />
-              <span className="font-black tracking-[-0.04em] text-xl text-white">
+              <span className="font-black tracking-[-0.05em] text-2xl text-white">
                 STEAV
               </span>
-              <span className="text-[10px] font-extrabold tracking-[0.24em] text-neutral-400 uppercase">
+              <span className="text-[10px] font-black tracking-[0.28em] text-neutral-400 uppercase">
                 PARIS
               </span>
             </Link>
 
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-extrabold uppercase tracking-wider text-[#D6FF00]">
-              <Sparkles className="w-3 h-3" />
-              <span>AW26 Capsule</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-black uppercase tracking-wider text-[#D6FF00]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D6FF00] animate-pulse" />
+              <span>AW26 SALON</span>
             </span>
           </div>
 
-          {/* Middle Narrative & Privileges */}
+          {/* Center Editorial Statement */}
           <div className="relative z-10 my-auto py-8 space-y-6">
-            <div className="space-y-3">
-              <span className="text-[10px] font-mono font-bold tracking-[0.24em] uppercase text-[#D6FF00] block">
-                {mode === "login" ? "PATRON SANCTUARY" : "PRIVATE REGISTRY"}
-              </span>
-              <h2 className="text-3xl font-black uppercase tracking-tight leading-[1.08] text-white">
-                Architecture Of Modern Luxury.
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.5 }}
+              className="space-y-3"
+            >
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D6FF00] text-black text-[10px] font-black uppercase tracking-widest shadow-xs">
+                <Crown className="w-3 h-3" />
+                <span>Private Patron Membership</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-[1.04] text-white">
+                Haute Couture.
+                <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-200 to-[#D6FF00]">
+                  Modern Luxury.
+                </span>
               </h2>
-              <p className="text-xs text-neutral-300 font-light leading-relaxed">
-                Step into our private salon for expedited NBC Bakong KHQR settlement, archived invoices, and white-glove international dispatch.
+              <p className="text-xs text-neutral-300 font-light leading-relaxed max-w-sm">
+                Access bespoke seasonal lookbooks, 1-tap NBC Bakong KHQR settlement, and white-glove international dispatch.
               </p>
-            </div>
+            </motion.div>
 
-            {/* Sleek Minimalist Privileges */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center gap-3 text-xs text-neutral-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#D6FF00] shrink-0 shadow-[0_0_6px_#D6FF00]" />
-                <span className="font-medium">Instant NBC Bakong KHQR Dual-Currency Pay</span>
+            {/* Micro Privilege Pills */}
+            <div className="space-y-2.5 pt-2">
+              <div className="p-3 rounded-2xl bg-white/6 backdrop-blur-md border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
+                <div className="w-8 h-8 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0 font-black shadow-xs">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Instant NBC Bakong KHQR</h4>
+                  <p className="text-[11px] text-neutral-300">
+                    Dual USD &amp; KHR checkout with automated digital voucher
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-neutral-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#D6FF00] shrink-0 shadow-[0_0_6px_#D6FF00]" />
-                <span className="font-medium">Permanent Access to Thermal Tax Invoices</span>
-              </div>
-              <div className="flex items-center gap-3 text-xs text-neutral-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#D6FF00] shrink-0 shadow-[0_0_6px_#D6FF00]" />
-                <span className="font-medium">White-Glove Courier Logistics &amp; Milestones</span>
+
+              <div className="p-3 rounded-2xl bg-white/6 backdrop-blur-md border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
+                <div className="w-8 h-8 rounded-xl bg-white/15 text-[#D6FF00] flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Official Tax Invoices &amp; Tracking</h4>
+                  <p className="text-[11px] text-neutral-300">
+                    5-stage courier dispatch milestones with downloadable thermal receipts
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Bottom Social Proof & Heritage */}
+          {/* Bottom Social Proof & Location Stamp */}
           <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-neutral-400">
             <div className="flex items-center gap-2">
               <div className="flex text-[#D6FF00]">
@@ -351,9 +433,9 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                   <Star key={i} className="w-3.5 h-3.5 fill-[#D6FF00] stroke-[#D6FF00]" />
                 ))}
               </div>
-              <span className="font-bold text-white text-[11px]">4.98 / 5.0</span>
+              <span className="font-extrabold text-white text-[11px]">4.98 / 5.0</span>
               <span className="text-[10px] text-neutral-400 uppercase tracking-wider hidden xl:inline">
-                • Patron Verified
+                • Verified Patrons
               </span>
             </div>
             <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
@@ -363,25 +445,35 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
         </div>
 
         {/* ========================================================= */}
-        {/* Right Form Column (7 Cols)                                */}
+        {/* Right Column (7 Cols): Sleek, Cool, High-Contrast Forms   */}
         {/* ========================================================= */}
         <div className="lg:col-span-7 p-6 sm:p-10 md:p-12 flex flex-col justify-between bg-white relative">
           <div className="space-y-6">
-            {/* Top Bar: Switcher Pill & Boutique Link */}
+            {/* Top Navigation Row: Segmented Switcher & Return Link */}
             <div className="flex items-center justify-between gap-3 flex-wrap border-b border-gray-100 pb-5">
-              {/* Pill Segmented Tabs */}
-              <div className="p-1 rounded-2xl bg-gray-100/90 border border-gray-200/70 inline-flex items-center relative w-full sm:w-64">
+              {/* Mobile Brand Link (Visible only on smaller screens) */}
+              <div className="lg:hidden flex items-center gap-2">
+                <img
+                  src="/navbar-logo.png?v=d6ff00"
+                  alt="STEAV Logo"
+                  className="w-6 h-6 object-contain"
+                />
+                <span className="font-black text-lg tracking-tight text-black">STEAV</span>
+              </div>
+
+              {/* Magnetic Sliding Segmented Switcher */}
+              <div className="p-1 rounded-2xl bg-gray-100/90 border border-gray-200/80 inline-flex items-center relative w-full sm:w-64">
                 <button
                   type="button"
                   onClick={() => handleSwitchMode("login")}
                   className={`relative flex-1 py-2 text-center text-xs font-black uppercase tracking-wider z-10 transition-colors cursor-pointer ${
-                    mode === "login" ? "text-black" : "text-gray-500 hover:text-black"
+                    mode === "login" ? "text-black" : "text-gray-400 hover:text-black"
                   }`}
                 >
                   {mode === "login" && (
                     <motion.div
-                      layoutId="auth-active-tab-pill"
-                      className="absolute inset-0 bg-white rounded-xl shadow-xs border border-gray-200/60 -z-10"
+                      layoutId="auth-active-tab-glow"
+                      className="absolute inset-0 bg-white rounded-xl shadow-xs border border-gray-200/70 -z-10"
                       transition={{ type: "spring", stiffness: 450, damping: 32 }}
                     />
                   )}
@@ -392,13 +484,13 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                   type="button"
                   onClick={() => handleSwitchMode("register")}
                   className={`relative flex-1 py-2 text-center text-xs font-black uppercase tracking-wider z-10 transition-colors cursor-pointer ${
-                    mode === "register" ? "text-black" : "text-gray-500 hover:text-black"
+                    mode === "register" ? "text-black" : "text-gray-400 hover:text-black"
                   }`}
                 >
                   {mode === "register" && (
                     <motion.div
-                      layoutId="auth-active-tab-pill"
-                      className="absolute inset-0 bg-white rounded-xl shadow-xs border border-gray-200/60 -z-10"
+                      layoutId="auth-active-tab-glow"
+                      className="absolute inset-0 bg-white rounded-xl shadow-xs border border-gray-200/70 -z-10"
                       transition={{ type: "spring", stiffness: 450, damping: 32 }}
                     />
                   )}
@@ -406,18 +498,23 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                 </button>
               </div>
 
+              {/* Boutique Return Link */}
               <Link
                 to="/"
                 className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-black transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Return to Boutique</span>
+                <span>Return to Shop</span>
               </Link>
             </div>
 
-            {/* Context-Aware Checkout Banner */}
+            {/* Context-Aware Reserved Shopping Bag Notice */}
             {isRedirectedForPurchase && (
-              <div className="p-3.5 rounded-2xl bg-[#111111] text-white flex items-center gap-3 shadow-xs border border-neutral-800">
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3.5 rounded-2xl bg-[#111111] text-white flex items-center gap-3 shadow-xs border border-neutral-800"
+              >
                 <div className="w-8 h-8 rounded-xl bg-[#D6FF00] text-black flex items-center justify-center shrink-0">
                   <ShoppingBag className="w-4 h-4" />
                 </div>
@@ -427,44 +524,47 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                   </strong>
                   <span className="text-gray-300 text-[11px] truncate block">
                     {mode === "login"
-                      ? "Sign in to seamlessly complete your order."
-                      : "Create your account to proceed with checkout."}
+                      ? "Sign in to seamlessly return and complete your order."
+                      : "Create your account to unlock instant member checkout."}
                   </span>
                 </div>
-              </div>
+              </motion.div>
             )}
 
-            {/* Dynamic Form Pane with Clean Fade Transitions */}
+            {/* Dynamic Form with Staggered Cascading Animation */}
             <AnimatePresence mode="wait" initial={false}>
               {mode === "login" ? (
+                /* ======================================================== */
+                /* LOGIN FORM VIEW                                          */
+                /* ======================================================== */
                 <motion.div
-                  key="pane-login"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  key="view-login"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
                   className="space-y-5"
                 >
-                  {/* Titles */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-gray-400">
+                  {/* Header Title */}
+                  <motion.div variants={itemVariants} className="space-y-1">
+                    <span className="text-[10px] font-mono font-bold tracking-[0.24em] uppercase text-gray-400">
                       STEAV CLIENT PORTAL
                     </span>
                     <h1 className="text-2xl sm:text-3xl font-black text-black uppercase tracking-tight">
                       Welcome Back
                     </h1>
                     <p className="text-xs text-gray-500 font-normal">
-                      Enter your patron credentials to access your lookbooks, orders, and receipts.
+                      Enter your patron credentials to access orders, invoices, and lookbooks.
                     </p>
-                  </div>
+                  </motion.div>
 
                   <form
                     onSubmit={loginForm.handleSubmit(onLoginSubmit)}
                     className="space-y-4 pt-1"
                   >
-                    {/* Email */}
-                    <div>
-                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                    {/* Email Input */}
+                    <motion.div variants={itemVariants}>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-black mb-1.5">
                         Email Address
                       </label>
                       <div className="relative group">
@@ -473,22 +573,23 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                           type="email"
                           autoComplete="email"
                           {...loginForm.register("email")}
-                          placeholder="name@steav.com"
-                          className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-medium text-xs text-black transition-all placeholder:text-gray-400"
+                          placeholder="patron@steav.com"
+                          className="w-full pl-10 pr-4 py-3 rounded-2xl bg-gray-50/80 hover:bg-gray-100/70 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                         />
                       </div>
                       {loginForm.formState.errors.email && (
-                        <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                          {loginForm.formState.errors.email.message}
+                        <p className="text-[11px] text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                          <span>•</span>
+                          <span>{loginForm.formState.errors.email.message}</span>
                         </p>
                       )}
-                    </div>
+                    </motion.div>
 
-                    {/* Password */}
-                    <div>
+                    {/* Password Input */}
+                    <motion.div variants={itemVariants}>
                       <div className="flex justify-between items-center mb-1.5">
-                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-gray-700">
-                          Password
+                        <label className="text-[11px] font-black uppercase tracking-wider text-black">
+                          Security Password
                         </label>
                         <button
                           type="button"
@@ -505,12 +606,12 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                           autoComplete="current-password"
                           {...loginForm.register("password")}
                           placeholder="••••••••••••"
-                          className="w-full pl-10 pr-11 py-3 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-medium text-xs text-black transition-all placeholder:text-gray-400"
+                          className="w-full pl-10 pr-11 py-3 rounded-2xl bg-gray-50/80 hover:bg-gray-100/70 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-black transition-colors cursor-pointer"
                           aria-label={showPassword ? "Hide password" : "Show password"}
                         >
                           {showPassword ? (
@@ -521,25 +622,33 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                         </button>
                       </div>
                       {loginForm.formState.errors.password && (
-                        <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                          {loginForm.formState.errors.password.message}
+                        <p className="text-[11px] text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                          <span>•</span>
+                          <span>{loginForm.formState.errors.password.message}</span>
                         </p>
                       )}
-                    </div>
+                    </motion.div>
 
-                    {/* Reset Feedback */}
+                    {/* Reset Password Sent Notice */}
                     {resetSent && (
-                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2"
+                      >
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Password recovery instructions sent to your inbox.</span>
-                      </div>
+                        <span>Recovery link sent to your email. Check your inbox.</span>
+                      </motion.div>
                     )}
 
-                    {/* Remember Me */}
-                    <div className="flex items-center justify-between pt-0.5">
+                    {/* Remember Device */}
+                    <motion.div
+                      variants={itemVariants}
+                      className="flex items-center justify-between pt-0.5"
+                    >
                       <label
                         htmlFor="rememberMe"
-                        className="flex items-center gap-2 text-xs text-gray-600 font-medium cursor-pointer select-none"
+                        className="flex items-center gap-2.5 text-xs text-gray-600 font-medium cursor-pointer select-none"
                       >
                         <input
                           type="checkbox"
@@ -549,35 +658,40 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                         />
                         <span>Remember this device for 30 days</span>
                       </label>
-                    </div>
+                    </motion.div>
 
                     {/* Submit CTA */}
-                    <button
-                      type="submit"
-                      disabled={loginForm.formState.isSubmitting}
-                      className="w-full mt-2 py-3.5 px-6 rounded-2xl bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:scale-[1.006] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60"
-                    >
-                      <span>
-                        {loginForm.formState.isSubmitting
-                          ? "Authenticating..."
-                          : "Sign In to STEAV"}
-                      </span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    <motion.div variants={itemVariants} className="pt-1">
+                      <button
+                        type="submit"
+                        disabled={loginForm.formState.isSubmitting}
+                        className="w-full py-3.5 px-6 rounded-2xl bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:scale-[1.008] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60"
+                      >
+                        <span>
+                          {loginForm.formState.isSubmitting
+                            ? "Authenticating..."
+                            : "Sign In to STEAV"}
+                        </span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </motion.div>
                   </form>
                 </motion.div>
               ) : (
+                /* ======================================================== */
+                /* REGISTER FORM VIEW                                       */
+                /* ======================================================== */
                 <motion.div
-                  key="pane-register"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  key="view-register"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
                   className="space-y-4"
                 >
-                  {/* Titles */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-gray-400">
+                  {/* Header Title */}
+                  <motion.div variants={itemVariants} className="space-y-1">
+                    <span className="text-[10px] font-mono font-bold tracking-[0.24em] uppercase text-gray-400">
                       NEW PATRON REGISTRY
                     </span>
                     <h1 className="text-2xl sm:text-3xl font-black text-black uppercase tracking-tight">
@@ -586,16 +700,19 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                     <p className="text-xs text-gray-500 font-normal">
                       Join our private circle for instant checkout and personalized wardrobe service.
                     </p>
-                  </div>
+                  </motion.div>
 
                   <form
                     onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
                     className="space-y-3 pt-1"
                   >
                     {/* Full Name & Phone */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <motion.div
+                      variants={itemVariants}
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                    >
                       <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                        <label className="block text-[11px] font-black uppercase tracking-wider text-black mb-1.5">
                           Full Name *
                         </label>
                         <div className="relative group">
@@ -605,18 +722,19 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                             autoComplete="name"
                             {...registerForm.register("fullName")}
                             placeholder="e.g. Rayou Va"
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-medium text-xs text-black transition-all placeholder:text-gray-400"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-gray-50/80 hover:bg-gray-100/70 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                           />
                         </div>
                         {registerForm.formState.errors.fullName && (
-                          <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                            {registerForm.formState.errors.fullName.message}
+                          <p className="text-[11px] text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                            <span>•</span>
+                            <span>{registerForm.formState.errors.fullName.message}</span>
                           </p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                        <label className="block text-[11px] font-black uppercase tracking-wider text-black mb-1.5">
                           Phone Number{" "}
                           <span className="text-gray-400 font-normal">(Optional)</span>
                         </label>
@@ -627,15 +745,15 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                             autoComplete="tel"
                             {...registerForm.register("phone")}
                             placeholder="e.g. 096 835 0317"
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-medium text-xs text-black transition-all placeholder:text-gray-400"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-gray-50/80 hover:bg-gray-100/70 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                           />
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Email */}
-                    <div>
-                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                    {/* Email Input */}
+                    <motion.div variants={itemVariants}>
+                      <label className="block text-[11px] font-black uppercase tracking-wider text-black mb-1.5">
                         Email Address *
                       </label>
                       <div className="relative group">
@@ -645,21 +763,25 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                           autoComplete="email"
                           {...registerForm.register("email")}
                           placeholder="name@steav.com"
-                          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-medium text-xs text-black transition-all placeholder:text-gray-400"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-gray-50/80 hover:bg-gray-100/70 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                         />
                       </div>
                       {registerForm.formState.errors.email && (
-                        <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                          {registerForm.formState.errors.email.message}
+                        <p className="text-[11px] text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                          <span>•</span>
+                          <span>{registerForm.formState.errors.email.message}</span>
                         </p>
                       )}
-                    </div>
+                    </motion.div>
 
                     {/* Password & Confirm */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <motion.div
+                      variants={itemVariants}
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                    >
                       <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
-                          Password *
+                        <label className="block text-[11px] font-black uppercase tracking-wider text-black mb-1.5">
+                          Security Password *
                         </label>
                         <div className="relative group">
                           <Lock className="w-4 h-4 text-gray-400 group-focus-within:text-black absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors pointer-events-none" />
@@ -668,12 +790,12 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                             autoComplete="new-password"
                             {...registerForm.register("password")}
                             placeholder="Min. 6 chars"
-                            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-medium text-xs text-black transition-all placeholder:text-gray-400"
+                            className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-gray-50/80 hover:bg-gray-100/70 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
                             aria-label={showPassword ? "Hide password" : "Show password"}
                           >
                             {showPassword ? (
@@ -684,14 +806,15 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                           </button>
                         </div>
                         {registerForm.formState.errors.password && (
-                          <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                            {registerForm.formState.errors.password.message}
+                          <p className="text-[11px] text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                            <span>•</span>
+                            <span>{registerForm.formState.errors.password.message}</span>
                           </p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                        <label className="block text-[11px] font-black uppercase tracking-wider text-black mb-1.5">
                           Confirm Password *
                         </label>
                         <div className="relative group">
@@ -701,12 +824,12 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                             autoComplete="new-password"
                             {...registerForm.register("confirmPassword")}
                             placeholder="Repeat password"
-                            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200 focus:border-black focus:ring-2 focus:ring-black/5 outline-none font-medium text-xs text-black transition-all placeholder:text-gray-400"
+                            className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-gray-50/80 hover:bg-gray-100/70 focus:bg-white border border-gray-200/90 focus:border-black focus:ring-4 focus:ring-black/5 outline-none font-semibold text-xs text-black transition-all placeholder:text-gray-400"
                           />
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
                             aria-label={
                               showConfirmPassword ? "Hide password" : "Show password"
                             }
@@ -719,26 +842,33 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                           </button>
                         </div>
                         {registerForm.formState.errors.confirmPassword && (
-                          <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                            {registerForm.formState.errors.confirmPassword.message}
+                          <p className="text-[11px] text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                            <span>•</span>
+                            <span>
+                              {registerForm.formState.errors.confirmPassword.message}
+                            </span>
                           </p>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Password Strength Gauge */}
+                    {/* Animated Laser Security Strength Equalizer */}
                     {watchedRegisterPassword.length > 0 && (
-                      <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 space-y-1.5">
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="p-3 rounded-2xl bg-gray-50 border border-gray-100 space-y-2 overflow-hidden"
+                      >
                         <div className="flex items-center justify-between text-[10px]">
-                          <span className="font-bold text-gray-600 uppercase tracking-wider">
-                            Password Strength:{" "}
-                            <strong className="text-black">
+                          <span className="font-extrabold text-gray-700 uppercase tracking-wider">
+                            Password Security:{" "}
+                            <strong className="text-black font-black">
                               {passwordStrength.label}
                             </strong>
                           </span>
                           {watchedRegisterConfirm.length > 0 && (
                             <span
-                              className={`font-bold flex items-center gap-1 ${
+                              className={`font-black flex items-center gap-1 uppercase tracking-wider text-[10px] ${
                                 watchedRegisterPassword === watchedRegisterConfirm
                                   ? "text-emerald-600"
                                   : "text-amber-600"
@@ -746,11 +876,11 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                             >
                               {watchedRegisterPassword === watchedRegisterConfirm ? (
                                 <>
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>Passwords match</span>
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  <span>Passwords Match</span>
                                 </>
                               ) : (
-                                <span>Passwords do not match yet</span>
+                                <span>Does Not Match Yet</span>
                               )}
                             </span>
                           )}
@@ -759,19 +889,23 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                           {[1, 2, 3, 4].map((level) => (
                             <div
                               key={level}
-                              className={`h-1.5 rounded-full transition-all duration-300 ${
+                              className={`h-2 rounded-full transition-all duration-300 ${
                                 passwordStrength.score >= level
                                   ? passwordStrength.color
                                   : "bg-gray-200"
+                              } ${
+                                passwordStrength.score >= 4 && level === 4
+                                  ? "shadow-[0_0_8px_#D6FF00]"
+                                  : ""
                               }`}
                             />
                           ))}
                         </div>
-                      </div>
+                      </motion.div>
                     )}
 
-                    {/* Terms */}
-                    <div className="pt-1">
+                    {/* Terms Agreement */}
+                    <motion.div variants={itemVariants} className="pt-1">
                       <label
                         htmlFor="agreeTerms"
                         className="flex items-start gap-2.5 text-xs text-gray-600 font-medium cursor-pointer select-none"
@@ -784,39 +918,42 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                         />
                         <span className="text-[11px] leading-snug">
                           I agree to the{" "}
-                          <Link to="/about" className="underline font-bold text-black">
+                          <Link to="/about" className="underline font-black text-black">
                             Terms of Service
                           </Link>{" "}
                           and Privacy Protocol.
                         </span>
                       </label>
-                    </div>
-                    {registerForm.formState.errors.agreeTerms && (
-                      <p className="text-[11px] text-rose-600 font-semibold">
-                        {registerForm.formState.errors.agreeTerms.message}
-                      </p>
-                    )}
+                      {registerForm.formState.errors.agreeTerms && (
+                        <p className="text-[11px] text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                          <span>•</span>
+                          <span>{registerForm.formState.errors.agreeTerms.message}</span>
+                        </p>
+                      )}
+                    </motion.div>
 
                     {/* Submit CTA */}
-                    <button
-                      type="submit"
-                      disabled={registerForm.formState.isSubmitting}
-                      className="w-full mt-2 py-3.5 px-6 rounded-2xl bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:scale-[1.006] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60"
-                    >
-                      <span>
-                        {registerForm.formState.isSubmitting
-                          ? "Creating Account..."
-                          : "Create STEAV Account"}
-                      </span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    <motion.div variants={itemVariants} className="pt-1">
+                      <button
+                        type="submit"
+                        disabled={registerForm.formState.isSubmitting}
+                        className="w-full py-3.5 px-6 rounded-2xl bg-[#111111] hover:bg-black text-[#D6FF00] font-black text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:scale-[1.008] active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60"
+                      >
+                        <span>
+                          {registerForm.formState.isSubmitting
+                            ? "Creating Account..."
+                            : "Create STEAV Account"}
+                        </span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </motion.div>
                   </form>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Clean Bottom Navigation & Quick Demo Fill */}
+          {/* Clean Bottom Navigation & Quick Demo Access */}
           <div className="pt-6 mt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
             <div>
               {mode === "login" ? (
@@ -844,15 +981,17 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
               )}
             </div>
 
-            {/* Discreet Quick Fill Pills */}
+            {/* Discreet Quick Demo Credentials Pill Bar */}
             <div className="flex items-center gap-1.5 text-[11px]">
-              <span className="text-gray-400 font-medium">Quick Fill:</span>
+              <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                Quick Test:
+              </span>
               {mode === "login" ? (
                 <>
                   <button
                     type="button"
                     onClick={handleQuickDemoFillLogin}
-                    className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold transition-all cursor-pointer"
+                    className="px-2.5 py-1 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-800 font-bold transition-all cursor-pointer shadow-2xs"
                     title="Load VIP Patron credentials"
                   >
                     VIP Patron
@@ -860,7 +999,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                   <button
                     type="button"
                     onClick={handleQuickDemoFillAdmin}
-                    className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold transition-all cursor-pointer"
+                    className="px-2.5 py-1 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-800 font-bold transition-all cursor-pointer shadow-2xs"
                     title="Load Studio Controller credentials"
                   >
                     Admin
@@ -870,7 +1009,7 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                 <button
                   type="button"
                   onClick={handleQuickDemoFillRegister}
-                  className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-700 font-bold transition-all cursor-pointer"
+                  className="px-2.5 py-1 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-800 font-bold transition-all cursor-pointer shadow-2xs"
                   title="Generate sample registration details"
                 >
                   Sample Patron
