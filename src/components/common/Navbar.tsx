@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Heart, ShoppingBag, User as UserIcon, Menu, X, ChevronRight, LogOut, Package, UserCheck, ShieldCheck } from "lucide-react";
+import {
+  Search,
+  Heart,
+  ShoppingBag,
+  User as UserIcon,
+  Menu,
+  X,
+  ChevronRight,
+  LogOut,
+  Package,
+  UserCheck,
+  ShieldCheck,
+} from "lucide-react";
 import { useCartStore } from "../../store/useCartStore";
 import { useWishlistStore } from "../../store/useWishlistStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -70,14 +82,18 @@ export const Navbar: React.FC = () => {
             className="lg:hidden p-1.5 -ml-1 text-black hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Toggle Navigation"
           >
-            {isMobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
+            {isMobileMenuOpen ? (
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            ) : (
+              <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+            )}
           </button>
 
           <Link to="/" className="flex items-center gap-2 group">
             <img
-              src="/favicon-32x32.png"
+              src="/navbar-logo.png"
               alt="STEAV Logo"
-              className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-contain group-hover:scale-110 transition-transform shadow-xs"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain group-hover:scale-110 transition-transform"
             />
             <span className="font-extrabold tracking-[-0.05em] text-lg sm:text-2xl text-black">
               STEAV
@@ -106,7 +122,11 @@ export const Navbar: React.FC = () => {
                   {isActive && (
                     <motion.span
                       layoutId="navbarActiveUnderline"
-                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 420,
+                        damping: 32,
+                      }}
                       className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#111111] rounded-full"
                     />
                   )}
@@ -125,10 +145,28 @@ export const Navbar: React.FC = () => {
             className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black tracking-wider border border-gray-200 hover:border-black bg-gray-50/80 hover:bg-black hover:text-[#D6FF00] transition-all cursor-pointer shadow-2xs mr-0.5 sm:mr-1"
             title="Switch Currency between USD ($) and Khmer Riel (៛)"
           >
-            <span className={currency === "USD" ? "text-emerald-600 font-black" : "text-gray-400"}>$</span>
+            <span
+              className={
+                currency === "USD"
+                  ? "text-emerald-600 font-black"
+                  : "text-gray-400"
+              }
+            >
+              $
+            </span>
             <span className="text-gray-300">/</span>
-            <span className={currency === "KHR" ? "text-emerald-600 font-black" : "text-gray-400"}>៛</span>
-            <span className="hidden xs:inline ml-0.5 uppercase text-[10px]">{currency}</span>
+            <span
+              className={
+                currency === "KHR"
+                  ? "text-emerald-600 font-black"
+                  : "text-gray-400"
+              }
+            >
+              ៛
+            </span>
+            <span className="hidden xs:inline ml-0.5 uppercase text-[10px]">
+              {currency}
+            </span>
           </button>
 
           {/* Search Trigger */}
@@ -195,8 +233,12 @@ export const Navbar: React.FC = () => {
                 {isAuthenticated && user ? (
                   <>
                     <div className="p-3 border-b border-gray-100 mb-1">
-                      <p className="font-bold text-black truncate">{user.name}</p>
-                      <p className="text-[11px] text-gray-400 truncate">{user.email}</p>
+                      <p className="font-bold text-black truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-[11px] text-gray-400 truncate">
+                        {user.email}
+                      </p>
                     </div>
                     <Link
                       to="/profile"
@@ -245,8 +287,12 @@ export const Navbar: React.FC = () => {
                 ) : (
                   <>
                     <div className="p-3 border-b border-gray-100 mb-1">
-                      <p className="font-bold text-black text-sm">Welcome to STEAV</p>
-                      <p className="text-[11px] text-gray-500">Sign in to view orders & wishlist</p>
+                      <p className="font-bold text-black text-sm">
+                        Welcome to STEAV
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        Sign in to view orders & wishlist
+                      </p>
                     </div>
                     <Link
                       to="/login"
@@ -344,4 +390,3 @@ export const Navbar: React.FC = () => {
     </header>
   );
 };
-

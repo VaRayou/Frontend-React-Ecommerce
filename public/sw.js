@@ -8,6 +8,7 @@ const ASSETS_TO_CACHE = [
   "/favicon.svg",
   "/favicon-32x32.png",
   "/favicon-192x192.png",
+  "/navbar-logo.png",
 ];
 
 // Install: pre-cache shell
