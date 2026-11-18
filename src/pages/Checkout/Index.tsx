@@ -546,7 +546,7 @@ export const Checkout: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-28 sm:pb-20">
       {/* Checkout Progress Stepper */}
       <div className="max-w-2xl mx-auto mb-12">
         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
@@ -665,7 +665,7 @@ export const Checkout: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleNextStep}
-                    className="px-8 py-3.5 bg-black hover:bg-neutral-800 text-[#D6FF00] font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 group"
+                    className="w-full sm:w-auto px-8 py-3.5 sm:py-4 bg-black hover:bg-neutral-800 text-[#D6FF00] font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 group cursor-pointer active:scale-98"
                   >
                     <span>Continue to Shipping</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -794,11 +794,11 @@ export const Checkout: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pt-4 flex justify-between">
+                <div className="pt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => setCurrentStep(1)}
-                    className="px-6 py-3 border border-gray-200 text-black font-bold text-xs uppercase tracking-wider rounded-xl hover:border-black transition-colors flex items-center gap-1.5"
+                    className="w-full sm:w-auto px-6 py-3.5 border border-gray-200 text-black font-bold text-xs uppercase tracking-wider rounded-xl hover:border-black transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>
@@ -807,7 +807,7 @@ export const Checkout: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleNextStep}
-                    className="px-8 py-3.5 bg-black hover:bg-neutral-800 text-[#D6FF00] font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 group"
+                    className="w-full sm:w-auto px-8 py-3.5 sm:py-4 bg-black hover:bg-neutral-800 text-[#D6FF00] font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 group cursor-pointer active:scale-98"
                   >
                     <span>Proceed to Payment</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -839,21 +839,21 @@ export const Checkout: React.FC = () => {
                   {/* Payment Option 1: Bank Transfer */}
                   <label
                     onClick={() => setValue("paymentMethod", "Bank Transfer")}
-                    className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${
+                    className={`flex items-start sm:items-center justify-between p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all gap-3 ${
                       selectedPayment === "Bank Transfer"
                         ? "border-black bg-gray-50 ring-1 ring-black"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
                         <CreditCard className="w-5 h-5" />
                       </div>
-                      <div>
-                        <strong className="block text-xs font-bold text-black">
+                      <div className="min-w-0 flex-1">
+                        <strong className="block text-xs sm:text-sm font-bold text-black">
                           Direct Bank Wire / SWIFT
                         </strong>
-                        <span className="text-[11px] text-gray-500">
+                        <span className="text-[11px] text-gray-500 block mt-0.5 leading-snug">
                           Transfer directly to STEAV Paris Treasury with IBAN
                         </span>
                       </div>
@@ -862,28 +862,28 @@ export const Checkout: React.FC = () => {
                       type="radio"
                       value="Bank Transfer"
                       {...register("paymentMethod")}
-                      className="accent-black w-4 h-4"
+                      className="accent-black w-4 h-4 shrink-0 mt-1 sm:mt-0"
                     />
                   </label>
 
                   {/* Payment Option 2: Cash on Delivery */}
                   <label
                     onClick={() => setValue("paymentMethod", "Cash on Delivery")}
-                    className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${
+                    className={`flex items-start sm:items-center justify-between p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all gap-3 ${
                       selectedPayment === "Cash on Delivery"
                         ? "border-black bg-gray-50 ring-1 ring-black"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-black text-[#D6FF00] flex items-center justify-center shrink-0">
                         <Banknote className="w-5 h-5" />
                       </div>
-                      <div>
-                        <strong className="block text-xs font-bold text-black">
+                      <div className="min-w-0 flex-1">
+                        <strong className="block text-xs sm:text-sm font-bold text-black">
                           Cash on Delivery (White Glove)
                         </strong>
-                        <span className="text-[11px] text-gray-500">
+                        <span className="text-[11px] text-gray-500 block mt-0.5 leading-snug">
                           Inspect garments upon courier delivery before payment
                         </span>
                       </div>
@@ -892,33 +892,36 @@ export const Checkout: React.FC = () => {
                       type="radio"
                       value="Cash on Delivery"
                       {...register("paymentMethod")}
-                      className="accent-black w-4 h-4"
+                      className="accent-black w-4 h-4 shrink-0 mt-1 sm:mt-0"
                     />
                   </label>
 
                   {/* Payment Option 3: Bakong KHQR Payment */}
                   <label
                     onClick={() => setValue("paymentMethod", "QR Payment")}
-                    className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${
+                    className={`flex items-start sm:items-center justify-between p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all gap-3 ${
                       selectedPayment === "QR Payment"
-                        ? "border-[#E1251B] bg-red-50/30 ring-1 ring-[#E1251B]"
+                        ? "border-[#E1251B] bg-red-50/30 ring-2 ring-[#E1251B]"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                       <div className="w-10 h-10 rounded-xl bg-[#E1251B] text-white flex items-center justify-center shrink-0 shadow-xs">
                         <QrCode className="w-5 h-5" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <strong className="text-xs font-bold text-black">
-                            Bakong KHQR (All Cambodia Mobile Banks)
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                          <strong className="text-xs sm:text-sm font-bold text-black leading-tight">
+                            Bakong KHQR
                           </strong>
-                          <span className="px-1.5 py-0.5 rounded-sm bg-[#E1251B] text-white text-[9px] font-black uppercase tracking-wider">
+                          <span className="text-[11px] text-gray-500 font-medium">
+                            (All Cambodia Mobile Banks)
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-sm bg-[#E1251B] text-white text-[9px] font-black uppercase tracking-wider shrink-0">
                             Instant KHQR
                           </span>
                         </div>
-                        <span className="text-[11px] text-gray-500 block mt-0.5">
+                        <span className="text-[11px] text-gray-500 block mt-1 leading-snug">
                           Scan with ABA Mobile, Bakong, Wing, ACLEDA, Canadia, etc.
                         </span>
                       </div>
@@ -927,16 +930,16 @@ export const Checkout: React.FC = () => {
                       type="radio"
                       value="QR Payment"
                       {...register("paymentMethod")}
-                      className="accent-[#E1251B] w-4 h-4"
+                      className="accent-[#E1251B] w-4 h-4 shrink-0 mt-1 sm:mt-0"
                     />
                   </label>
                 </div>
 
-                <div className="pt-4 flex justify-between">
+                <div className="pt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => setCurrentStep(2)}
-                    className="px-6 py-3 border border-gray-200 text-black font-bold text-xs uppercase tracking-wider rounded-xl hover:border-black transition-colors flex items-center gap-1.5 cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-3.5 sm:py-4 border border-gray-200 text-black font-bold text-xs uppercase tracking-wider rounded-xl hover:border-black transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>
@@ -945,22 +948,22 @@ export const Checkout: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isGeneratingKhqr}
-                    className="px-8 py-4 bg-[#D6FF00] hover:bg-[#c6ef00] text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg flex items-center gap-2 group cursor-pointer disabled:opacity-50"
+                    className="w-full sm:w-auto flex-1 sm:flex-initial sm:max-w-md px-6 sm:px-8 py-4 bg-[#D6FF00] hover:bg-[#c6ef00] text-black font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-98 text-center"
                   >
                     {isGeneratingKhqr ? (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
                         <span>Initializing Bakong KHQR...</span>
                       </>
                     ) : selectedPayment === "QR Payment" ? (
                       <>
-                        <span>Pay with Bakong KHQR ({formatPrice(total)})</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <span className="truncate sm:whitespace-normal">Pay with Bakong KHQR ({formatPrice(total)})</span>
+                        <ArrowRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
                       </>
                     ) : (
                       <>
-                        <span>Authorize &amp; Place Order ({formatPrice(total)})</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <span className="truncate sm:whitespace-normal">Authorize &amp; Place Order ({formatPrice(total)})</span>
+                        <ArrowRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
                   </button>
