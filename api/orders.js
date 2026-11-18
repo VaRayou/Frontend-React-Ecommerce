@@ -143,10 +143,10 @@ export default async function handler(req, res) {
 
       const orderNumber =
         String(body.orderNumber || body.order_number || "").trim() ||
-        `ATL-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        `STEAV-2026-${Math.floor(100000 + Math.random() * 900000)}`;
 
       const customerName = body.customerName || body.customer_name || "Patron Client";
-      const customerEmail = body.customerEmail || body.customer_email || "patron@atelier.com";
+      const customerEmail = body.customerEmail || body.customer_email || "patron@steav.com";
       const customerPhone = body.customerPhone || body.customer_phone || "+855 23 888 999";
       
       const shippingAddress =
