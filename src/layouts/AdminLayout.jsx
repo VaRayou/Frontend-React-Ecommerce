@@ -49,6 +49,26 @@ function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
+  // Professional Executive Night Mode (defaults to ON)
+  const [isNightMode, setIsNightMode] = useState(() => {
+    try {
+      const stored = localStorage.getItem("steav_admin_night_mode");
+      return stored !== null ? stored === "true" : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleNightMode = () => {
+    setIsNightMode((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("steav_admin_night_mode", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const [isVerifying, setIsVerifying] = useState(true);
   const [isValidAdmin, setIsValidAdmin] = useState(true);
 
@@ -147,7 +167,7 @@ function AdminLayout() {
 
   return (
     <div
-      className={`admin-app-container ${collapsed ? "sidebar-collapsed" : ""}`}
+      className={`admin-app-container ${isNightMode ? "admin-night-mode night-mode dark" : ""} ${collapsed ? "sidebar-collapsed" : ""}`}
     >
       {/* Mobile Backdrop Overlay */}
       {mobileOpen && (
@@ -172,6 +192,8 @@ function AdminLayout() {
           isCollapsed={collapsed}
           onToggleCollapse={() => setCollapsed(!collapsed)}
           onToggleMobile={() => setMobileOpen(!mobileOpen)}
+          isNightMode={isNightMode}
+          onToggleNightMode={toggleNightMode}
         />
 
         {/* Dynamic Route Content (Enforced by RBAC with Persistent Layout) */}

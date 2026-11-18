@@ -9,12 +9,20 @@ import {
   ShoppingBag,
   ChevronDown,
   CheckCircle2,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
 import { orderService } from "../../services/orderService";
 import api from "../../services/api";
 
-export function AdminHeader({ onToggleMobile, onToggleCollapse, isCollapsed }) {
+export function AdminHeader({
+  onToggleMobile,
+  onToggleCollapse,
+  isCollapsed,
+  isNightMode,
+  onToggleNightMode,
+}) {
   const { adminUser, adminLogout } = useAdminAuthStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -120,8 +128,8 @@ export function AdminHeader({ onToggleMobile, onToggleCollapse, isCollapsed }) {
         </div>
       </div>
 
-      {/* Right Tools: View Store, Notifications, Profile */}
-      <div className="flex items-center gap-2.5 sm:gap-3.5">
+      {/* Right Tools: View Store, Night Mode, Notifications, Profile */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
         {/* Quick View Store Link */}
         <Link
           to="/"
@@ -133,6 +141,34 @@ export function AdminHeader({ onToggleMobile, onToggleCollapse, isCollapsed }) {
           <ExternalLink className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">View Store</span>
         </Link>
+
+        {/* Professional Night Mode Toggle Button */}
+        <button
+          type="button"
+          onClick={onToggleNightMode}
+          className={`h-9 px-2.5 sm:px-3 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer text-xs font-bold ${
+            isNightMode
+              ? "bg-[#181a20] border-[#D6FF00]/40 text-[#D6FF00] hover:bg-[#22252c] shadow-xs"
+              : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-black"
+          }`}
+          title={isNightMode ? "Switch to Day Mode" : "Switch to Professional Night Mode"}
+        >
+          {isNightMode ? (
+            <>
+              <Moon className="w-4 h-4 fill-[#D6FF00]/20 stroke-[#D6FF00]" />
+              <span className="hidden md:inline font-mono text-[11px] uppercase tracking-wider">
+                Night Mode
+              </span>
+            </>
+          ) : (
+            <>
+              <Sun className="w-4 h-4 text-amber-500" />
+              <span className="hidden md:inline font-mono text-[11px] uppercase tracking-wider">
+                Day Mode
+              </span>
+            </>
+          )}
+        </button>
 
         {/* Notifications Icon & Dropdown */}
         <div className="relative" ref={notifRef}>
@@ -297,7 +333,28 @@ export function AdminHeader({ onToggleMobile, onToggleCollapse, isCollapsed }) {
                 </div>
               </div>
 
-              <div className="p-1.5">
+              <div className="p-1.5 space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onToggleNightMode?.();
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:text-black transition-colors text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {isNightMode ? (
+                      <Moon className="w-4 h-4 text-[#D6FF00]" />
+                    ) : (
+                      <Sun className="w-4 h-4 text-amber-500" />
+                    )}
+                    <span>Night Mode</span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-black text-[#D6FF00]">
+                    {isNightMode ? "ACTIVE" : "OFF"}
+                  </span>
+                </button>
+
                 <Link
                   to="/admin/settings"
                   onClick={() => setShowProfileMenu(false)}

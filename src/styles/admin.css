@@ -1369,3 +1369,274 @@
   width: 16px;
   height: 16px;
 }
+
+/* ==========================================================================
+   PROFESSIONAL EXECUTIVE NIGHT MODE (DARK THEME)
+   Ultra-High-End Obsidian / Carbon Luxury Aesthetic with #D6FF00 Accents
+   ========================================================================== */
+.admin-night-mode {
+  --admin-main-bg: #0b0c0e;
+  --admin-card-bg: #121418;
+  --admin-header-bg: #0e1014;
+  --admin-border-dark: rgba(255, 255, 255, 0.08);
+  --admin-text-main: #f8fafc;
+  --admin-text-sub: #94a3b8;
+  background-color: #0b0c0e !important;
+  color: #f1f5f9 !important;
+}
+
+.admin-night-mode .admin-main-wrapper {
+  background-color: #0b0c0e !important;
+}
+
+.admin-night-mode .admin-page-container {
+  background-color: #0b0c0e !important;
+}
+
+/* Header in Night Mode */
+.admin-night-mode header,
+.admin-night-mode .admin-header {
+  background-color: #0e1014 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+/* Cards & Surface Containers in Night Mode */
+.admin-night-mode .bg-white,
+.admin-night-mode .admin-card,
+.admin-night-mode .admin-stat-card,
+.admin-night-mode .admin-page-header {
+  background-color: #121418 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Text Colors in Night Mode */
+.admin-night-mode .text-gray-950,
+.admin-night-mode .text-gray-900,
+.admin-night-mode .text-gray-800,
+.admin-night-mode h1,
+.admin-night-mode h2,
+.admin-night-mode h3,
+.admin-night-mode h4 {
+  color: #f8fafc !important;
+}
+
+.admin-night-mode .text-gray-700,
+.admin-night-mode .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+.admin-night-mode .text-gray-500,
+.admin-night-mode .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+/* Secondary Panels, Tracks, and Light Containers */
+.admin-night-mode .bg-gray-50,
+.admin-night-mode .bg-gray-50\/50,
+.admin-night-mode .bg-gray-50\/60,
+.admin-night-mode .bg-gray-50\/70,
+.admin-night-mode .bg-gray-50\/75,
+.admin-night-mode .bg-gray-100,
+.admin-night-mode .bg-slate-50,
+.admin-night-mode .bg-slate-100 {
+  background-color: rgba(255, 255, 255, 0.035) !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+.admin-night-mode .border-gray-200,
+.admin-night-mode .border-gray-200\/80,
+.admin-night-mode .border-gray-200\/90,
+.admin-night-mode .border-gray-100,
+.admin-night-mode .border-gray-50 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-night-mode .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.admin-night-mode .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Hover States in Night Mode */
+.admin-night-mode .hover\:bg-gray-50:hover,
+.admin-night-mode .hover\:bg-gray-50\/60:hover,
+.admin-night-mode .hover\:bg-gray-50\/70:hover,
+.admin-night-mode .hover\:bg-gray-100:hover,
+.admin-night-mode .hover\:border-gray-300:hover {
+  background-color: rgba(255, 255, 255, 0.055) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Form Controls & Inputs in Night Mode */
+.admin-night-mode input[type="text"],
+.admin-night-mode input[type="email"],
+.admin-night-mode input[type="number"],
+.admin-night-mode input[type="password"],
+.admin-night-mode input[type="search"],
+.admin-night-mode textarea,
+.admin-night-mode select {
+  background-color: #0d0e12 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.admin-night-mode input:focus,
+.admin-night-mode textarea:focus,
+.admin-night-mode select:focus {
+  border-color: #d6ff00 !important;
+  box-shadow: 0 0 0 2px rgba(214, 255, 0, 0.18) !important;
+  outline: none !important;
+}
+
+.admin-night-mode input::placeholder,
+.admin-night-mode textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Secondary Buttons in Night Mode */
+.admin-night-mode .border-gray-200.bg-white,
+.admin-night-mode .btn-secondary,
+.admin-night-mode .btn-admin-secondary {
+  background-color: #16181f !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #e2e8f0 !important;
+}
+
+.admin-night-mode .border-gray-200.bg-white:hover,
+.admin-night-mode .btn-secondary:hover,
+.admin-night-mode .btn-admin-secondary:hover {
+  background-color: #1f222b !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.admin-night-mode .bg-gray-100.text-gray-900 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #d6ff00 !important;
+}
+
+.admin-night-mode code {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #d6ff00 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Dropdowns, Flyouts & Modals in Night Mode */
+.admin-night-mode .header-dropdown-menu,
+.admin-night-mode .fixed.bg-white,
+.admin-night-mode .absolute.bg-white,
+.admin-night-mode [role="dialog"],
+.admin-night-mode .modal-content {
+  background-color: #121418 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.75) !important;
+}
+
+.admin-night-mode .dropdown-menu-header,
+.admin-night-mode .dropdown-profile-header,
+.admin-night-mode .dropdown-menu-footer {
+  background-color: #0e1014 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-night-mode .dropdown-menu-link {
+  color: #cbd5e1 !important;
+}
+
+.admin-night-mode .dropdown-menu-link:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
+/* Tables in Night Mode */
+.admin-night-mode table {
+  color: #cbd5e1 !important;
+}
+
+.admin-night-mode thead tr {
+  background-color: #0e1014 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+.admin-night-mode tbody tr {
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.admin-night-mode tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.035) !important;
+}
+
+/* Revenue Chart in Night Mode */
+.admin-night-mode .h-32.bg-gray-50,
+.admin-night-mode .h-40.bg-gray-50 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+.admin-night-mode .bg-slate-200 {
+  background-color: #262933 !important;
+}
+
+.admin-night-mode .group:hover .group-hover\:bg-slate-300 {
+  background-color: #3b3f4e !important;
+}
+
+/* Badges & Indicators in Night Mode */
+.admin-night-mode .bg-emerald-50,
+.admin-night-mode .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.admin-night-mode .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+.admin-night-mode .bg-rose-50\/80,
+.admin-night-mode .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+  border-color: rgba(244, 63, 94, 0.28) !important;
+}
+
+.admin-night-mode .text-rose-950 {
+  color: #ffe4e6 !important;
+}
+
+.admin-night-mode .text-rose-600 {
+  color: #f43f5e !important;
+}
+
+.admin-night-mode .bg-sky-50,
+.admin-night-mode .bg-blue-50 {
+  background-color: rgba(14, 165, 233, 0.15) !important;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+  color: #38bdf8 !important;
+}
+
+/* Footer in Night Mode */
+.admin-night-mode .admin-footer {
+  background-color: #0e1014 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+/* Custom Scrollbars in Night Mode */
+.admin-night-mode ::-webkit-scrollbar-track {
+  background: #0e1014 !important;
+}
+
+.admin-night-mode ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px;
+}
+
+.admin-night-mode ::-webkit-scrollbar-thumb:hover {
+  background: rgba(214, 255, 0, 0.5) !important;
+}
