@@ -91,9 +91,9 @@ export const Navbar: React.FC = () => {
 
           <Link to="/" className="flex items-center gap-2 group">
             <img
-              src="/navbar-logo.png"
+              src="/navbar-logo.png?v=4k"
               alt="STEAV Logo"
-              className="w-7 h-7 sm:w-8 sm:h-8 object-contain group-hover:scale-110 transition-transform"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0 group-hover:scale-110 transition-transform"
             />
             <span className="font-extrabold tracking-[-0.05em] text-lg sm:text-2xl text-black">
               STEAV
