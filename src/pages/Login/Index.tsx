@@ -260,33 +260,6 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
     navigate(from, { replace: true });
   };
 
-  // Quick Demo Auto-fill Handlers
-  const handleQuickDemoFillLogin = () => {
-    loginForm.setValue("email", "camille@steav.com", { shouldValidate: true });
-    loginForm.setValue("password", "password123", { shouldValidate: true });
-    showToast("VIP Patron credentials loaded — click 'Sign In'", "info");
-  };
-
-  const handleQuickDemoFillAdmin = () => {
-    loginForm.setValue("email", "controller@steav.com", { shouldValidate: true });
-    loginForm.setValue("password", "password123", { shouldValidate: true });
-    showToast("Studio Controller credentials loaded — click 'Sign In'", "info");
-  };
-
-  const handleQuickDemoFillRegister = () => {
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
-    registerForm.setValue("fullName", "Margot Fontaine", { shouldValidate: true });
-    registerForm.setValue("email", `margot${randomSuffix}@steav.com`, {
-      shouldValidate: true,
-    });
-    registerForm.setValue("phone", "+855 96 835 0317", { shouldValidate: true });
-    registerForm.setValue("password", "SteavPass2026!", { shouldValidate: true });
-    registerForm.setValue("confirmPassword", "SteavPass2026!", {
-      shouldValidate: true,
-    });
-    showToast("Sample Patron details loaded — ready to create", "info");
-  };
-
   const handleForgotPassword = () => {
     setResetSent(true);
     showToast(
@@ -981,41 +954,12 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
               )}
             </div>
 
-            {/* Discreet Quick Demo Credentials Pill Bar */}
-            <div className="flex items-center gap-1.5 text-[11px]">
-              <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
-                Quick Test:
-              </span>
-              {mode === "login" ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleQuickDemoFillLogin}
-                    className="px-2.5 py-1 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-800 font-bold transition-all cursor-pointer shadow-2xs"
-                    title="Load VIP Patron credentials"
-                  >
-                    VIP Patron
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleQuickDemoFillAdmin}
-                    className="px-2.5 py-1 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-800 font-bold transition-all cursor-pointer shadow-2xs"
-                    title="Load Studio Controller credentials"
-                  >
-                    Admin
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleQuickDemoFillRegister}
-                  className="px-2.5 py-1 rounded-xl bg-gray-100 hover:bg-black hover:text-[#D6FF00] text-gray-800 font-bold transition-all cursor-pointer shadow-2xs"
-                  title="Generate sample registration details"
-                >
-                  Sample Patron
-                </button>
-              )}
-            </div>
+            <Link
+              to="/about"
+              className="text-[11px] text-gray-400 hover:text-black font-semibold transition-colors"
+            >
+              Privacy &amp; Terms
+            </Link>
           </div>
         </div>
       </motion.div>
