@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { User, Order } from "../types";
 import { supabase } from "../services/supabase";
+import api from "../services/api";
 import { useAdminAuthStore } from "./useAdminAuthStore";
 
 interface AuthState {

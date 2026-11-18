@@ -95,13 +95,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           end
           className={({ isActive }) =>
             `flex flex-col items-center justify-center py-0.5 px-3 rounded-xl transition-all ${
-              isActive ? "text-black font-black" : "text-gray-400 hover:text-black font-semibold"
+              isActive
+                ? "text-black font-black"
+                : "text-gray-400 hover:text-black font-semibold"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <div className={`p-1 rounded-lg transition-colors ${isActive ? "bg-[#D6FF00] text-black" : ""}`}>
+              <div
+                className={`p-1 rounded-lg transition-colors ${isActive ? "bg-[#D6FF00] text-black" : ""}`}
+              >
                 <Home className="w-4 h-4 stroke-[2.2]" />
               </div>
               <span className="text-[10px] tracking-tight mt-0.5">Home</span>
@@ -113,13 +117,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           to="/shop"
           className={({ isActive }) =>
             `flex flex-col items-center justify-center py-0.5 px-3 rounded-xl transition-all ${
-              isActive ? "text-black font-black" : "text-gray-400 hover:text-black font-semibold"
+              isActive
+                ? "text-black font-black"
+                : "text-gray-400 hover:text-black font-semibold"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <div className={`p-1 rounded-lg transition-colors ${isActive ? "bg-[#D6FF00] text-black" : ""}`}>
+              <div
+                className={`p-1 rounded-lg transition-colors ${isActive ? "bg-[#D6FF00] text-black" : ""}`}
+              >
                 <Compass className="w-4 h-4 stroke-[2.2]" />
               </div>
               <span className="text-[10px] tracking-tight mt-0.5">Shop</span>
@@ -131,13 +139,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           to="/categories"
           className={({ isActive }) =>
             `flex flex-col items-center justify-center py-0.5 px-3 rounded-xl transition-all ${
-              isActive ? "text-black font-black" : "text-gray-400 hover:text-black font-semibold"
+              isActive
+                ? "text-black font-black"
+                : "text-gray-400 hover:text-black font-semibold"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <div className={`p-1 rounded-lg transition-colors ${isActive ? "bg-[#D6FF00] text-black" : ""}`}>
+              <div
+                className={`p-1 rounded-lg transition-colors ${isActive ? "bg-[#D6FF00] text-black" : ""}`}
+              >
                 <Grid className="w-4 h-4 stroke-[2.2]" />
               </div>
               <span className="text-[10px] tracking-tight mt-0.5">Depts</span>
@@ -158,20 +170,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </span>
             )}
           </div>
-          <span className="text-[10px] tracking-tight mt-0.5 text-black font-bold">Bag</span>
+          <span className="text-[10px] tracking-tight mt-0.5 text-black font-bold">
+            Bag
+          </span>
         </button>
 
         <NavLink
           to={isAuthenticated ? "/orders" : "/login"}
           className={({ isActive }) =>
             `flex flex-col items-center justify-center py-0.5 px-3 rounded-xl transition-all ${
-              isActive ? "text-black font-black" : "text-gray-400 hover:text-black font-semibold"
+              isActive
+                ? "text-black font-black"
+                : "text-gray-400 hover:text-black font-semibold"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <div className={`p-1 rounded-lg transition-colors ${isActive ? "bg-[#D6FF00] text-black" : ""}`}>
+              <div
+                className={`p-1 rounded-lg transition-colors ${isActive ? "bg-[#D6FF00] text-black" : ""}`}
+              >
                 <User className="w-4 h-4 stroke-[2.2]" />
               </div>
               <span className="text-[10px] tracking-tight mt-0.5">
