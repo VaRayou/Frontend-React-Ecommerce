@@ -949,14 +949,6 @@ export const Login: React.FC<AuthProps> = ({ initialMode }) => {
                 </>
               )}
             </div>
-
-            <Link
-              to="/admin/login"
-              className="text-[11px] font-bold text-gray-400 hover:text-black transition-colors flex items-center gap-1.5"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Studio Controller Access</span>
-            </Link>
           </div>
         </div>
       </motion.div>

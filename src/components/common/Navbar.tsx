@@ -374,17 +374,6 @@ export const Navbar: React.FC = () => {
               <span>({wishlistCount})</span>
             </Link>
           </div>
-
-          {!isAuthenticated && !isAdminAuthenticated && (
-            <Link
-              to="/admin/login"
-              onClick={closeMobileMenu}
-              className="flex items-center justify-center gap-1.5 text-center text-[11px] font-bold text-gray-400 hover:text-black py-1 transition-colors"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Studio Staff & Controller Login →</span>
-            </Link>
-          )}
         </div>
       )}
     </header>
