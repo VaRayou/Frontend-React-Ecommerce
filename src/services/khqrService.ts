@@ -5,13 +5,10 @@ import { telegramService } from "./telegramService";
 
 const env = (import.meta as any).env || {};
 
-const BAKONG_API_TOKEN = env.VITE_BAKONG_API_TOKEN || "";
-
-const BAKONG_API_URL =
-  env.VITE_BAKONG_API_URL || "https://api-bakong.nbc.gov.kh";
-const BAKONG_ACCOUNT_ID = env.VITE_BAKONG_ACCOUNT_ID || "rayou_va@bkrt";
-const BAKONG_MERCHANT_NAME = env.VITE_BAKONG_MERCHANT_NAME || "Rayou Va";
-const BAKONG_PHONE = env.VITE_BAKONG_PHONE || "0968350317";
+// Server-side Bakong proxy route (Tokens and private keys remain strictly on the server)
+const BAKONG_ACCOUNT_ID = env.VITE_BAKONG_ACCOUNT_ID || "rayou_va@aclb";
+const BAKONG_MERCHANT_NAME = env.VITE_BAKONG_MERCHANT_NAME || "STEAV PARIS";
+const BAKONG_PHONE = env.VITE_BAKONG_PHONE || "+855 23 888 999";
 
 export interface KhqrCreatePayload {
   amount: number;
@@ -376,7 +373,7 @@ async function callBakongOpenApi(
     ? "generate_deeplink_by_qr"
     : "check_transaction_by_md5";
 
-  // 1. Primary: Vercel Serverless Backend Proxy (/api/bakong pinned to sin1 Singapore region)
+  // Vercel Serverless Backend Proxy (/api/bakong pinned to sin1 Singapore region)
   // Holds authenticated credentials securely server-side and eliminates all browser CORS blocks
   try {
     const fnRes = await fetch("/api/bakong", {
@@ -396,55 +393,6 @@ async function callBakongOpenApi(
     }
   } catch (e) {
     console.warn("[Bakong /api/bakong serverless note]:", e);
-  }
-
-  // 2. Secondary fallback: Same-Origin Rewrite Proxy (/bakong-api/...)
-  try {
-    const proxyRes = await fetch(`/bakong-api${cleanPath}`, {
-      method: "POST",
-      headers: {
-        ...(BAKONG_API_TOKEN
-          ? { Authorization: `Bearer ${BAKONG_API_TOKEN}` }
-          : {}),
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const contentType = proxyRes.headers.get("content-type") || "";
-    if (proxyRes.ok && contentType.includes("application/json")) {
-      const json = await proxyRes.json();
-      if (json && typeof json.responseCode === "number") {
-        return json;
-      }
-    }
-  } catch (e) {
-    console.warn("[Bakong /bakong-api proxy note]:", e);
-  }
-
-  // 3. Direct NBC Bakong API fallback (when token is configured)
-  if (BAKONG_API_TOKEN) {
-    try {
-      const directRes = await fetch(
-        `${BAKONG_API_URL.replace(/\/$/, "")}${cleanPath}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${BAKONG_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        },
-      );
-      if (directRes.ok) {
-        const directJson = await directRes.json();
-        if (directJson && typeof directJson.responseCode === "number") {
-          return directJson;
-        }
-      }
-    } catch (e) {
-      console.warn("[Bakong Direct API note]:", e);
-    }
   }
 
   return null;
@@ -831,12 +779,12 @@ export const khqrService = {
   },
 
   /**
-   * On-demand verification against NBC Bakong Open API (or explicit admin confirmation)
+   * Authoritative server-side payment verification against NBC Bakong Open API
    */
   verifyPayment: async (
     paymentIdOrMd5: number | string,
-    transactionId?: string,
-    confirmPaid?: boolean,
+    _transactionId?: string,
+    _confirmPaid?: boolean,
   ): Promise<{
     success: boolean;
     is_paid: boolean;
@@ -846,71 +794,40 @@ export const khqrService = {
   }> => {
     const md5Str = String(paymentIdOrMd5).trim();
 
-    // 1. Always check live NBC Bakong API first (forceRefresh = true)
-    const statusRes = await khqrService.checkStatus(md5Str, true);
-    if (statusRes.is_paid) {
-      return {
-        success: true,
-        is_paid: true,
-        transaction_id: statusRes.transaction_id,
-        message: "Payment successfully confirmed on NBC Bakong network!",
-      };
-    }
-
-    // If not explicitly forced by an admin override, return the authentic pending status
-    if (!confirmPaid) {
-      return {
-        success: false,
-        is_paid: false,
-        rate_limit_exceeded: statusRes.rate_limit_exceeded,
-        message:
-          statusRes.message ||
-          "Payment has not yet been detected on the NBC Bakong network.",
-      };
-    }
-
-    // 2. Explicit manual override in Supabase
-    const txn = transactionId || `MANUAL-${Date.now()}`;
     try {
-      await ensureAdminSession();
-      const { data: updatedPay } = await supabase
-        .from("payments")
-        .update({
-          status: "PAID",
-          transaction_id: txn,
-          paid_at: new Date().toISOString(),
-        })
-        .or(`md5_hash.eq.${md5Str},order_number.eq.${md5Str},id.eq.${md5Str}`)
-        .select("*")
-        .maybeSingle();
+      const resp = await fetch("/api/orders?action=verify_payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ md5: md5Str }),
+      });
 
-      // If associated order exists in orders table, synchronize its payment status to 'Paid'
-      const targetOrderNum =
-        updatedPay?.order_number || (md5Str.startsWith("ATL-") ? md5Str : null);
-      if (targetOrderNum) {
-        try {
-          await supabase
-            .from("orders")
-            .update({ payment_status: "Paid" })
-            .eq("order_number", targetOrderNum);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.is_paid) {
+          const paidResult: KhqrStatusResponse = {
+            status: "PAID",
+            is_paid: true,
+            transaction_id: data.transaction_id,
+            paid_at: new Date().toISOString(),
+          };
+          checkStatusCache[md5Str] = { timestamp: Date.now(), result: paidResult };
           window.dispatchEvent(new Event("atelier_order_updated"));
-        } catch {}
+          return {
+            success: true,
+            is_paid: true,
+            transaction_id: data.transaction_id,
+            message: "Payment successfully confirmed on NBC Bakong network!",
+          };
+        }
       }
-    } catch {}
-
-    const paidResult: KhqrStatusResponse = {
-      status: "PAID",
-      is_paid: true,
-      transaction_id: txn,
-      paid_at: new Date().toISOString(),
-    };
-    checkStatusCache[md5Str] = { timestamp: Date.now(), result: paidResult };
+    } catch (e) {
+      console.warn("[khqrService] Server verification note:", e);
+    }
 
     return {
-      success: true,
-      is_paid: true,
-      transaction_id: txn,
-      message: "Payment verified and recorded in Supabase ledger.",
+      success: false,
+      is_paid: false,
+      message: "Payment has not yet been detected on the NBC Bakong network.",
     };
   },
 

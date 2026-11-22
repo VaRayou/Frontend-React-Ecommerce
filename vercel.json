@@ -23,7 +23,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.onrender.com https://api.qrserver.com https://encrypted-tbn0.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api-bakong.nbc.gov.kh https://api.telegram.org https://api.brevo.com https://api.resend.com https://api.emailjs.com https://nominatim.openstreetmap.org https://*.onrender.com http://localhost:* http://127.0.0.1:*; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.onrender.com https://api.qrserver.com https://encrypted-tbn0.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.emailjs.com https://nominatim.openstreetmap.org; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
         },
         {
           "key": "X-Frame-Options",
@@ -39,7 +39,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=(self), payment=*"
+          "value": "camera=(), microphone=(), geolocation=(self), payment=(self)"
         },
         {
           "key": "X-XSS-Protection",
@@ -48,29 +48,29 @@
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "require-corp"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "same-origin"
         }
       ]
     }
   ],
   "rewrites": [
     {
-      "source": "/brevo-api/:path*",
-      "destination": "https://api.brevo.com/:path*"
-    },
-    {
-      "source": "/resend-api/:path*",
-      "destination": "https://api.resend.com/:path*"
-    },
-    {
-      "source": "/bakong-api/:path*",
-      "destination": "https://api-bakong.nbc.gov.kh/:path*"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
     {
-      "source": "/((?!api/|bakong-api/|brevo-api/|resend-api/).*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

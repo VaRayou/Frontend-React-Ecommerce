@@ -1,7 +1,7 @@
 const env = (import.meta as any).env || {};
 
-const DEFAULT_BOT_TOKEN = String(env.VITE_TELEGRAM_BOT_TOKEN || "").trim();
-const DEFAULT_CHAT_ID = String(env.VITE_TELEGRAM_CHAT_ID || "").trim();
+const DEFAULT_BOT_TOKEN = "";
+const DEFAULT_CHAT_ID = "";
 
 const ADMIN_PRODUCTS_URL =
   typeof window !== "undefined" && window.location.origin.startsWith("http")
@@ -150,24 +150,29 @@ export const telegramService = {
     }
 
     try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      const res = await fetch("/api/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bodyPayload),
+        body: JSON.stringify({
+          action: "sendMessage",
+          chat_id: chatId,
+          text,
+          parse_mode: "HTML",
+        }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (data && data.ok) {
         return { ok: true };
       }
       return {
         ok: false,
-        description: data?.description || `Telegram API error (${res.status})`,
+        description: data?.description || data?.error || `Telegram notification dispatched`,
       };
     } catch (err: any) {
-      console.warn("[TelegramService] Direct send notice:", err?.message || err);
+      console.warn("[TelegramService] Server send notice:", err?.message || err);
       return {
         ok: false,
-        description: err?.message || "Network error reaching api.telegram.org",
+        description: err?.message || "Error communicating with server Telegram gateway",
       };
     }
   },

@@ -1,7 +1,7 @@
 // Zero-dependency native fetch client with identical Axios signature for maximum performance
 // Normalize API Base URL so both "https://app.onrender.com" and "https://app.onrender.com/api" work seamlessly
 const resolveApiBaseUrl = () => {
-  const raw = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api").trim().replace(/\/+$/, "");
+  const raw = (import.meta.env.VITE_API_BASE_URL || "/api").trim().replace(/\/+$/, "");
   return raw.endsWith("/api") ? raw : `${raw}/api`;
 };
 

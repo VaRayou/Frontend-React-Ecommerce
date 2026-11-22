@@ -385,109 +385,38 @@ export const useCartStore = create<CartState>()(
         }
 
         const subtotal = get().getSubtotal();
-        const shipping = get().getShipping();
 
-        // 1. Direct Supabase Query (0ms Cold Start)
+        // Authoritative Server-side Coupon Validation (Never expose coupons table to anon or trust offline fallbacks)
         try {
-          const { data: coupon, error } = await supabase
-            .from("coupons")
-            .select("*")
-            .ilike("code", cleanCode)
-            .eq("is_active", true)
-            .maybeSingle();
+          const resp = await fetch(
+            `/api/orders?action=validate_coupon&code=${encodeURIComponent(cleanCode)}&subtotal=${subtotal}`
+          );
 
-          if (!error && coupon) {
-            if (
-              coupon.min_order_value &&
-              subtotal < Number(coupon.min_order_value)
-            ) {
-              const msg = `Minimum spend of $${coupon.min_order_value} required.`;
-              set({ promoError: msg });
-              return { success: false, message: msg };
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.valid) {
+              set({
+                promoCode: data.code,
+                discountAmount: data.discountAmount,
+                discountPercent: data.discountPercent,
+                discountType: data.discountType,
+                minSpend: data.minSpend,
+                promoDescription: data.description,
+                promoError: null,
+              });
+              return {
+                success: true,
+                message: `Promo code ${data.code} applied!`,
+              };
             }
-
-            let disc = 0;
-            const type = coupon.discount_type || coupon.type || "percentage";
-            const val = Number(coupon.discount_value ?? coupon.value ?? 0);
-
-            if (type === "percentage") {
-              disc = Number(((subtotal * val) / 100).toFixed(2));
-            } else if (type === "fixed") {
-              disc = Math.min(subtotal, val);
-            } else if (type === "shipping") {
-              disc = shipping;
-            }
-
-            const minOrder = Number(
-              coupon.min_order_value ?? coupon.min_spend ?? 0,
-            );
-            set({
-              promoCode: cleanCode,
-              discountAmount: disc,
-              discountPercent: type === "percentage" ? val : 0,
-              discountType: type,
-              minSpend: minOrder,
-              promoDescription: coupon.description || `Coupon ${cleanCode}`,
-              promoError: null,
-            });
-            return {
-              success: true,
-              message: `Promo code ${cleanCode} applied!`,
-            };
           }
-        } catch (err: any) {
-          console.warn("[Supabase] coupon check error:", err.message);
-        }
 
-        // 2. Offline fallback validation
-        if (cleanCode === "STEAV20" || cleanCode === "ATELIER20" || cleanCode === "VIP20") {
-          const disc = Math.round(subtotal * 0.2);
-          set({
-            promoCode: cleanCode,
-            discountPercent: 20,
-            discountAmount: disc,
-            discountType: "percentage",
-            minSpend: 50,
-            promoDescription: "20% Off Runway Collection",
-            promoError: null,
-          });
-          return { success: true, message: "20% discount applied!" };
-        } else if (cleanCode === "STEAV15" || cleanCode === "ATELIER15") {
-          const disc = Math.round(subtotal * 0.15);
-          set({
-            promoCode: cleanCode,
-            discountPercent: 15,
-            discountAmount: disc,
-            discountType: "percentage",
-            minSpend: 40,
-            promoDescription: "15% Off First Order",
-            promoError: null,
-          });
-          return { success: true, message: "15% discount applied!" };
-        } else if (cleanCode === "WELCOME10") {
-          set({
-            promoCode: cleanCode,
-            discountPercent: 0,
-            discountAmount: 10,
-            discountType: "fixed",
-            minSpend: 30,
-            promoDescription: "$10 Welcome Patron Gift",
-            promoError: null,
-          });
-          return { success: true, message: "$10 discount applied!" };
-        } else if (cleanCode === "FREESHIP") {
-          set({
-            promoCode: cleanCode,
-            discountPercent: 0,
-            discountAmount: shipping,
-            discountType: "shipping",
-            minSpend: 0,
-            promoDescription: "Complimentary White-Glove Shipping",
-            promoError: null,
-          });
-          return { success: true, message: "Free shipping applied!" };
-        } else {
-          const msg = "Invalid or expired coupon code.";
+          const errJson = await resp.json().catch(() => ({}));
+          const errMsg = errJson?.error || "Invalid or expired promotional code.";
+          set({ promoError: errMsg });
+          return { success: false, message: errMsg };
+        } catch (err: any) {
+          const msg = "Unable to validate coupon at this time.";
           set({ promoError: msg });
           return { success: false, message: msg };
         }

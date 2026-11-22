@@ -8,15 +8,12 @@ const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
   "sb_publishable_UGc-TpOB6-ONOpUNlqYFhA_XuyDiSbv";
 
-const DEFAULT_BOT_TOKEN =
-  process.env.VITE_TELEGRAM_BOT_TOKEN ||
-  process.env.TELEGRAM_BOT_TOKEN ||
-  "";
+const BOT_TOKEN = (
+  process.env.TELEGRAM_BOT_TOKEN || ""
+).trim();
 
 const DEFAULT_CHAT_ID = String(
-  process.env.VITE_TELEGRAM_CHAT_ID ||
-  process.env.TELEGRAM_CHAT_ID ||
-  "1389246582"
+  process.env.TELEGRAM_CHAT_ID || ""
 ).trim();
 
 const AUTHORIZED_CHAT_IDS = new Set(
@@ -29,21 +26,24 @@ const AUTHORIZED_CHAT_IDS = new Set(
   ].filter(Boolean)
 );
 
+// Strict CORS allowlist
+const ALLOWED_ORIGINS = new Set([
+  "https://youngsteav.site",
+  "https://www.youngsteav.site",
+  ...(process.env.NODE_ENV !== "production"
+    ? ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
+    : []),
+]);
+
 function isAllowedOrigin(origin) {
-  if (!origin) return true;
+  if (!origin) return false;
   try {
-    const url = new URL(origin);
-    const host = url.hostname;
-    if (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host.endsWith(".vercel.app") ||
-      Boolean(host)
-    ) {
-      return true;
-    }
-  } catch {}
-  return true;
+    const parsed = new URL(origin);
+    const originNormalized = `${parsed.protocol}//${parsed.host}`;
+    return ALLOWED_ORIGINS.has(originNormalized);
+  } catch {
+    return false;
+  }
 }
 
 const STOREFRONT_URL = process.env.VITE_STOREFRONT_URL || "https://youngsteav.site";
@@ -55,74 +55,10 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-let cachedAdminToken = null;
-let tokenExpiresAt = 0;
-
-async function getAdminToken() {
-  const now = Date.now();
-  if (cachedAdminToken && tokenExpiresAt > now + 60000) {
-    return cachedAdminToken;
-  }
-
-  // 1. If service role key is explicitly provided, use it directly (service_role bypasses RLS)
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    cachedAdminToken = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    tokenExpiresAt = now + 86400000;
-    return cachedAdminToken;
-  }
-
-  // 2. Authenticate as Store Administrator to obtain valid JWT for RLS clearance
-  const primaryPassword = process.env.ADMIN_PASSWORD || "adminpass123";
-  const credentialsToTry = [
-    {
-      email: process.env.ADMIN_EMAIL || "controller@atelier.com",
-      password: primaryPassword,
-    },
-    {
-      email: "controller@steav.com",
-      password: primaryPassword,
-    },
-    {
-      email: "admin@atelier.com",
-      password: primaryPassword,
-    },
-  ];
-
-  for (const cred of credentialsToTry) {
-    try {
-      const authRes = await fetch(
-        `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-        {
-          method: "POST",
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(cred),
-        }
-      );
-
-      if (authRes.ok) {
-        const data = await authRes.json();
-        if (data?.access_token) {
-          cachedAdminToken = data.access_token;
-          tokenExpiresAt =
-            now + (data.expires_in ? data.expires_in * 1000 : 3600000);
-          return cachedAdminToken;
-        }
-      }
-    } catch (e) {
-      console.warn(`[api/telegram] Admin token acquisition error for ${cred.email}:`, e?.message);
-    }
-  }
-
-  return SUPABASE_ANON_KEY;
-}
-
 async function getSupabaseAuthHeaders() {
-  const token = await getAdminToken();
+  const token = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
   return {
-    apikey: SUPABASE_ANON_KEY,
+    apikey: process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY,
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   };
@@ -524,27 +460,63 @@ async function buildLowStockMessage(sbHeaders) {
 export default async function handler(req, res) {
   const origin = req.headers.origin || "";
   if (isAllowedOrigin(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-  } else {
-    res.setHeader(
-      "Access-Control-Allow-Origin",
-      "https://frontend-react-ecommerce-inky.vercel.app"
-    );
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
   }
+
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Telegram-Bot-Api-Secret-Token");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Telegram-Bot-Api-Secret-Token, X-Requested-With"
+  );
 
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // Webhook Secret Token validation (if configured in environment)
-  if (process.env.TELEGRAM_WEBHOOK_SECRET) {
-    const secret = req.headers["x-telegram-bot-api-secret-token"];
-    if (secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
-      return res.status(403).json({ error: "Unauthorized webhook token." });
+  const botToken = BOT_TOKEN;
+  if (!botToken) {
+    console.error("[CRITICAL] TELEGRAM_BOT_TOKEN environment variable is not configured on server.");
+    return res.status(500).json({ error: "Telegram service not configured on server." });
+  }
+
+  const body =
+    typeof req.body === "string"
+      ? JSON.parse(req.body || "{}")
+      : req.body || {};
+
+  // 1. Support Internal Store Notifications (e.g. New Order alerts triggered from backend / trusted origin)
+  if (body.action === "notify_order" || body.action === "sendMessage") {
+    const targetChatId = body.chat_id || DEFAULT_CHAT_ID;
+    const messageText = body.text || "";
+    if (!targetChatId || !messageText) {
+      return res.status(400).json({ error: "Missing chat_id or message text." });
     }
+
+    try {
+      const tgResult = await tgApi(botToken, "sendMessage", {
+        chat_id: targetChatId,
+        text: messageText,
+        parse_mode: body.parse_mode || "HTML",
+      });
+      return res.status(200).json(tgResult);
+    } catch (e) {
+      return res.status(500).json({ error: e.message || "Failed to dispatch Telegram message" });
+    }
+  }
+
+  // 2. Incoming Telegram Webhook Validation (Strict Header & Fail-Closed)
+  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.warn("[Security Alert] Rejecting Telegram webhook: TELEGRAM_WEBHOOK_SECRET is not configured on server.");
+    return res.status(403).json({ error: "Webhook secret token is not configured on server." });
+  }
+
+  const secretHeader = req.headers["x-telegram-bot-api-secret-token"];
+  if (secretHeader !== webhookSecret) {
+    console.warn("[Security Alert] Unauthorized Telegram webhook invocation attempt without matching secret header.");
+    return res.status(403).json({ error: "Unauthorized webhook token." });
   }
 
   if (req.method === "GET") {
@@ -555,11 +527,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const botToken = String(req.query?.token || DEFAULT_BOT_TOKEN).trim();
-  const update =
-    typeof req.body === "string"
-      ? JSON.parse(req.body || "{}")
-      : req.body || {};
+  const update = body;
 
   try {
     const sbHeaders = await getSupabaseAuthHeaders();

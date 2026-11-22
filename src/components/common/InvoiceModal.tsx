@@ -175,145 +175,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       return;
     }
 
-    const styles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
-      .map((el) => el.outerHTML)
-      .join("\n");
+    printWindow.document.title = docTitle;
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>${docTitle}</title>
-          ${styles}
-          <style>
-            @page {
-              size: A4 portrait;
-              margin: 12mm 15mm;
-            }
-            body {
-              background: #ffffff !important;
-              color: #111111 !important;
-              margin: 0;
-              padding: 16px;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            #atelier-printable-invoice {
-              width: 100% !important;
-              max-width: 800px;
-              margin: 0 auto;
-              display: block !important;
-            }
-            .no-print {
-              display: none !important;
-            }
-            @media screen {
-              .print-top-bar {
-                position: -webkit-sticky;
-                position: sticky;
-                top: 0;
-                z-index: 99999;
-                margin: -16px -16px 24px -16px;
-                padding: 14px 20px;
-                background: #0f172a;
-                color: #ffffff;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                border-bottom: 2px solid #D6FF00;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-              }
-              .btn-return-store {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                background: #D6FF00;
-                color: #000000;
-                text-decoration: none;
-                padding: 9px 18px;
-                border-radius: 10px;
-                font-weight: 900;
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                cursor: pointer;
-                box-shadow: 0 2px 8px rgba(214,255,0,0.3);
-              }
-              .btn-action-outline {
-                background: rgba(255,255,255,0.12);
-                color: #ffffff;
-                border: 1px solid rgba(255,255,255,0.25);
-                padding: 9px 16px;
-                border-radius: 10px;
-                font-weight: 800;
-                font-size: 12px;
-                text-transform: uppercase;
-                cursor: pointer;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <!-- Screen-only Persistent Top Navigation Bar -->
-          <div class="no-print print-top-bar">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #D6FF00;"></span>
-              <span style="font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #D6FF00;">
-                STEAV Tax Invoice &bull; ${invoiceNumber}
-              </span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="btn-return-store">
-                &larr; Back to Store
-              </a>
-              <button onclick="window.print()" class="btn-action-outline">
-                Print / Save PDF
-              </button>
-              <button onclick="window.close()" class="btn-action-outline" style="background: rgba(255,255,255,0.08); color: #94a3b8; border: none;">
-                Close
-              </button>
-            </div>
-          </div>
+    document.querySelectorAll("link[rel='stylesheet'], style").forEach((el) => {
+      printWindow.document.head.appendChild(el.cloneNode(true));
+    });
 
-          <div id="atelier-printable-invoice">
-            ${printContent.innerHTML}
-          </div>
+    const targetDiv = printWindow.document.createElement("div");
+    targetDiv.id = "atelier-printable-invoice";
+    targetDiv.appendChild(printContent.cloneNode(true));
+    printWindow.document.body.appendChild(targetDiv);
 
-          <!-- Screen-only Persistent Bottom Return Bar -->
-          <div class="no-print" style="max-width: 800px; margin: 32px auto 0 auto; padding: 18px 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
-            <div>
-              <div style="font-weight: 900; font-size: 13px; color: #0f172a; text-transform: uppercase;">
-                STEAV Studio Official Platform
-              </div>
-              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
-                Verified Digital Tax Invoice &bull; Preah Norodom Blvd, Phnom Penh
-              </div>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="btn-return-store" style="padding: 10px 20px;">
-                &larr; Back to Store
-              </a>
-              <button onclick="window.close()" class="btn-action-outline" style="background: #e2e8f0; color: #334155; border: none; padding: 10px 16px;">
-                Close Window
-              </button>
-            </div>
-          </div>
-
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.focus();
-                window.print();
-              }, 250);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
   };
 
   return (

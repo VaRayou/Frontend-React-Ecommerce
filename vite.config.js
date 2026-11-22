@@ -9,6 +9,7 @@ export default defineConfig({
     react(),
   ],
   build: {
+    sourcemap: false,
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
@@ -34,33 +35,6 @@ export default defineConfig({
           }
           return 'vendor-core'
         },
-      },
-    },
-  },
-  server: {
-    proxy: {
-      '/brevo-api': {
-        target: 'https://api.brevo.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/brevo-api/, ''),
-      },
-      '/resend-api': {
-        target: 'https://api.resend.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/resend-api/, ''),
-      },
-      '/bakong-api': {
-        target: 'https://api-bakong.nbc.gov.kh',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/bakong-api/, ''),
-      },
-      '/api': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
-      '/media': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
       },
     },
   },

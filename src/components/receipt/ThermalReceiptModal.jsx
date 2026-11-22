@@ -470,108 +470,153 @@ export const ThermalReceiptModal = ({ isOpen, onClose, invoiceData }) => {
       return;
     }
 
-    const styles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
-      .map((el) => el.outerHTML)
-      .join("\n");
+    printWindow.document.title = receiptDocTitle || "Receipt";
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>${receiptDocTitle}</title>
-          ${styles}
-          <style>
-            @page {
-              size: 80mm auto;
-              margin: 4mm;
-            }
-            body {
-              background: #ffffff !important;
-              color: #0f172a !important;
-              margin: 0;
-              padding: 8px;
-              font-family: monospace, -apple-system, sans-serif;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            #pos-thermal-receipt-paper {
-              width: 100% !important;
-              max-height: none !important;
-              overflow: visible !important;
-            }
-            .no-print {
-              display: none !important;
-            }
-            @media screen {
-              .receipt-screen-bar {
-                margin: -8px -8px 12px -8px;
-                padding: 10px 14px;
-                background: #0f172a;
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                border-radius: 8px;
-                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-              }
-              .receipt-return-link {
-                background: #D6FF00;
-                color: #000;
-                text-decoration: none;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-weight: 800;
-                font-size: 11px;
-                text-transform: uppercase;
-                cursor: pointer;
-                display: inline-flex;
-                align-items: center;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <!-- Screen-only Persistent Top Navigation Bar -->
-          <div class="no-print receipt-screen-bar">
-            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; color: #D6FF00; letter-spacing: 0.5px;">
-              Receipt &bull; ${normalized?.invoiceNumber || "Receipt"}
-            </div>
-            <div style="display: flex; gap: 6px;">
-              <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="receipt-return-link">
-                &larr; Back to Store
-              </a>
-              <button onclick="window.close()" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; cursor: pointer;">
-                Close
-              </button>
-            </div>
-          </div>
+    // Safely copy stylesheet and style elements
+    document.querySelectorAll("link[rel='stylesheet'], style").forEach((el) => {
+      printWindow.document.head.appendChild(el.cloneNode(true));
+    });
 
-          <div id="pos-thermal-receipt-paper">
-            ${printContent.innerHTML}
-          </div>
+    const customStyle = printWindow.document.createElement("style");
+    customStyle.textContent = `
+      @page {
+        size: 80mm auto;
+        margin: 4mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        margin: 0;
+        padding: 8px;
+        font-family: monospace, -apple-system, sans-serif;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #pos-thermal-receipt-paper {
+        width: 100% !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      @media screen {
+        .receipt-screen-bar {
+          margin: -8px -8px 12px -8px;
+          padding: 10px 14px;
+          background: #0f172a;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-radius: 8px;
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .receipt-return-link {
+          background: #D6FF00;
+          color: #000;
+          text-decoration: none;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-weight: 800;
+          font-size: 11px;
+          text-transform: uppercase;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+        }
+      }
+    `;
+    printWindow.document.head.appendChild(customStyle);
 
-          <!-- Screen-only Bottom Return Link -->
-          <div class="no-print" style="margin-top: 16px; padding: 12px; text-align: center; border-top: 1px dashed #cbd5e1; font-family: -apple-system, sans-serif;">
-            <a href="${storeUrl}" onclick="if(window.opener && !window.opener.closed){window.opener.focus();window.close();return false;} return true;" class="receipt-return-link" style="padding: 8px 16px; font-size: 12px;">
-              &larr; Return to STEAV Store
-            </a>
-          </div>
+    // Screen-only Persistent Top Navigation Bar
+    const topBar = printWindow.document.createElement("div");
+    topBar.className = "no-print receipt-screen-bar";
 
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.focus();
-                window.print();
-              }, 250);
-            };
-          </script>
-        </body>
-      </html>
-    `);
+    const titleDiv = printWindow.document.createElement("div");
+    titleDiv.style.fontWeight = "800";
+    titleDiv.style.fontSize = "11px";
+    titleDiv.style.textTransform = "uppercase";
+    titleDiv.style.color = "#D6FF00";
+    titleDiv.style.letterSpacing = "0.5px";
+    titleDiv.textContent = `Receipt \u2022 ${normalized?.invoiceNumber || "Receipt"}`;
+    topBar.appendChild(titleDiv);
+
+    const btnContainer = printWindow.document.createElement("div");
+    btnContainer.style.display = "flex";
+    btnContainer.style.gap = "6px";
+
+    const backLink = printWindow.document.createElement("a");
+    backLink.href = storeUrl || "/";
+    backLink.className = "receipt-return-link";
+    backLink.textContent = "\u2190 Back to Store";
+    backLink.onclick = () => {
+      if (window.opener && !window.opener.closed) {
+        window.opener.focus();
+        window.close();
+        return false;
+      }
+      return true;
+    };
+    btnContainer.appendChild(backLink);
+
+    const closeBtn = printWindow.document.createElement("button");
+    closeBtn.textContent = "Close";
+    closeBtn.style.background = "rgba(255,255,255,0.15)";
+    closeBtn.style.color = "#fff";
+    closeBtn.style.border = "none";
+    closeBtn.style.padding = "6px 10px";
+    closeBtn.style.borderRadius = "6px";
+    closeBtn.style.fontWeight = "700";
+    closeBtn.style.fontSize = "11px";
+    closeBtn.style.textTransform = "uppercase";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.onclick = () => window.close();
+    btnContainer.appendChild(closeBtn);
+
+    topBar.appendChild(btnContainer);
+    printWindow.document.body.appendChild(topBar);
+
+    // Clone receipt paper securely
+    const paperClone = printContent.cloneNode(true);
+    printWindow.document.body.appendChild(paperClone);
+
+    // Screen-only Bottom Return Link
+    const bottomDiv = printWindow.document.createElement("div");
+    bottomDiv.className = "no-print";
+    bottomDiv.style.marginTop = "16px";
+    bottomDiv.style.padding = "12px";
+    bottomDiv.style.textAlign = "center";
+    bottomDiv.style.borderTop = "1px dashed #cbd5e1";
+    bottomDiv.style.fontFamily = "-apple-system, sans-serif";
+
+    const returnLink = printWindow.document.createElement("a");
+    returnLink.href = storeUrl || "/";
+    returnLink.className = "receipt-return-link";
+    returnLink.style.padding = "8px 16px";
+    returnLink.style.fontSize = "12px";
+    returnLink.textContent = "\u2190 Return to STEAV Store";
+    returnLink.onclick = () => {
+      if (window.opener && !window.opener.closed) {
+        window.opener.focus();
+        window.close();
+        return false;
+      }
+      return true;
+    };
+    bottomDiv.appendChild(returnLink);
+    printWindow.document.body.appendChild(bottomDiv);
+
     printWindow.document.close();
+    setTimeout(() => {
+      try {
+        printWindow.focus();
+        printWindow.print();
+      } catch (e) {
+        console.error("Print trigger failed:", e);
+      }
+    }, 250);
   };
 
   return (

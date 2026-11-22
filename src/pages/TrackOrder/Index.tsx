@@ -43,6 +43,7 @@ export const TrackOrder: React.FC = () => {
   const initialQuery = paramOrderNumber || queryOrderId;
 
   const [searchInput, setSearchInput] = useState<string>(initialQuery);
+  const [contactInput, setContactInput] = useState<string>(user?.email || "");
   const [loading, setLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [order, setOrder] = useState<any | null>(null);
@@ -66,9 +67,15 @@ export const TrackOrder: React.FC = () => {
   };
 
   const handleLookup = useCallback(
-    async (idOrNumber: string, silent = false) => {
+    async (idOrNumber: string, silent = false, contactVal?: string) => {
       const query = idOrNumber.trim();
       if (!query) return;
+
+      const contact = (contactVal ?? contactInput ?? user?.email ?? "").trim();
+      if (!contact && !user?.email) {
+        setError("Please enter the email or phone number associated with your order.");
+        return;
+      }
 
       if (silent) {
         setRefreshing(true);
@@ -78,64 +85,39 @@ export const TrackOrder: React.FC = () => {
       }
 
       try {
-        const found = await orderService.getOrderById(query);
-        if (found && (found.id || found.orderNumber || found.order_number)) {
-          setOrder(found);
-          setLastSyncedAt(
-            new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            }),
-          );
-          setLoading(false);
-          setRefreshing(false);
-          return;
+        const resp = await fetch(
+          `/api/orders?action=track&order_number=${encodeURIComponent(query)}&contact=${encodeURIComponent(contact || user?.email || "")}`
+        );
+
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.order) {
+            setOrder(data.order);
+            setLastSyncedAt(
+              new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })
+            );
+            setLoading(false);
+            setRefreshing(false);
+            return;
+          }
         }
-      } catch {
-        // Fallback to full list search below
-      }
 
-      try {
-        const allOrders = await orderService.getOrders();
-        const cleanQ = query.toLowerCase();
-        const match = (allOrders || []).find((o: any) => {
-          const ordNum = String(
-            o.orderNumber || o.order_number || o.id || o._id || "",
-          ).toLowerCase();
-          const email = String(
-            o.customerEmail || o.customer_email || o.customer?.email || "",
-          ).toLowerCase();
-          const phone = String(
-            o.customerPhone || o.customer_phone || o.customer?.phone || "",
-          );
-          return (
-            ordNum === cleanQ ||
-            ordNum.includes(cleanQ) ||
-            email === cleanQ ||
-            (cleanQ.length > 4 && phone.includes(cleanQ))
-          );
-        });
-
-        if (match) {
-          setOrder(match);
-          setLastSyncedAt(
-            new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            }),
-          );
-        } else if (!silent) {
+        const errData = await resp.json().catch(() => ({}));
+        if (!silent) {
           setOrder(null);
           setError(
-            `No active dispatch record found for "${query}". Check your order reference (e.g. ATL-2026-...) or tap one of the recent orders below.`,
+            errData?.error ||
+              `No active dispatch record found for "${query}". Please verify your order number and contact email/phone.`
           );
         }
       } catch {
         if (!silent) {
           setError(
-            "Unable to retrieve dispatch record at this time. Please try again.",
+            "Unable to retrieve dispatch record at this time. Please try again."
           );
         }
       } finally {
@@ -143,34 +125,28 @@ export const TrackOrder: React.FC = () => {
         setRefreshing(false);
       }
     },
-    [],
+    [contactInput, user?.email]
   );
 
-  // Load recent orders for quick-tap pills (customer's own orders or latest store orders)
+  // Load recent orders only for authenticated users (Never expose store-wide recent orders to guests)
   useEffect(() => {
     let active = true;
     const loadRecent = async () => {
       try {
-        const list = user?.email
-          ? await orderService.getOrdersByCustomer(user.email)
-          : await orderService.getOrders();
-        if (!active) return;
-        const top = Array.isArray(list) ? list.slice(0, 5) : [];
-        setRecentOrders(top);
-        // If no initial query was given and we have at least 1 order for the signed-in user, pre-load it
-        if (!initialQuery && user?.email && top.length > 0) {
-          const firstRef = top[0].orderNumber || top[0].order_number;
-          if (firstRef) {
-            setSearchInput(firstRef);
-            setOrder(top[0]);
-            setLastSyncedAt(
-              new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              }),
-            );
+        if (user?.email) {
+          const list = await orderService.getOrdersByCustomer(user.email);
+          if (!active) return;
+          const top = Array.isArray(list) ? list.slice(0, 5) : [];
+          setRecentOrders(top);
+          if (!initialQuery && top.length > 0) {
+            const firstRef = top[0].orderNumber || top[0].order_number;
+            if (firstRef) {
+              setSearchInput(firstRef);
+              handleLookup(firstRef, false, user.email);
+            }
           }
+        } else {
+          setRecentOrders([]);
         }
       } catch {
         // ignore
@@ -180,7 +156,7 @@ export const TrackOrder: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [user?.email, initialQuery]);
+  }, [user?.email, initialQuery, handleLookup]);
 
   useEffect(() => {
     const targetRef = paramOrderNumber || queryOrderId;
@@ -333,17 +309,13 @@ export const TrackOrder: React.FC = () => {
         <p className="text-xs sm:text-sm text-gray-500 font-light">
           Enter your STEAV order reference (e.g.{" "}
           <span className="font-mono font-bold text-gray-900">
-            STV-2026-2592
+            STEAV-2026-102948
           </span>
-          ), customer email, or phone number — or send{" "}
-          <code className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-gray-900 font-bold">
-            /track ORDER_ID
-          </code>{" "}
-          to our Telegram Bot.
+          ) along with your verified email or phone on file.
         </p>
       </div>
 
-      {/* Search Input Box + Recent Order Quick Pills */}
+      {/* Search Input Box + Authenticated Recent Order Quick Pills */}
       <div className="max-w-2xl mx-auto space-y-3">
         <form
           onSubmit={handleSubmit}
@@ -355,10 +327,22 @@ export const TrackOrder: React.FC = () => {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Enter Order ID (ATL-2026-...), Phone, or Email..."
+              placeholder="Order Number (e.g. STEAV-2026-...)"
               className="flex-1 py-2 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 bg-transparent focus:outline-hidden font-semibold min-w-0"
             />
           </div>
+          {!user?.email && (
+            <div className="flex items-center flex-1 gap-2 px-2.5 border-t sm:border-t-0 sm:border-l border-gray-200">
+              <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+              <input
+                type="text"
+                value={contactInput}
+                onChange={(e) => setContactInput(e.target.value)}
+                placeholder="Email or phone on order..."
+                className="flex-1 py-2 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 bg-transparent focus:outline-hidden font-semibold min-w-0"
+              />
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}

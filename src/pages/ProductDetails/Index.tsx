@@ -401,6 +401,7 @@ export const ProductDetails: React.FC = () => {
           .from("reviews")
           .select("*")
           .eq("product_id", product.id)
+          .eq("status", "Approved")
           .order("created_at", { ascending: false });
 
         if (!error && Array.isArray(data)) {
@@ -430,49 +431,38 @@ export const ProductDetails: React.FC = () => {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newReviewAuthor.trim() || !newReviewComment.trim()) return;
+    if (!isAuthenticated || !user) {
+      showToast("Please sign in to your patron account to submit a review.", "warning");
+      navigate("/login");
+      return;
+    }
+    if (!newReviewComment.trim()) return;
 
     try {
-      const session = await ensureAdminSession();
       const { data: rev, error } = await supabase
         .from("reviews")
         .insert([
           {
             product_id: product.id,
-            user_id: session?.user?.id || user?.id,
-            author_name: newReviewAuthor.trim(),
-            author_email: user?.email || "patron@steav.com",
+            user_id: user.id,
+            author_name: user.name || "Verified Patron",
+            author_email: user.email,
             rating: newReviewRating,
             comment: newReviewComment.trim(),
             title: "Verified Patron Review",
-            status: "Approved",
+            status: "Pending", // Default review status is always Pending moderation
           },
         ])
         .select()
         .single();
 
       if (error) throw error;
-      if (rev) {
-        setReviewsList((prev) => [
-          {
-            id: rev.id,
-            authorName: rev.author_name,
-            authorEmail: rev.author_email,
-            rating: rev.rating,
-            comment: rev.comment,
-            title: rev.title,
-            createdAt: rev.created_at,
-          },
-          ...prev,
-        ]);
-      }
       setNewReviewComment("");
       setReviewSubmitted(true);
       showToast(
-        "Thank you! Your verified review has been published.",
+        "Thank you! Your verified review has been submitted for studio moderation.",
         "success",
       );
-      window.dispatchEvent(new Event("atelier_products_updated"));
     } catch (err: any) {
       console.warn("Review submit error:", err);
       showToast(err?.message || "Could not post review right now.", "error");

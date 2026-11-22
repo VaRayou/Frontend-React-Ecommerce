@@ -1,14 +1,9 @@
 -- ==============================================================================
--- ATELIER HAUTE COUTURE — CLEAN PURGE OF OLD POLICIES & STRICT RLS LOCKDOWN
--- Target: Supabase Cloud PostgreSQL (Project: awcgcpoibputqrtuvrms)
--- 
--- Instructions:
--- 1. Open Supabase Dashboard: https://supabase.com/dashboard/project/awcgcpoibputqrtuvrms/sql/new
--- 2. Paste this entire query and click "Run".
+-- STEAV LUXURY E-COMMERCE — ORDERS & PAYMENTS RLS HARDENING
+-- Target: Supabase Cloud PostgreSQL
 -- ==============================================================================
 
--- 1. DYNAMICALLY PURGE ALL OLD / LEFTOVER POLICIES ON ORDERS, PAYMENTS, ORDER_ITEMS
--- (This removes any old "Enable read access for all users" policies from Supabase)
+-- 1. PURGE ALL OLD / INSECURE POLICIES ON ORDERS, PAYMENTS, ORDER_ITEMS
 DO $$
 DECLARE
     pol record;
@@ -27,13 +22,17 @@ ALTER TABLE IF EXISTS public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.order_items ENABLE ROW LEVEL SECURITY;
 
--- 3. ORDERS: STRICT ROW LEVEL SECURITY POLICIES
--- Customer order placement (Allow anonymous and authenticated guests to checkout)
+-- 3. DROP INSECURE ENUMERATION RPCs
+DROP FUNCTION IF EXISTS public.get_order_by_ref(text);
+DROP FUNCTION IF EXISTS public.get_payment_by_ref(text);
+
+-- 4. ORDERS: STRICT ROW LEVEL SECURITY POLICIES
+-- Customer order placement (Allow checkout insert)
 CREATE POLICY "orders_insert_checkout"
 ON public.orders FOR INSERT
 WITH CHECK (true);
 
--- Customer order privacy (Only the authenticated customer OR administrators can view)
+-- Customer order privacy (Only order owner or admin can view)
 CREATE POLICY "orders_select_owner_or_admin"
 ON public.orders FOR SELECT
 USING (
@@ -42,7 +41,7 @@ USING (
   (customer_id IS NOT NULL AND customer_id::text = (auth.uid())::text)
 );
 
--- Only verified administrators can update order status
+-- Only verified administrators can update orders
 CREATE POLICY "orders_update_admin_only"
 ON public.orders FOR UPDATE
 TO authenticated
@@ -55,7 +54,7 @@ ON public.orders FOR DELETE
 TO authenticated
 USING (public.is_admin());
 
--- 4. ORDER ITEMS: STRICT ROW LEVEL SECURITY POLICIES
+-- 5. ORDER ITEMS: STRICT ROW LEVEL SECURITY POLICIES
 CREATE POLICY "order_items_insert_checkout"
 ON public.order_items FOR INSERT
 WITH CHECK (true);
@@ -80,7 +79,7 @@ ON public.order_items FOR ALL
 TO authenticated
 USING (public.is_admin());
 
--- 5. PAYMENTS / BAKONG KHQR: STRICT ROW LEVEL SECURITY POLICIES
+-- 6. PAYMENTS: STRICT ROW LEVEL SECURITY POLICIES
 CREATE POLICY "payments_insert_checkout"
 ON public.payments FOR INSERT
 WITH CHECK (true);
@@ -93,43 +92,16 @@ USING (
   (auth.jwt() ->> 'email' IS NOT NULL AND customer_email::text = (auth.jwt() ->> 'email')::text)
 );
 
--- Customers can settle their pending payment upon Bakong KHQR verification
-CREATE POLICY "payments_update_settle_or_admin"
+-- Payment status updates are strictly restricted to admin or server service role
+-- (Anonymous clients and regular customers CANNOT settle or modify payments directly)
+CREATE POLICY "payments_update_admin_only"
 ON public.payments FOR UPDATE
-USING (
-  public.is_admin() OR
-  status = 'PENDING'
-)
-WITH CHECK (
-  public.is_admin() OR
-  status = 'PAID'
-);
+TO authenticated
+USING (public.is_admin())
+WITH CHECK (public.is_admin());
 
--- Only administrators can delete payment records
+-- Only admins can purge/delete payment records
 CREATE POLICY "payments_delete_admin_only"
 ON public.payments FOR DELETE
 TO authenticated
 USING (public.is_admin());
-
--- 6. RPC HELPER FUNCTIONS FOR GUEST LOOKUPS (SECURITY DEFINER)
--- Allows checking a single order by order reference without exposing the table
-CREATE OR REPLACE FUNCTION public.get_order_by_ref(p_ref text)
-RETURNS SETOF public.orders AS $$
-BEGIN
-  RETURN QUERY
-  SELECT * FROM public.orders
-  WHERE (order_number = p_ref OR id::text = p_ref)
-  LIMIT 1;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Allows checking payment status by MD5 hash without exposing other payments
-CREATE OR REPLACE FUNCTION public.get_payment_by_ref(p_ref text)
-RETURNS SETOF public.payments AS $$
-BEGIN
-  RETURN QUERY
-  SELECT * FROM public.payments
-  WHERE (md5_hash = p_ref OR order_number = p_ref OR id::text = p_ref)
-  LIMIT 1;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;

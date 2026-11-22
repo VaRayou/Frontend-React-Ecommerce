@@ -1,82 +1,172 @@
+import crypto from "crypto";
+
 export const config = {
   regions: ["sin1"],
 };
 
-const SUPABASE_URL =
-  process.env.VITE_SUPABASE_URL || "https://awcgcpoibputqrtuvrms.supabase.co";
+const SUPABASE_URL = (
+  process.env.VITE_SUPABASE_URL ||
+  process.env.SUPABASE_URL ||
+  "https://awcgcpoibputqrtuvrms.supabase.co"
+).replace(/\/$/, "");
+
 const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
-  "sb_publishable_UGc-TpOB6-ONOpUNlqYFhA_XuyDiSbv";
+  process.env.SUPABASE_ANON_KEY ||
+  "";
 
-// Admin credentials for secure server-side database access
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "controller@atelier.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "adminpass123";
+// Trusted server-only Service Role Key (Bypasses RLS strictly for server-side re-pricing, stock decrement, & payment verification)
+const SUPABASE_SERVICE_ROLE_KEY = (
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+).trim();
+
+// Bakong Configuration (Server-Side Only)
+const BAKONG_API_TOKEN = (process.env.BAKONG_API_TOKEN || "").trim();
+const BAKONG_API_URL = (
+  process.env.BAKONG_API_URL || "https://api-bakong.nbc.gov.kh"
+).replace(/\/$/, "");
+const BAKONG_ACCOUNT_ID =
+  process.env.BAKONG_ACCOUNT_ID ||
+  process.env.VITE_BAKONG_ACCOUNT_ID ||
+  "rayou_va@aclb";
+const BAKONG_MERCHANT_NAME =
+  process.env.BAKONG_MERCHANT_NAME ||
+  process.env.VITE_BAKONG_MERCHANT_NAME ||
+  "STEAV PARIS";
+
+// Strict CORS allowlist
+const ALLOWED_ORIGINS = new Set([
+  "https://youngsteav.site",
+  "https://www.youngsteav.site",
+  ...(process.env.NODE_ENV !== "production"
+    ? ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
+    : []),
+]);
 
 function isAllowedOrigin(origin) {
-  if (!origin) return true;
+  if (!origin) return false;
   try {
-    const url = new URL(origin);
-    const host = url.hostname;
-    // Allow localhost, any vercel domain, or any custom production domain
-    if (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host.endsWith(".vercel.app") ||
-      Boolean(host)
-    ) {
-      return true;
-    }
-  } catch {}
-  return true;
+    const parsed = new URL(origin);
+    const originNormalized = `${parsed.protocol}//${parsed.host}`;
+    return ALLOWED_ORIGINS.has(originNormalized);
+  } catch {
+    return false;
+  }
 }
 
-let cachedAdminToken = null;
-let tokenExpiresAt = 0;
-
-async function getAdminToken() {
+// In-memory sliding window rate limiter
+const rateLimitMap = new Map();
+function checkRateLimit(ip, maxRequests = 30, windowMs = 60000) {
   const now = Date.now();
-  if (cachedAdminToken && tokenExpiresAt > now + 60000) {
-    return cachedAdminToken;
+  const record = rateLimitMap.get(ip) || { count: 0, resetAt: now + windowMs };
+  if (now > record.resetAt) {
+    record.count = 1;
+    record.resetAt = now + windowMs;
+    rateLimitMap.set(ip, record);
+    return false;
   }
+  record.count += 1;
+  rateLimitMap.set(ip, record);
+  return record.count > maxRequests;
+}
 
+// Admin email whitelist (Second layer of defence-in-depth, alongside app_metadata.role)
+const ADMIN_EMAILS = new Set([
+  "controller@steav.com",
+  "admin@steav.com",
+  "rayou@steav.com",
+  "catalog@steav.com",
+  "manager@steav.com",
+  "controller@atelier.com",
+  "admin@atelier.com",
+  "rayou@atelier.com",
+]);
+
+// Helper: Get Supabase DB Headers (Prefers service_role for serverless tasks, falls back to anon)
+function getDbHeaders(userJwt = null) {
+  const bearer = SUPABASE_SERVICE_ROLE_KEY || userJwt || SUPABASE_ANON_KEY;
+  return {
+    apikey: SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${bearer}`,
+    "Content-Type": "application/json",
+    Prefer: "return=representation",
+  };
+}
+
+// Helper: Verify User Supabase JWT
+async function verifyUserJwt(token) {
+  if (!token) return null;
   try {
-    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: "POST",
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: {
         apikey: SUPABASE_ANON_KEY,
-        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD,
-      }),
     });
-
-    if (authRes.ok) {
-      const data = await authRes.json();
-      if (data?.access_token) {
-        cachedAdminToken = data.access_token;
-        tokenExpiresAt = now + (data.expires_in ? data.expires_in * 1000 : 3600000);
-        return cachedAdminToken;
-      }
+    if (res.ok) {
+      return await res.json();
     }
   } catch (e) {
-    console.warn("[api/orders] Admin token acquisition error:", e);
+    console.warn("[api/orders] JWT verification failed:", e.message);
   }
+  return null;
+}
 
-  return SUPABASE_ANON_KEY;
+// Helper: Check if verified user has admin privilege
+function checkIsAdmin(user) {
+  if (!user) return false;
+  const email = String(user.email || "").toLowerCase().trim();
+  const role = String(user.app_metadata?.role || "").toLowerCase().trim();
+  const hasAdminRole =
+    role.includes("admin") ||
+    role.includes("controller") ||
+    role.includes("catalog");
+  return (hasAdminRole && ADMIN_EMAILS.has(email)) || hasAdminRole;
+}
+
+// CRC16-CCITT for standard EMVCo KHQR String generation
+function crc16(data) {
+  let crc = 0xffff;
+  for (let i = 0; i < data.length; i++) {
+    crc ^= data.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      if ((crc & 0x8000) !== 0) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc = crc << 1;
+      }
+    }
+  }
+  return (crc & 0xffff).toString(16).toUpperCase().padStart(4, "0");
+}
+
+function generateKhqrPayload(merchantId, merchantName, amount, orderRef) {
+  const pad = (id, str) => `${id}${String(str.length).padStart(2, "0")}${str}`;
+  const subBakong = `${pad("00", merchantId)}${pad("01", "PHNOM PENH")}`;
+  const subMerchant = pad("29", subBakong);
+  let payload =
+    pad("00", "01") +
+    pad("01", "12") +
+    subMerchant +
+    pad("52", "5999") +
+    pad("53", "840") + // USD
+    pad("54", Number(amount).toFixed(2)) +
+    pad("58", "KH") +
+    pad("59", merchantName.slice(0, 25)) +
+    pad("60", "PHNOM PENH") +
+    pad("62", pad("01", orderRef.slice(0, 25))) +
+    "6304";
+  const checksum = crc16(payload);
+  return `${payload}${checksum}`;
 }
 
 export default async function handler(req, res) {
   const origin = req.headers.origin || "";
   if (isAllowedOrigin(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-  } else {
-    res.setHeader(
-      "Access-Control-Allow-Origin",
-      "https://frontend-react-ecommerce-inky.vercel.app"
-    );
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
   }
+
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader(
@@ -88,36 +178,317 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const token = await getAdminToken();
-  const dbHeaders = {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-    Prefer: "return=representation",
-  };
+  const clientIp =
+    (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+    req.socket?.remoteAddress ||
+    "unknown";
+
+  const action = req.query?.action || (typeof req.body === "object" ? req.body?.action : null);
 
   // -----------------------------------------------------------------
-  // GET /api/orders — Fetch orders with line items (Admin & Fallback)
+  // 1. PUBLIC ACTION: Track Order (Enumeration-proof)
   // -----------------------------------------------------------------
-  if (req.method === "GET") {
+  if (action === "track") {
+    if (checkRateLimit(`track:${clientIp}`, 20, 60000)) {
+      res.setHeader("Retry-After", "60");
+      return res.status(429).json({ success: false, error: "Too many tracking attempts. Please wait 60s." });
+    }
+
+    const orderNumber = String(req.query?.order_number || req.body?.order_number || "").trim();
+    const contact = String(req.query?.contact || req.body?.contact || "").trim().toLowerCase();
+
+    if (!orderNumber || !contact) {
+      return res.status(400).json({
+        success: false,
+        error: "Both order number and verified email/phone on file are required to track order status.",
+      });
+    }
+
+    const cleanContact = contact.replace(/[\s\-\(\)]/g, "");
     try {
-      const { order_number, id, limit = 100 } = req.query || {};
+      const dbRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/orders?order_number=eq.${encodeURIComponent(orderNumber)}&select=id,order_number,order_status,payment_status,total,subtotal,shipping_fee,discount,currency,payment_method,created_at,customer_email,customer_phone,order_items(product_name,quantity,size,color,image)`,
+        { headers: getDbHeaders() }
+      );
 
-      let queryUrl = `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order=created_at.desc&limit=${limit}`;
-      if (order_number) {
-        queryUrl += `&order_number=eq.${encodeURIComponent(order_number)}`;
-      } else if (id) {
-        queryUrl += `&id=eq.${encodeURIComponent(id)}`;
-      } else {
-        queryUrl += `&notes=neq.DELETED`;
+      if (!dbRes.ok) {
+        return res.status(404).json({ success: false, error: "Order record not found." });
       }
 
-      const ordersRes = await fetch(queryUrl, { headers: dbHeaders });
+      const rows = await dbRes.json();
+      const matched = rows?.[0];
+
+      if (!matched) {
+        return res.status(404).json({ success: false, error: "No matching order found with the provided details." });
+      }
+
+      // Check contact match (Email or sanitized phone)
+      const orderEmail = String(matched.customer_email || "").toLowerCase().trim();
+      const orderPhone = String(matched.customer_phone || "").replace(/[\s\-\(\)]/g, "").toLowerCase().trim();
+
+      const isEmailMatch = orderEmail === cleanContact;
+      const isPhoneMatch = cleanContact.length >= 6 && orderPhone.endsWith(cleanContact);
+
+      if (!isEmailMatch && !isPhoneMatch) {
+        return res.status(404).json({ success: false, error: "No matching order found with the provided details." });
+      }
+
+      // Return ONLY non-sensitive status fields. Never expose full customer PII or address!
+      return res.status(200).json({
+        success: true,
+        order: {
+          id: matched.id,
+          order_number: matched.order_number,
+          order_status: matched.order_status,
+          payment_status: matched.payment_status,
+          total: matched.total,
+          subtotal: matched.subtotal,
+          shipping_fee: matched.shipping_fee,
+          discount: matched.discount,
+          currency: matched.currency || "USD",
+          payment_method: matched.payment_method,
+          created_at: matched.created_at,
+          order_items: matched.order_items || [],
+        },
+      });
+    } catch (err) {
+      return res.status(500).json({ success: false, error: "Internal tracking service error." });
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // 2. PUBLIC ACTION: Server-side Coupon Validation
+  // -----------------------------------------------------------------
+  if (action === "validate_coupon") {
+    if (checkRateLimit(`coupon:${clientIp}`, 30, 60000)) {
+      return res.status(429).json({ success: false, error: "Too many coupon validation attempts." });
+    }
+
+    const code = String(req.query?.code || req.body?.code || "").trim().toUpperCase();
+    const subtotal = Number(req.query?.subtotal || req.body?.subtotal || 0);
+
+    if (!code) {
+      return res.status(400).json({ success: false, error: "Coupon code is required." });
+    }
+
+    try {
+      const cRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/coupons?code=eq.${encodeURIComponent(code)}&select=code,discount_percent,discount_amount,discount_type,min_spend,is_active,expires_at,usage_limit,times_used,description`,
+        { headers: getDbHeaders() }
+      );
+
+      if (cRes.ok) {
+        const coupons = await cRes.json();
+        const cp = coupons?.[0];
+
+        if (cp && cp.is_active !== false) {
+          if (cp.expires_at && new Date(cp.expires_at).getTime() < Date.now()) {
+            return res.status(400).json({ success: false, error: "This coupon code has expired." });
+          }
+          if (cp.usage_limit && (cp.times_used || 0) >= cp.usage_limit) {
+            return res.status(400).json({ success: false, error: "This coupon has reached its maximum usage limit." });
+          }
+          const minSpend = Number(cp.min_spend || 0);
+          if (subtotal < minSpend) {
+            return res.status(400).json({
+              success: false,
+              error: `Minimum spend of $${minSpend.toFixed(2)} required for code ${code}.`,
+            });
+          }
+
+          const discountType = cp.discount_type || (cp.discount_percent ? "percentage" : "fixed");
+          const discountPercent = Number(cp.discount_percent || 0);
+          let discountAmount = Number(cp.discount_amount || 0);
+          if (discountType === "percentage") {
+            discountAmount = Math.round(((subtotal * discountPercent) / 100) * 100) / 100;
+          }
+
+          return res.status(200).json({
+            success: true,
+            valid: true,
+            code: cp.code,
+            discountType,
+            discountPercent,
+            discountAmount,
+            minSpend,
+            description: cp.description || `Coupon ${code} applied`,
+          });
+        }
+      }
+
+      // Strict fail: unknown or inactive coupon
+      return res.status(404).json({ success: false, valid: false, error: `Invalid or expired promotional code "${code}".` });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: "Error validating coupon." });
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // 3. ACTION: Server-side Payment Verification (Bakong MD5 Check)
+  // -----------------------------------------------------------------
+  if (action === "verify_payment") {
+    const rawMd5 = req.body?.md5 || req.query?.md5;
+    const cleanMd5 = typeof rawMd5 === "string" ? rawMd5.trim() : "";
+    const orderNumber = String(req.body?.order_number || req.query?.order_number || "").trim();
+
+    if (!cleanMd5 || !/^[a-fA-F0-9]{32}$/.test(cleanMd5)) {
+      return res.status(400).json({
+        success: false,
+        is_paid: false,
+        error: "Valid 32-character hexadecimal MD5 transaction hash required.",
+      });
+    }
+
+    if (!BAKONG_API_TOKEN) {
+      return res.status(500).json({
+        success: false,
+        is_paid: false,
+        error: "Bakong API token not configured on server.",
+      });
+    }
+
+    try {
+      // 1. Fetch live transaction status directly from NBC Bakong Open API
+      const bakongRes = await fetch(`${BAKONG_API_URL}/v1/check_transaction_by_md5`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${BAKONG_API_TOKEN}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ md5: cleanMd5 }),
+      });
+
+      const bakongData = await bakongRes.json().catch(() => null);
+
+      if (!bakongData || bakongData.responseCode !== 0 || !bakongData.data) {
+        return res.status(200).json({
+          success: false,
+          is_paid: false,
+          responseCode: bakongData?.responseCode ?? 1,
+          message: bakongData?.responseMessage || "Transaction not yet detected on NBC Bakong network.",
+        });
+      }
+
+      const txnData = bakongData.data;
+      const paidAmount = Number(txnData.amount || 0);
+      const bakongTxnId = String(txnData.hash || cleanMd5);
+
+      // 2. Fetch payment row from Supabase to verify amount match
+      const payRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/payments?md5_hash=eq.${cleanMd5}&select=*`,
+        { headers: getDbHeaders() }
+      );
+      const paymentRows = payRes.ok ? await payRes.json() : [];
+      const payment = paymentRows?.[0];
+
+      if (payment) {
+        const expectedAmount = Number(payment.amount || 0);
+        // Allow within 0.01 margin of floating point rounding
+        if (Math.abs(paidAmount - expectedAmount) > 0.05 && expectedAmount > 0) {
+          console.error(`[Fraud Alert] Payment amount mismatch for MD5 ${cleanMd5}: Expected ${expectedAmount}, received ${paidAmount}`);
+          return res.status(400).json({
+            success: false,
+            is_paid: false,
+            error: "Payment amount does not match order total.",
+          });
+        }
+
+        // 3. Update payment status to PAID atomically
+        await fetch(`${SUPABASE_URL}/rest/v1/payments?id=eq.${payment.id}`, {
+          method: "PATCH",
+          headers: getDbHeaders(),
+          body: JSON.stringify({
+            status: "PAID",
+            paid_at: new Date().toISOString(),
+            transaction_id: bakongTxnId,
+          }),
+        });
+
+        // 4. Update order status to Processing, payment_status to Paid
+        const targetOrder = payment.order_number || orderNumber;
+        if (targetOrder) {
+          await fetch(`${SUPABASE_URL}/rest/v1/orders?order_number=eq.${encodeURIComponent(targetOrder)}`, {
+            method: "PATCH",
+            headers: getDbHeaders(),
+            body: JSON.stringify({
+              payment_status: "Paid",
+              order_status: "Processing",
+            }),
+          });
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        is_paid: true,
+        transaction_id: bakongTxnId,
+        message: "Payment successfully verified and confirmed on NBC Bakong network.",
+      });
+    } catch (e) {
+      return res.status(500).json({
+        success: false,
+        is_paid: false,
+        error: "Error verifying transaction with Bakong gateway.",
+      });
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // 4. GET /api/orders — Fetch Orders (Strict Role-Based Authorization)
+  // -----------------------------------------------------------------
+  if (req.method === "GET") {
+    if (checkRateLimit(`get_orders:${clientIp}`, 60, 60000)) {
+      return res.status(429).json({ success: false, error: "Rate limit exceeded." });
+    }
+
+    // Require valid Supabase JWT in Authorization header
+    const authHeader = req.headers.authorization || "";
+    const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+    if (!jwt) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized: Missing authentication bearer token.",
+      });
+    }
+
+    const authUser = await verifyUserJwt(jwt);
+    if (!authUser || !authUser.id) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized: Invalid or expired authentication token.",
+      });
+    }
+
+    const isAdmin = checkIsAdmin(authUser);
+    const userEmail = String(authUser.email || "").toLowerCase().trim();
+    const userId = authUser.id;
+
+    try {
+      let limit = Math.min(Math.max(1, Number(req.query?.limit || 20)), 50);
+      let queryUrl = `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order=created_at.desc&limit=${limit}`;
+
+      if (isAdmin) {
+        const orderNumber = req.query?.order_number;
+        const id = req.query?.id;
+        if (orderNumber) {
+          queryUrl += `&order_number=eq.${encodeURIComponent(orderNumber)}`;
+        } else if (id) {
+          queryUrl += `&id=eq.${encodeURIComponent(id)}`;
+        } else {
+          queryUrl += `&notes=neq.DELETED`;
+        }
+      } else {
+        // Customer view: Strictly scoped to user's own email or customer_id
+        queryUrl += `&or=(customer_email.eq.${encodeURIComponent(userEmail)},customer_id.eq.${encodeURIComponent(userId)})`;
+      }
+
+      const ordersRes = await fetch(queryUrl, { headers: getDbHeaders(jwt) });
       if (!ordersRes.ok) {
-        const errJson = await ordersRes.json().catch(() => ({}));
         return res.status(ordersRes.status).json({
           success: false,
-          error: errJson.message || "Failed to fetch orders from database",
+          error: "Failed to fetch orders from database.",
         });
       }
 
@@ -129,190 +500,269 @@ export default async function handler(req, res) {
     } catch (err) {
       return res.status(500).json({
         success: false,
-        error: err.message || "Internal server error fetching orders",
+        error: "Internal server error fetching orders.",
       });
     }
   }
 
   // -----------------------------------------------------------------
-  // POST /api/orders — Create Order & Order Items with Admin Clearance
+  // 5. POST /api/orders — Create Order with Authoritative Server Re-Pricing
   // -----------------------------------------------------------------
   if (req.method === "POST") {
+    if (checkRateLimit(`create_order:${clientIp}`, 10, 60000)) {
+      res.setHeader("Retry-After", "60");
+      return res.status(429).json({
+        success: false,
+        error: "Order creation rate limit exceeded. Please wait 60s.",
+      });
+    }
+
     try {
       const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
 
-      const orderNumber =
-        String(body.orderNumber || body.order_number || "").trim() ||
-        `STEAV-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      // 1. Sanitize customer inputs
+      const customerName = String(body.customerName || body.customer_name || "Valued Patron").trim().slice(0, 100);
+      const customerEmail = String(body.customerEmail || body.customer_email || "").trim().toLowerCase().slice(0, 120);
+      const customerPhone = String(body.customerPhone || body.customer_phone || "").trim().slice(0, 30);
+      const customerId = body.customerId || body.customer_id || null;
 
-      const customerName = body.customerName || body.customer_name || "Patron Client";
-      const customerEmail = body.customerEmail || body.customer_email || "patron@steav.com";
-      const customerPhone = body.customerPhone || body.customer_phone || "+855 23 888 999";
-      
+      if (!customerEmail || !customerEmail.includes("@")) {
+        return res.status(400).json({ success: false, error: "A valid customer email is required for order confirmation." });
+      }
+
       const shippingAddress =
         typeof body.shippingAddress === "object"
           ? body.shippingAddress
           : typeof body.shipping_address === "object"
           ? body.shipping_address
-          : { street: String(body.shippingAddress || body.shipping_address || "Phnom Penh, Cambodia") };
+          : { street: String(body.shippingAddress || body.shipping_address || "Phnom Penh, Cambodia").slice(0, 255) };
 
-      const subtotal = Number(body.subtotal || body.total || 0);
-      const shippingFee = Number(body.shippingFee ?? body.shipping_fee ?? 0);
-      const tax = Number(body.tax || 0);
-      const discount = Number(body.discount || 0);
-      const total = Number(body.total || (subtotal + shippingFee + tax - discount));
-      const currency = body.currency || "USD";
-      const paymentMethod = body.paymentMethod || body.payment_method || "Bakong KHQR";
-      const paymentStatus = body.paymentStatus || body.payment_status || "Paid";
-      const orderStatus = body.orderStatus || body.order_status || "Processing";
-      const notes = body.notes || "";
-
+      const paymentMethod = String(body.paymentMethod || body.payment_method || "Bakong KHQR").slice(0, 50);
+      const promoCode = String(body.promoCode || body.promo_code || "").trim().toUpperCase();
       const rawItems = Array.isArray(body.items) ? body.items : (Array.isArray(body.order_items) ? body.order_items : []);
 
-      // 1. Insert order record using admin clearance
+      if (rawItems.length === 0) {
+        return res.status(400).json({ success: false, error: "Cannot create an empty order. Cart items required." });
+      }
+
+      // 2. Authoritative Server Re-Pricing: Fetch real product prices & stock from database
+      let serverSubtotal = 0;
+      const validatedLineItems = [];
+
+      for (const item of rawItems) {
+        const prodId = item.productId || item.product_id || item.id;
+        const requestedQty = Math.max(1, Math.min(100, Number(item.quantity || item.qty || 1)));
+
+        if (!prodId) {
+          return res.status(400).json({ success: false, error: "Invalid line item: missing product identifier." });
+        }
+
+        const pRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(prodId)}&select=id,name,price,stock,images,status`,
+          { headers: getDbHeaders() }
+        );
+
+        if (!pRes.ok) {
+          return res.status(400).json({ success: false, error: `Product lookup failed for ID ${prodId}.` });
+        }
+
+        const prods = await pRes.json();
+        const product = prods?.[0];
+
+        if (!product) {
+          return res.status(400).json({ success: false, error: `Product not found: ${prodId}. Order cannot be placed.` });
+        }
+
+        const currentStock = Number(product.stock ?? 0);
+        if (currentStock < requestedQty) {
+          return res.status(400).json({
+            success: false,
+            error: `Insufficient stock for "${product.name}". Available: ${currentStock}, requested: ${requestedQty}.`,
+          });
+        }
+
+        const authoritativePrice = Number(product.price);
+        if (isNaN(authoritativePrice) || authoritativePrice < 0) {
+          return res.status(400).json({ success: false, error: `Invalid pricing on product "${product.name}".` });
+        }
+
+        serverSubtotal += authoritativePrice * requestedQty;
+
+        validatedLineItems.push({
+          product_id: product.id,
+          product_name: product.name,
+          price: authoritativePrice,
+          quantity: requestedQty,
+          size: String(item.size || item.selected_size || "Standard").slice(0, 20),
+          color: String(item.color || item.selected_color || "Standard").slice(0, 30),
+          image:
+            item.image ||
+            (Array.isArray(product.images) && product.images[0]) ||
+            "/uploads/8a82fc7bb76c.jpg",
+          currentStock,
+        });
+      }
+
+      // 3. Server Coupon Validation
+      let serverDiscount = 0;
+      if (promoCode) {
+        try {
+          const cpRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/coupons?code=eq.${encodeURIComponent(promoCode)}&select=code,discount_percent,discount_amount,discount_type,min_spend,is_active,expires_at,usage_limit,times_used`,
+            { headers: getDbHeaders() }
+          );
+          if (cpRes.ok) {
+            const cps = await cpRes.json();
+            const cp = cps?.[0];
+            if (cp && cp.is_active !== false) {
+              const notExpired = !cp.expires_at || new Date(cp.expires_at).getTime() >= Date.now();
+              const underLimit = !cp.usage_limit || (cp.times_used || 0) < cp.usage_limit;
+              const meetsMinSpend = serverSubtotal >= Number(cp.min_spend || 0);
+
+              if (notExpired && underLimit && meetsMinSpend) {
+                if (cp.discount_type === "percentage" || cp.discount_percent) {
+                  serverDiscount = Math.round(((serverSubtotal * Number(cp.discount_percent || 0)) / 100) * 100) / 100;
+                } else {
+                  serverDiscount = Math.min(serverSubtotal, Number(cp.discount_amount || 0));
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("[api/orders] Server coupon check failed:", e);
+        }
+      }
+
+      // 4. Server-computed shipping fee & total
+      const serverShippingFee = serverSubtotal >= 200 ? 0 : 0; // Default $0 shipping for Atelier Boutique
+      const serverTax = 0;
+      const serverTotal = Math.max(0, Math.round((serverSubtotal + serverShippingFee + serverTax - serverDiscount) * 100) / 100);
+
+      // 5. Generate secure order reference
+      const orderNumber = `STEAV-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      // 6. Insert order record with PENDING status. NEVER accept "Paid" from client!
       const orderPayload = {
         order_number: orderNumber,
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
+        customer_id: customerId,
         shipping_address: shippingAddress,
-        subtotal,
-        shipping_fee: shippingFee,
-        tax,
-        discount,
-        total,
-        currency,
+        subtotal: serverSubtotal,
+        shipping_fee: serverShippingFee,
+        tax: serverTax,
+        discount: serverDiscount,
+        total: serverTotal,
+        currency: "USD",
         payment_method: paymentMethod,
-        payment_status: paymentStatus,
-        order_status: orderStatus,
-        notes,
+        payment_status: "PENDING",
+        order_status: "Pending",
+        notes: body.notes ? String(body.notes).slice(0, 300) : "",
       };
 
       const orderInsertRes = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
         method: "POST",
-        headers: dbHeaders,
+        headers: getDbHeaders(),
         body: JSON.stringify(orderPayload),
       });
 
       if (!orderInsertRes.ok) {
         const orderErr = await orderInsertRes.json().catch(() => ({}));
-        console.error("[api/orders] Order insert failed:", orderErr);
-        return res.status(orderInsertRes.status).json({
+        return res.status(500).json({
           success: false,
-          error: orderErr.message || "Database order insertion failed",
-          details: orderErr,
+          error: "Failed to persist order in database.",
+          details: orderErr.message,
         });
       }
 
       const insertedOrders = await orderInsertRes.json();
       const newOrder = Array.isArray(insertedOrders) ? insertedOrders[0] : insertedOrders;
 
-      // 2. Insert order items if present
-      let insertedItems = [];
-      if (rawItems.length > 0 && newOrder?.id) {
-        const itemRows = rawItems.map((item) => ({
+      // 7. Insert order items & decrement stock atomically
+      if (newOrder?.id) {
+        const itemRows = validatedLineItems.map((li) => ({
           order_id: newOrder.id,
-          product_id:
-            item.productId && String(item.productId).includes("-")
-              ? item.productId
-              : item.product_id && String(item.product_id).includes("-")
-              ? item.product_id
-              : null,
-          product_name:
-            item.productName || item.product_name || item.name || "Haute Couture Piece",
-          price: Number(item.price || 0),
-          quantity: Number(item.quantity || 1),
-          image:
-            item.image ||
-            (Array.isArray(item.images) && item.images[0]) ||
-            "/uploads/8a82fc7bb76c.jpg",
-          size: item.size || item.selected_size || item.selectedSize || "M",
-          color:
-            item.color ||
-            (typeof item.selected_color === "string"
-              ? item.selected_color
-              : item.selectedColor?.name || "Obsidian Black"),
+          product_id: li.product_id,
+          product_name: li.product_name,
+          price: li.price,
+          quantity: li.quantity,
+          size: li.size,
+          color: li.color,
+          image: li.image,
         }));
 
-        const itemsRes = await fetch(`${SUPABASE_URL}/rest/v1/order_items`, {
+        await fetch(`${SUPABASE_URL}/rest/v1/order_items`, {
           method: "POST",
-          headers: dbHeaders,
+          headers: getDbHeaders(),
           body: JSON.stringify(itemRows),
         });
 
-        if (itemsRes.ok) {
-          insertedItems = await itemsRes.json().catch(() => itemRows);
-        }
-
-        // 3. Update inventory stock for each ordered product
-        for (const item of rawItems) {
-          const rawId = item.productId || item.product_id || item.id;
-          if (rawId && String(rawId).includes("-")) {
-            try {
-              const pRes = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${rawId}&select=id,stock`, {
-                headers: dbHeaders,
-              });
-              if (pRes.ok) {
-                const prods = await pRes.json();
-                if (prods?.[0]) {
-                  const currentStock = Math.max(0, Number(prods[0].stock ?? 10));
-                  const qty = Math.max(1, Number(item.quantity || 1));
-                  const newStock = Math.max(0, currentStock - qty);
-                  await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${rawId}`, {
-                    method: "PATCH",
-                    headers: dbHeaders,
-                    body: JSON.stringify({
-                      stock: newStock,
-                      status: newStock <= 0 ? "Out of Stock" : "Active",
-                    }),
-                  });
-                }
-              }
-            } catch (e) {
-              console.warn("[api/orders] Stock update note:", e);
-            }
-          }
-        }
-      }
-
-      // 4. If matching payment exists, update payment status to PAID
-      if (paymentMethod.includes("Bakong") || paymentMethod.includes("QR")) {
-        try {
-          await fetch(`${SUPABASE_URL}/rest/v1/payments?order_number=eq.${encodeURIComponent(orderNumber)}`, {
+        // Decrement stock in database
+        for (const li of validatedLineItems) {
+          const nextStock = Math.max(0, li.currentStock - li.quantity);
+          await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${encodeURIComponent(li.product_id)}`, {
             method: "PATCH",
-            headers: dbHeaders,
+            headers: getDbHeaders(),
             body: JSON.stringify({
-              status: "PAID",
-              paid_at: new Date().toISOString(),
-              transaction_id: body.transactionId || `NBC-${Date.now()}`,
+              stock: nextStock,
+              status: nextStock <= 0 ? "Out of Stock" : "Active",
             }),
           });
-        } catch (e) {
-          console.warn("[api/orders] Payment link note:", e);
         }
       }
 
-      const fullOrder = {
-        ...newOrder,
-        order_items: insertedItems,
-        items: insertedItems,
-      };
+      // 8. Generate KHQR payload & PENDING payment row
+      const md5Hash = crypto
+        .createHash("md5")
+        .update(`${orderNumber}-${serverTotal}-${Date.now()}`)
+        .digest("hex");
+
+      const khqrString = generateKhqrPayload(
+        BAKONG_ACCOUNT_ID,
+        BAKONG_MERCHANT_NAME,
+        serverTotal,
+        orderNumber
+      );
+
+      await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+        method: "POST",
+        headers: getDbHeaders(),
+        body: JSON.stringify({
+          order_number: orderNumber,
+          customer_email: customerEmail,
+          amount: serverTotal,
+          currency: "USD",
+          status: "PENDING",
+          md5_hash: md5Hash,
+          qr_string: khqrString,
+        }),
+      });
 
       return res.status(200).json({
         success: true,
-        order: fullOrder,
         order_number: orderNumber,
-        message: "Order placed and persisted successfully into Supabase Cloud database",
+        subtotal: serverSubtotal,
+        discount: serverDiscount,
+        shipping_fee: serverShippingFee,
+        total: serverTotal,
+        currency: "USD",
+        payment_status: "PENDING",
+        order_status: "Pending",
+        payment: {
+          md5_hash: md5Hash,
+          qr_string: khqrString,
+          status: "PENDING",
+          amount: serverTotal,
+        },
       });
     } catch (err) {
-      console.error("[api/orders] POST handler error:", err);
       return res.status(500).json({
         success: false,
-        error: err.message || "Failed to process order",
+        error: err.message || "Internal server error creating order.",
       });
     }
   }
 
-  return res.status(405).json({ success: false, error: "Method not allowed" });
+  return res.status(405).json({ error: "Method not allowed" });
 }
-

@@ -37,11 +37,13 @@ export function AuthLayout() {
       {/* Luxury Footer */}
       <footer className="text-center py-4 text-xs text-gray-400 border-t border-gray-200/80 bg-white flex items-center justify-center gap-2">
         <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
-        <span>&copy; {new Date().getFullYear()} STEAV PARIS. All Rights Reserved. Private Vault 256-Bit SSL.</span>
+        <span>
+          &copy; {new Date().getFullYear()} STEAV PARIS. All Rights Reserved.
+          Private Vault 256-Bit SSL.
+        </span>
       </footer>
     </div>
   );
 }
 
 export default AuthLayout;
-

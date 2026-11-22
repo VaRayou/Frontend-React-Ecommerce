@@ -1,11 +1,8 @@
 -- ==============================================================================
--- ATELIER HAUTE COUTURE — GLOBAL STORE SETTINGS & SHIPPING SYNC SETUP
--- Target: Supabase PostgreSQL (Project: awcgcpoibputqrtuvrms)
---
--- Instructions:
--- 1. Open Supabase Dashboard: https://supabase.com/dashboard/project/awcgcpoibputqrtuvrms
--- 2. Click "SQL Editor" -> "New query".
--- 3. Paste this script and click "Run".
+-- STEAV LUXURY E-COMMERCE — GLOBAL STORE SETTINGS SETUP
+-- Target: Supabase Cloud PostgreSQL
+-- NOTE: Never store API keys, bot tokens, or private secrets in store_settings!
+--       All backend secrets are strictly managed in Vercel environment variables.
 -- ==============================================================================
 
 -- 1. Ensure store_settings table exists
@@ -18,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
 -- 2. Enable Row Level Security (RLS)
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 
--- 3. Policy: Public & Customer devices can read store settings (shipping fee, boutique info)
+-- 3. Policy: Public & Customer devices can read public store settings (shipping, boutique info)
 DROP POLICY IF EXISTS "Public can view store_settings" ON public.store_settings;
 CREATE POLICY "Public can view store_settings"
 ON public.store_settings FOR SELECT
@@ -32,22 +29,20 @@ TO authenticated
 USING (public.is_admin())
 WITH CHECK (public.is_admin());
 
--- 5. Set default shipping configuration to $0 free shipping in Supabase
+-- 5. Set default store and shipping configuration in Supabase (NO SECRETS)
 INSERT INTO public.store_settings (id, settings, updated_at)
 VALUES (
     'default',
     jsonb_build_object(
-        'storeName', 'ATELIER PARIS — Flagship Studio',
-        'storeEmail', 'concierge@atelier.com',
+        'storeName', 'STEAV Paris — Flagship Studio',
+        'storeEmail', 'contact@youngsteav.site',
         'storePhone', '+855 96 835 0317',
         'storeAddress', 'Phnom Penh • Paris • Global Flagship',
         'storeTaxId', 'VAT REG: KH-8840291-A',
         'currency', 'USD ($)',
-        'receiptFooterMessage', '*** THANK YOU FOR PATRONIZING ATELIER ***',
+        'receiptFooterMessage', '*** THANK YOU FOR PATRONIZING STEAV ***',
         'orderNotification', true,
         'stockAlertNotification', true,
-        'telegramBotToken', '9048372338:AAHADX6G3fszbnyUTF58AEn0X2BSRbptx8A',
-        'telegramChatId', '1389246582',
         'standardShippingFee', 0,
         'freeShippingThreshold', 200,
         'shippingCarrierName', 'DHL Express Courier',

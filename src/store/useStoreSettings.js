@@ -21,15 +21,11 @@ export const useStoreSettings = create(
       currency: "USD ($)",
       orderNotification: true,
       stockAlertNotification: true,
-      telegramBotToken: String(env.VITE_TELEGRAM_BOT_TOKEN || "").trim(),
-      telegramChatId: String(env.VITE_TELEGRAM_CHAT_ID || "").trim(),
       standardShippingFee: 15,
       freeShippingThreshold: 200,
       shippingCarrierName: "DHL Express Courier",
       enableFreeShipping: true,
-      resendApiKey: String(env.VITE_RESEND_API_KEY || "").trim(),
       resendSenderEmail: String(env.VITE_RESEND_SENDER_EMAIL || "onboarding@resend.dev").trim(),
-      brevoApiKey: String(env.VITE_BREVO_API_KEY || "").trim(),
       brevoSenderEmail: String(env.VITE_BREVO_SENDER_EMAIL || "varayouk@gmail.com").trim(),
       brevoSenderName: String(env.VITE_BREVO_SENDER_NAME || "STEAV PARIS").trim(),
       emailJsServiceId: String(env.VITE_EMAILJS_SERVICE_ID || "").trim(),
@@ -58,7 +54,12 @@ export const useStoreSettings = create(
 
           if (!error && data?.settings) {
             _lastSettingsFetch = now;
-            const s = data.settings;
+            const s = { ...data.settings };
+            // Security sanitizer: Strip any legacy secret tokens from state
+            delete s.telegramBotToken;
+            delete s.telegramChatId;
+            delete s.brevoApiKey;
+            delete s.resendApiKey;
 
             set((state) => ({
               ...state,

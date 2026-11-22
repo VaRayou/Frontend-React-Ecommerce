@@ -2,35 +2,31 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { User, Order } from "../types";
 import { supabase } from "../services/supabase";
-import api from "../services/api";
 import { useAdminAuthStore } from "./useAdminAuthStore";
 
 interface AuthState {
   user: User | null;
   orders: Order[];
   isAuthenticated: boolean;
-  login: (email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
-  register: (name: string, email: string, password?: string, phone?: string) => Promise<{ success: boolean; message?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => void;
   addOrder: (order: Order) => void;
 }
 
-const DEMO_USER: User = {
-  id: "usr-01",
-  name: "Camille Laurent",
-  email: "camille@steav.com",
-  phone: "+1 (555) 349-2810",
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-  address: {
-    street: "740 Madison Avenue, Apt 8B",
-    city: "New York",
-    country: "United States",
-    postalCode: "10065",
-  },
-};
-
 const INITIAL_ORDERS: Order[] = [];
+
+// Whitelist of valid administrator emails (Used only as secondary check alongside authoritative app_metadata.role)
+const VERIFIED_ADMIN_EMAILS = new Set([
+  "controller@steav.com",
+  "admin@steav.com",
+  "rayou@steav.com",
+  "catalog@steav.com",
+  "manager@steav.com",
+  "controller@atelier.com",
+  "admin@atelier.com",
+]);
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -39,8 +35,12 @@ export const useAuthStore = create<AuthState>()(
       orders: INITIAL_ORDERS,
       isAuthenticated: false,
 
-      login: async (email, password = "password123") => {
-        const cleanEmail = email.trim().toLowerCase();
+      login: async (email: string, password: string) => {
+        const cleanEmail = String(email || "").trim().toLowerCase();
+        if (!cleanEmail || !password) {
+          return { success: false, message: "Email and password are required." };
+        }
+
         try {
           const { data, error } = await supabase.auth.signInWithPassword({
             email: cleanEmail,
@@ -49,32 +49,22 @@ export const useAuthStore = create<AuthState>()(
 
           if (!error && data?.user) {
             const u = data.user;
-            const rawRole = String(
-              (u as any).app_metadata?.role || u.user_metadata?.role || ""
-            ).toLowerCase();
-            const isAdminEmail = [
-              "controller@steav.com",
-              "admin@steav.com",
-              "rayou@steav.com",
-              "catalog@steav.com",
-              "manager@steav.com",
-              "controller@atelier.com",
-              "admin@atelier.com",
-              "rayou@atelier.com",
-              "catalog@atelier.com",
-              "manager@atelier.com",
-            ].includes(cleanEmail);
+            // Admin role claim MUST come from protected app_metadata (set server-side in Supabase Auth)
+            const appRole = String(
+              (u as any).app_metadata?.role || ""
+            ).toLowerCase().trim();
+
             const isAuthorizedAdmin =
-              isAdminEmail ||
-              rawRole.includes("admin") ||
-              rawRole.includes("controller") ||
-              rawRole.includes("catalog");
+              (appRole.includes("admin") ||
+                appRole.includes("controller") ||
+                appRole.includes("catalog")) &&
+              VERIFIED_ADMIN_EMAILS.has(cleanEmail);
 
             const loggedUser: User = {
               id: String(u.id),
               name: u.user_metadata?.full_name || cleanEmail.split("@")[0].toUpperCase(),
               email: u.email || cleanEmail,
-              role: isAuthorizedAdmin ? "admin" : (u.user_metadata?.role || "customer"),
+              role: isAuthorizedAdmin ? "admin" : "customer",
               isAdmin: isAuthorizedAdmin,
               phone: u.user_metadata?.phone || "+855 23 888 999",
               avatar:
@@ -89,7 +79,7 @@ export const useAuthStore = create<AuthState>()(
             };
             set({ user: loggedUser, isAuthenticated: true });
 
-            // Seamlessly cross-authenticate useAdminAuthStore so admin layout is unlocked immediately
+            // Seamlessly cross-authenticate useAdminAuthStore if admin
             if (isAuthorizedAdmin && password) {
               try {
                 await useAdminAuthStore.getState().adminLogin(cleanEmail, password).catch(() => {});
@@ -98,28 +88,23 @@ export const useAuthStore = create<AuthState>()(
 
             return { success: true, message: "Welcome back to STEAV Studio." };
           }
+
           if (error) {
-            if (cleanEmail === "camille@steav.com" || cleanEmail === "camille@atelier.com") {
-              set({ user: DEMO_USER, isAuthenticated: true });
-              return { success: true, message: "Welcome back, Camille!" };
-            }
-            return { success: false, message: error.message };
+            return { success: false, message: error.message || "Invalid email or password." };
           }
         } catch (err: any) {
-          console.warn("[Supabase] login notice:", err.message);
-        }
-
-        // Demo account fallback if camille@steav.com is used
-        if (cleanEmail === "camille@steav.com" || cleanEmail === "camille@atelier.com") {
-          set({ user: DEMO_USER, isAuthenticated: true });
-          return { success: true, message: "Welcome back, Camille!" };
+          console.warn("[Supabase] login notice:", err?.message || err);
         }
 
         return { success: false, message: "Invalid email or password." };
       },
 
-      register: async (name, email, password = "password123", phone = "") => {
-        const cleanEmail = email.trim().toLowerCase();
+      register: async (name: string, email: string, password: string, phone: string = "") => {
+        const cleanEmail = String(email || "").trim().toLowerCase();
+        if (!cleanEmail || !password) {
+          return { success: false, message: "Email and password are required." };
+        }
+
         try {
           const { data, error } = await supabase.auth.signUp({
             email: cleanEmail,
@@ -128,7 +113,7 @@ export const useAuthStore = create<AuthState>()(
               data: {
                 full_name: name,
                 phone: phone || "+855 23 888 999",
-                role: "customer",
+                role: "customer", // Default client registration is always customer
               },
             },
           });
@@ -145,11 +130,12 @@ export const useAuthStore = create<AuthState>()(
             set({ user: newUser, isAuthenticated: true });
             return { success: true, message: "Patron account created successfully!" };
           }
+
           if (error) {
             return { success: false, message: error.message };
           }
         } catch (err: any) {
-          console.warn("[Supabase] register note:", err.message);
+          console.warn("[Supabase] register note:", err?.message || err);
         }
 
         return { success: false, message: "Unable to register account. Please try again." };
@@ -167,35 +153,25 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateProfile: (data) => {
-        const current = useAuthStore.getState().user;
+        // Prevent normal users from escalating role through profile update
+        const sanitized = { ...data };
+        delete (sanitized as any).role;
+        delete (sanitized as any).isAdmin;
+
         set((state) => ({
-          user: state.user ? { ...state.user, ...data } : null,
+          user: state.user ? { ...state.user, ...sanitized } : null,
         }));
-        if (current && current.id && /^\d+$/.test(String(current.id))) {
-          api
-            .patch(`/users/${current.id}/`, {
-              name: data.name ?? current.name,
-              email: data.email ?? current.email,
-              phone: data.phone ?? current.phone ?? "",
-              address: data.address?.street ?? current.address?.street ?? "",
-              city: data.address?.city ?? current.address?.city ?? "",
-              country: data.address?.country ?? current.address?.country ?? "",
-            })
-            .catch((err) => {
-              console.warn("Profile backend sync note:", err?.message);
-            });
-        }
       },
 
-      addOrder: (order) => {
+      addOrder: (order: Order) =>
         set((state) => ({
           orders: [order, ...state.orders],
-        }));
-      },
+        })),
     }),
     {
-      name: "atelier_auth_v3",
+      name: "atelier_auth_v2",
     }
   )
 );
+
 export default useAuthStore;

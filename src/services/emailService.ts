@@ -36,6 +36,15 @@ export interface EmailSendResult {
   details?: string;
 }
 
+function escapeHtml(str: any): string {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export const emailService = {
   /**
    * Generates a luxury responsive HTML email template for order confirmations.
@@ -55,10 +64,10 @@ export const emailService = {
         <tr>
           <td style="padding: 12px 0; border-bottom: 1px solid #EEEEEE;">
             <div style="font-weight: 700; font-size: 13px; color: #111111; text-transform: uppercase; letter-spacing: 0.5px;">
-              ${item.name}
+              ${escapeHtml(item.name)}
             </div>
             <div style="font-size: 11px; color: #777777; margin-top: 3px;">
-              ${item.size ? `Size: ${item.size}` : ""} ${item.color ? `• Color: ${item.color}` : ""} • Qty: ${item.quantity}
+              ${item.size ? `Size: ${escapeHtml(item.size)}` : ""} ${item.color ? `• Color: ${escapeHtml(item.color)}` : ""} • Qty: ${Number(item.quantity) || 1}
             </div>
           </td>
           <td style="padding: 12px 0; border-bottom: 1px solid #EEEEEE; text-align: right; font-weight: 700; font-size: 13px; color: #111111;">
@@ -74,7 +83,7 @@ export const emailService = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Confirmation #${order.orderNumber}</title>
+  <title>Order Confirmation #${escapeHtml(order.orderNumber)}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #F8F8F8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111111;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8F8F8; padding: 30px 15px;">
@@ -101,7 +110,7 @@ export const emailService = {
                 ✓ Order Confirmed &amp; Dispatched to STEAV
               </div>
               <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 900; color: #111111; text-transform: uppercase; letter-spacing: 0.5px;">
-                Thank You, ${order.customerName}!
+                Thank You, ${escapeHtml(order.customerName)}!
               </h1>
               <p style="margin: 0; font-size: 13px; line-height: 20px; color: #555555;">
                 Your runway acquisition has been accepted by our master craft studio. Below is your official digital dispatch receipt and logistics voucher.
@@ -117,13 +126,13 @@ export const emailService = {
                   <td width="50%" style="font-size: 11px; color: #777777; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
                     Order Identifier:
                     <div style="font-size: 14px; font-weight: 800; color: #111111; margin-top: 3px; font-family: monospace;">
-                      #${order.orderNumber}
+                      #${escapeHtml(order.orderNumber)}
                     </div>
                   </td>
                   <td width="50%" style="font-size: 11px; color: #777777; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; text-align: right;">
                     Payment Mode:
                     <div style="font-size: 13px; font-weight: 800; color: #111111; margin-top: 3px;">
-                      ${order.paymentMethod}
+                      ${escapeHtml(order.paymentMethod)}
                     </div>
                   </td>
                 </tr>
@@ -183,7 +192,7 @@ export const emailService = {
                   Delivery Destination
                 </div>
                 <div style="font-size: 12px; font-weight: 700; color: #111111;">
-                  ${order.shippingAddress}
+                  ${escapeHtml(order.shippingAddress)}
                 </div>
               </div>
             </td>
@@ -265,7 +274,6 @@ export const emailService = {
     const resendKey = String(
       configOverride?.resendApiKey ||
       settings.resendApiKey ||
-      env.VITE_RESEND_API_KEY ||
       ""
     )
       .trim()
@@ -274,7 +282,6 @@ export const emailService = {
     const brevoKey = String(
       configOverride?.brevoApiKey ||
       settings.brevoApiKey ||
-      env.VITE_BREVO_API_KEY ||
       ""
     )
       .trim()
@@ -303,279 +310,33 @@ export const emailService = {
 
     const htmlContent = emailService.generateReceiptHtml(order);
 
-    // 1. Try Brevo (Sendinblue) Transactional API (300 free emails/day)
-    if (brevoKey) {
-      if (brevoKey.startsWith("xsmtpsib-")) {
-        return {
-          success: false,
-          configured: true,
-          provider: "brevo",
-          message:
-            "Invalid Key Type: You pasted an SMTP Key (starts with 'xsmtpsib-'). Brevo REST API requires an API Key v3 (starts with 'xkeysib-'). In Brevo, go to SMTP & API -> API Keys tab and click 'Generate a new API key'.",
-          details: "SMTP Key provided instead of REST API Key v3.",
-        };
-      }
+    // 1. Authoritative Serverless Email Dispatch (/api/email using server-only BREVO_API_KEY / RESEND_API_KEY)
+    try {
+      const resp = await fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: order.customerEmail,
+          recipientName: order.customerName || "Valued Patron",
+          subject: `✦ Runway Order Confirmation #${order.orderNumber} | STEAV PARIS`,
+          htmlContent,
+        }),
+      });
 
-      const brevoSenderEmail = String(
-        configOverride?.brevoSenderEmail ||
-        settings.brevoSenderEmail ||
-        settings.storeEmail ||
-        env.VITE_BREVO_SENDER_EMAIL ||
-        "varayouk@gmail.com"
-      ).trim();
-
-      const brevoSenderName = String(
-        configOverride?.brevoSenderName ||
-        settings.brevoSenderName ||
-        settings.storeName ||
-        env.VITE_BREVO_SENDER_NAME ||
-        "STEAV PARIS"
-      ).trim();
-
-      const subject = `✦ Runway Order Confirmation #${order.orderNumber} | STEAV PARIS`;
-      const brevoPayload = {
-        sender: {
-          name: brevoSenderName,
-          email: brevoSenderEmail,
-        },
-        to: [{ email: order.customerEmail, name: order.customerName || "Valued Patron" }],
-        subject: subject,
-        htmlContent: htmlContent,
-      };
-
-      let lastBrevoError: any = null;
-
-      // Strategy A: Proxy route /brevo-api/v3/smtp/email (Vite dev server + Vercel edge rewrite)
-      try {
-        const resp = await fetch("/brevo-api/v3/smtp/email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "api-key": brevoKey,
-          },
-          body: JSON.stringify(brevoPayload),
-        });
-
-        if (resp.ok) {
-          const respData = await resp.json().catch(() => ({}));
+      if (resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        if (data && data.success) {
           return {
             success: true,
             configured: true,
-            provider: "brevo",
-            message: `Official confirmation email delivered to ${order.customerEmail} via Brevo!`,
-            details: respData?.messageId ? `Message ID: ${respData.messageId}` : undefined,
-          };
-        } else {
-          const errData = await resp.json().catch(() => ({}));
-          lastBrevoError = errData;
-          console.warn("[Email Brevo Proxy Error]:", resp.status, errData);
-        }
-      } catch (err: any) {
-        lastBrevoError = err?.message || err;
-        console.warn("[Email Brevo Proxy Fetch Note]:", err);
-      }
-
-      // Strategy B: Django Backend API /api/email/dispatch/ (Zero CORS, server-to-server)
-      try {
-        const resp = await fetch("/api/email/dispatch/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            provider: "brevo",
-            apiKey: brevoKey,
-            senderEmail: brevoSenderEmail,
-            senderName: brevoSenderName,
-            recipientEmail: order.customerEmail,
-            customerName: order.customerName,
-            subject: subject,
-            htmlContent: htmlContent,
-          }),
-        });
-
-        if (resp.ok) {
-          const respData = await resp.json().catch(() => ({}));
-          return {
-            success: true,
-            configured: true,
-            provider: "brevo",
-            message: `Official confirmation email delivered to ${order.customerEmail} via Brevo!`,
-            details: respData?.messageId ? `Message ID: ${respData.messageId}` : undefined,
-          };
-        } else {
-          const errData = await resp.json().catch(() => ({}));
-          if (errData?.error || errData?.message) {
-            lastBrevoError = errData.error || errData.message;
-          }
-          console.warn("[Email Backend Dispatch Error]:", resp.status, errData);
-        }
-      } catch (err: any) {
-        console.warn("[Email Backend Dispatch Note]:", err);
-      }
-
-      // Strategy C: Direct fetch to api.brevo.com
-      try {
-        const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "api-key": brevoKey,
-          },
-          body: JSON.stringify(brevoPayload),
-        });
-
-        if (resp.ok) {
-          const respData = await resp.json().catch(() => ({}));
-          return {
-            success: true,
-            configured: true,
-            provider: "brevo",
-            message: `Official confirmation email delivered to ${order.customerEmail} via Brevo!`,
-            details: respData?.messageId ? `Message ID: ${respData.messageId}` : undefined,
-          };
-        } else {
-          const errData = await resp.json().catch(() => ({}));
-          lastBrevoError = errData;
-        }
-      } catch (err: any) {
-        if (!lastBrevoError) lastBrevoError = err?.message || err;
-      }
-
-      // If Brevo key was provided, report the specific Brevo diagnostic
-      if (lastBrevoError) {
-        let errorMsg =
-          typeof lastBrevoError === "string"
-            ? lastBrevoError
-            : lastBrevoError?.message || lastBrevoError?.code || JSON.stringify(lastBrevoError);
-
-        if (
-          errorMsg.toLowerCase().includes("sender") ||
-          errorMsg.toLowerCase().includes("authorized") ||
-          errorMsg.toLowerCase().includes("not valid") ||
-          errorMsg.toLowerCase().includes("unregistered")
-        ) {
-          errorMsg = `Sender email "${brevoSenderEmail}" is not authorized on your Brevo account. In Brevo (app.brevo.com), go to Senders & IPs -> Senders to verify this address, or enter your Brevo account registration email.`;
-        } else if (
-          errorMsg.toLowerCase().includes("unauthorized") ||
-          errorMsg.toLowerCase().includes("key not found") ||
-          errorMsg.toLowerCase().includes("key")
-        ) {
-          errorMsg = `Brevo rejected this key (Key not found / unauthorized). Please check: 1) In Brevo, go to SMTP & API -> 'API Keys' tab (starts with 'xkeysib-'), NOT the SMTP tab. 2) When generating the key, choose 'Master key' (or enable Transactional Emails). 3) Ensure your Brevo account is confirmed via the email Brevo sent you.`;
-        }
-
-        return {
-          success: false,
-          configured: true,
-          provider: "brevo",
-          message: `Brevo Delivery Failed: ${errorMsg}`,
-          details:
-            typeof lastBrevoError === "object"
-              ? JSON.stringify(lastBrevoError)
-              : String(lastBrevoError),
-        };
-      }
-    }
-
-    // 2. Try EmailJS (Built for client-side JavaScript)
-    if (emailJsService && emailJsTemplate && emailJsKey) {
-      try {
-        const origin =
-          typeof window !== "undefined" && window.location.origin
-            ? window.location.origin
-            : "https://youngsteav.site";
-
-        const resp = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            service_id: emailJsService,
-            template_id: emailJsTemplate,
-            user_id: emailJsKey,
-            template_params: {
-              to_name: order.customerName,
-              to_email: order.customerEmail,
-              order_number: order.orderNumber,
-              total: `$${Number(order.total).toFixed(2)}`,
-              shipping_address: order.shippingAddress,
-              tracking_url: `${origin}/track?id=${encodeURIComponent(order.orderNumber)}`,
-            },
-          }),
-        });
-
-        if (resp.ok) {
-          return {
-            success: true,
-            configured: true,
-            provider: "emailjs",
-            message: `Confirmation email delivered to ${order.customerEmail} via EmailJS!`,
+            provider: data.provider || "brevo",
+            message: `Official confirmation email delivered to ${order.customerEmail}!`,
+            details: data?.data?.messageId ? `Message ID: ${data.data.messageId}` : undefined,
           };
         }
-      } catch (err: any) {
-        console.warn("[Email EmailJS Error]:", err?.message || err);
       }
-    }
-
-    // 3. Try Resend (supports /resend-api in development or direct)
-    if (resendKey) {
-      let lastResendErr: any = null;
-      try {
-        const endpoint =
-          typeof window !== "undefined" &&
-          (window.location.hostname === "localhost" ||
-            window.location.hostname === "127.0.0.1")
-            ? "/resend-api/emails"
-            : "https://api.resend.com/emails";
-
-        const resp = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${resendKey}`,
-          },
-          body: JSON.stringify({
-            from: "STEAV Concierge <onboarding@resend.dev>",
-            to: [order.customerEmail],
-            subject: `✦ Runway Order Confirmation #${order.orderNumber} | STEAV PARIS`,
-            html: htmlContent,
-          }),
-        });
-
-        if (resp.ok) {
-          const respData = await resp.json().catch(() => ({}));
-          return {
-            success: true,
-            configured: true,
-            provider: "resend",
-            message: `Confirmation email dispatched to ${order.customerEmail} via Resend!`,
-            details: respData?.id ? `ID: ${respData.id}` : undefined,
-          };
-        } else {
-          lastResendErr = await resp.json().catch(() => ({}));
-          console.warn("[Email Resend Note]:", lastResendErr);
-        }
-      } catch (err: any) {
-        lastResendErr = err?.message || err;
-        console.warn("[Email Resend Fetch Error]:", err);
-      }
-
-      if (lastResendErr) {
-        const msg =
-          typeof lastResendErr === "object"
-            ? lastResendErr?.message || JSON.stringify(lastResendErr)
-            : String(lastResendErr);
-        return {
-          success: false,
-          configured: true,
-          provider: "resend",
-          message: `Resend Error: ${msg}`,
-          details: String(msg),
-        };
-      }
+    } catch (err) {
+      console.warn("[emailService] Server dispatch note:", err?.message || err);
     }
 
     // 4. Fallback: Provider not configured yet

@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "../layouts/MainLayout";
 import Loader from "../components/common/Loader";
+import ProtectedRoute from "../components/common/ProtectedRoute";
 
 // Primary Landing & Catalog Pages (Eagerly loaded for instant 0ms initial navigation)
 import { Home } from "../pages/Home/Index";
@@ -51,14 +52,44 @@ export const AppRoutes: React.FC = () => {
           {/* User Authentication & Account (Unified zero-flash animated transition) */}
           <Route path="/login" element={<Login initialMode="login" />} />
           <Route path="/register" element={<Login initialMode="register" />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/orders" element={<Orders />} />
+          <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/track" element={<TrackOrder />} />
           <Route path="/track/:orderNumber" element={<TrackOrder />} />
           <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/track-order/:orderNumber" element={<TrackOrder />} />
-          <Route path="/invoice" element={<InvoicePage />} />
-          <Route path="/invoice/:orderNumber" element={<InvoicePage />} />
+          <Route
+            path="/invoice"
+            element={
+              <ProtectedRoute>
+                <InvoicePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invoice/:orderNumber"
+            element={
+              <ProtectedRoute>
+                <InvoicePage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Brand Information */}
           <Route path="/about" element={<About />} />

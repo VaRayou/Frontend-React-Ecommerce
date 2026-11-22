@@ -501,14 +501,11 @@ export const orderService = {
                   item.productId || item.product_id || item.id || "",
                 );
                 const truePrice = priceMap.get(id);
-                if (truePrice !== undefined && truePrice > 0) {
-                  // Protect against client-side price tampering
-                  item.price = truePrice;
-                  computedSubtotal += truePrice * (Number(item.quantity) || 1);
-                } else {
-                  computedSubtotal +=
-                    Number(item.price || 0) * (Number(item.quantity) || 1);
+                if (truePrice === undefined || truePrice <= 0) {
+                  throw new Error(`Authoritative price for product ${id} could not be verified. Order rejected.`);
                 }
+                item.price = truePrice;
+                computedSubtotal += truePrice * (Number(item.quantity) || 1);
               }
 
               // Verify and sanitize discount/coupon claims against Supabase database
@@ -544,13 +541,8 @@ export const orderService = {
                   }
                 }
 
-                // If claimed discount exceeds verified discount by > $0.50, override with verified discount
-                if (claimedDiscount > verifiedDiscount + 0.5) {
-                  console.warn(
-                    `[Security Verification] Client claimed discount $${claimedDiscount} superseded by verified database discount $${verifiedDiscount}`,
-                  );
-                  discount = verifiedDiscount;
-                }
+                // Strictly enforce verified discount only
+                discount = verifiedDiscount;
               }
 
               // Compute verified expected total
@@ -558,20 +550,17 @@ export const orderService = {
                 0,
                 Number((computedSubtotal + shippingFee + tax - discount).toFixed(2)),
               );
-              // If discrepancy > $0.50 (tampering or stale price), enforce verified database price
-              if (Math.abs(expectedTotal - total) > 0.5) {
-                console.warn(
-                  `[Security Verification] Client total ${total} superseded by verified database total ${expectedTotal}`,
-                );
-                subtotal = computedSubtotal;
-                total = expectedTotal;
-              }
+              subtotal = computedSubtotal;
+              total = expectedTotal;
+            } else {
+              throw new Error("Could not retrieve catalog pricing from database. Order rejected.");
             }
           } catch (secErr) {
-            console.warn(
-              "[Security Verification] Price validation notice:",
+            console.error(
+              "[Security Verification] Price validation error:",
               secErr.message,
             );
+            throw secErr;
           }
         }
       }
@@ -598,15 +587,13 @@ export const orderService = {
         currency: orderData.currency || "USD",
         payment_method:
           orderData.paymentMethod || orderData.payment_method || "Bakong KHQR",
-        payment_status:
-          orderData.paymentStatus || orderData.payment_status || "Paid",
-        order_status:
-          orderData.orderStatus || orderData.order_status || "Processing",
+        payment_status: "PENDING",
+        order_status: "Pending",
         notes: orderData.notes || "",
       };
 
       // 1. Primary execution path: /api/orders serverless endpoint
-      // Operates with server admin clearance, guaranteeing zero RLS 401 blocks for guest/patron checkouts
+      // Operates with server authoritative validation, ensuring zero RLS 401 blocks for checkouts
       try {
         const apiRes = await fetch("/api/orders", {
           method: "POST",
@@ -614,7 +601,6 @@ export const orderService = {
           body: JSON.stringify({
             ...orderRow,
             items: rawItems,
-            transactionId: orderData.transactionId || "",
           }),
         });
         if (apiRes.ok) {

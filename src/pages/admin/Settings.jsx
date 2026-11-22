@@ -52,12 +52,8 @@ export function Settings() {
     currency: storedBranding.currency || "USD ($)",
     orderNotification: storedBranding.orderNotification ?? true,
     stockAlertNotification: storedBranding.stockAlertNotification ?? true,
-    telegramBotToken:
-      storedBranding.telegramBotToken ||
-      String(env.VITE_TELEGRAM_BOT_TOKEN || "").trim(),
-    telegramChatId:
-      storedBranding.telegramChatId ||
-      String(env.VITE_TELEGRAM_CHAT_ID || "").trim(),
+    telegramBotToken: storedBranding.telegramBotToken || "",
+    telegramChatId: storedBranding.telegramChatId || "",
   });
 
   const [telegramStatus, setTelegramStatus] = useState({
