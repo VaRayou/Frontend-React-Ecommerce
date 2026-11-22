@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { ProductGrid } from "../../components/product/ProductGrid";
 import { productService } from "../../services/productService";
-import { categoryService } from "../../services/categoryService";
+import { categoryService, countProductsInCategory } from "../../services/categoryService";
 import { useCurrencyStore } from "../../store/useCurrencyStore";
 import { useUIStore } from "../../store/useUIStore";
 import { Product } from "../../types";
@@ -567,10 +567,7 @@ export const Home: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           {categoriesList.slice(0, 6).map((cat, idx) => {
             const dynamicCount =
-              productsList.filter(
-                (p) =>
-                  normalizeCatKey(p.category) === normalizeCatKey(cat.name),
-              ).length || cat.itemCount;
+              countProductsInCategory(productsList, cat) || cat.itemCount;
             const isHeroTile = idx === 0 || idx === 1;
             return (
               <motion.div

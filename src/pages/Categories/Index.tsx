@@ -2,19 +2,31 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, ArrowUpRight } from "lucide-react";
-import { categoryService } from "../../services/categoryService";
+import { categoryService, countProductsInCategory } from "../../services/categoryService";
+import { productService } from "../../services/productService";
 
 export const Categories: React.FC = () => {
   const [categoriesList, setCategoriesList] = useState<any[]>(() => {
-    const cached = (categoryService as any).getCachedCategories?.();
-    return Array.isArray(cached) ? cached : [];
+    const cachedCats = (categoryService as any).getCachedCategories?.() || [];
+    const cachedProds = productService.getCachedProducts?.() || [];
+    return cachedCats.map((c: any, idx: number) => ({
+      id: String(c.id || c._id || idx),
+      name: c.name || "Collection",
+      slug: c.slug || String(c.name || "").toLowerCase().replace(/\s+/g, "-"),
+      description: c.description || `Architectural ${c.name} collection`,
+      image: c.image || "/uploads/bed6e30a33b2.jpg",
+      itemCount: countProductsInCategory(cachedProds, c) || c.itemCount || c.count || 0,
+    }));
   });
 
   useEffect(() => {
-    categoryService
-      .getCategories()
-      .then((cats: any) => {
+    Promise.all([
+      categoryService.getCategories(),
+      productService.getProducts(),
+    ])
+      .then(([cats, prods]: [any, any]) => {
         if (Array.isArray(cats) && cats.length > 0) {
+          const prodsList = Array.isArray(prods) ? prods : [];
           setCategoriesList(
             cats.map((c: any, idx: number) => ({
               id: String(c.id || c._id || idx),
@@ -24,12 +36,14 @@ export const Categories: React.FC = () => {
               image:
                 c.image ||
                 "/uploads/bed6e30a33b2.jpg",
-              itemCount: c.itemCount ?? c.count ?? 0,
+              itemCount: countProductsInCategory(prodsList, c) || c.itemCount || c.count || 0,
             }))
           );
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn("[Categories] Error loading categories with counts:", err);
+      });
   }, []);
 
   return (

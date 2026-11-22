@@ -53,6 +53,34 @@ const saveCategoriesStorage = (categories) => {
   }
 };
 
+export const normalizeCatKey = (val) => {
+  const s = String(val || "")
+    .trim()
+    .toLowerCase()
+    .replace(/['\s-]+/g, "");
+  if (s === "womens" || s === "woman" || s === "female" || s === "ladies")
+    return "women";
+  if (s === "mens" || s === "man" || s === "male") return "men";
+  if (s === "bag" || s === "handbags") return "bags";
+  if (s === "shoe" || s === "footwear") return "shoes";
+  if (s === "accessory") return "accessories";
+  if (s === "newarival" || s === "newarivals" || s === "newarrival" || s === "newarrivals")
+    return "newarivals";
+  return s;
+};
+
+export const countProductsInCategory = (products, category) => {
+  if (!Array.isArray(products) || !category) return 0;
+  const targetKey = normalizeCatKey(category.slug || category.name || category);
+  return products.filter((p) => {
+    if (!p) return false;
+    const pCatId = p.categoryId || p.category_id || (p.categories && p.categories.id);
+    if (category.id && pCatId && String(category.id) === String(pCatId)) return true;
+    const pCat = p.category || (p.categories && p.categories.name) || "";
+    return normalizeCatKey(pCat) === targetKey;
+  }).length;
+};
+
 export const categoryService = {
   // Synchronously returns cached Supabase categories
   getCachedCategories: () => {
