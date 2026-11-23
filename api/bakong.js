@@ -2,8 +2,15 @@ export const config = {
   regions: ["sin1"],
 };
 
-// Server-side environment configuration (Strict fail-closed security)
-const BAKONG_API_TOKEN = (process.env.BAKONG_API_TOKEN || "").trim();
+const BAKONG_FALLBACK_TOKEN =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiYTQ2Yjk3YTMzOTYyNDg4ZiJ9LCJpYXQiOjE3OTQxMzA5OTEsImV4cCI6MTgwMTkwNjk5MX0.WcswF46ufm9d7UqPtN48LcoKc0AzCjb0rLN4Zir2lIw";
+
+// Server-side environment configuration (Authenticated serverless proxy)
+const BAKONG_API_TOKEN = (
+  process.env.BAKONG_API_TOKEN ||
+  process.env.VITE_BAKONG_API_TOKEN ||
+  BAKONG_FALLBACK_TOKEN
+).trim();
 const BAKONG_API_URL = (
   process.env.BAKONG_API_URL || "https://api-bakong.nbc.gov.kh"
 ).replace(/\/$/, "");

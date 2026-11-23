@@ -21,18 +21,29 @@ const SUPABASE_SERVICE_ROLE_KEY = (
 ).trim();
 
 // Bakong Configuration (Server-Side Only)
-const BAKONG_API_TOKEN = (process.env.BAKONG_API_TOKEN || "").trim();
+const BAKONG_FALLBACK_TOKEN =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiYTQ2Yjk3YTMzOTYyNDg4ZiJ9LCJpYXQiOjE3OTQxMzA5OTEsImV4cCI6MTgwMTkwNjk5MX0.WcswF46ufm9d7UqPtN48LcoKc0AzCjb0rLN4Zir2lIw";
+
+const BAKONG_API_TOKEN = (
+  process.env.BAKONG_API_TOKEN ||
+  process.env.VITE_BAKONG_API_TOKEN ||
+  BAKONG_FALLBACK_TOKEN
+).trim();
 const BAKONG_API_URL = (
   process.env.BAKONG_API_URL || "https://api-bakong.nbc.gov.kh"
 ).replace(/\/$/, "");
 const BAKONG_ACCOUNT_ID =
   process.env.BAKONG_ACCOUNT_ID ||
   process.env.VITE_BAKONG_ACCOUNT_ID ||
-  "rayou_va@aclb";
+  "rayou_va@bkrt";
 const BAKONG_MERCHANT_NAME =
   process.env.BAKONG_MERCHANT_NAME ||
   process.env.VITE_BAKONG_MERCHANT_NAME ||
-  "STEAV PARIS";
+  "Rayou Va";
+const BAKONG_PHONE =
+  process.env.BAKONG_PHONE ||
+  process.env.VITE_BAKONG_PHONE ||
+  "0968350317";
 
 // Strict CORS allowlist
 const ALLOWED_ORIGINS = new Set([
@@ -140,21 +151,28 @@ function crc16(data) {
   return (crc & 0xffff).toString(16).toUpperCase().padStart(4, "0");
 }
 
-function generateKhqrPayload(merchantId, merchantName, amount, orderRef) {
+function generateKhqrPayload(merchantId, merchantName, amount, orderRef, currency = "USD") {
   const pad = (id, str) => `${id}${String(str.length).padStart(2, "0")}${str}`;
-  const subBakong = `${pad("00", merchantId)}${pad("01", "PHNOM PENH")}`;
-  const subMerchant = pad("29", subBakong);
-  let payload =
+  const isKhr = String(currency).toUpperCase() === "KHR";
+  const currencyCode = isKhr ? "116" : "840";
+  const formattedAmount = isKhr ? String(Math.round(amount)) : Number(amount).toFixed(2);
+  const nowMs = Date.now();
+  const expireMs = nowMs + 10 * 60 * 1000;
+  const tag29 = pad("00", merchantId || "rayou_va@bkrt");
+  const tag62 = pad("01", String(orderRef || "").slice(0, 25));
+  const tag99 = pad("00", String(nowMs)) + pad("01", String(expireMs));
+  const payload =
     pad("00", "01") +
     pad("01", "12") +
-    subMerchant +
+    pad("29", tag29) +
     pad("52", "5999") +
-    pad("53", "840") + // USD
-    pad("54", Number(amount).toFixed(2)) +
+    pad("53", currencyCode) +
+    pad("54", formattedAmount) +
     pad("58", "KH") +
-    pad("59", merchantName.slice(0, 25)) +
-    pad("60", "PHNOM PENH") +
-    pad("62", pad("01", orderRef.slice(0, 25))) +
+    pad("59", (merchantName || "Rayou Va").slice(0, 25)) +
+    pad("60", "Phnom Penh") +
+    pad("62", tag62) +
+    pad("99", tag99) +
     "6304";
   const checksum = crc16(payload);
   return `${payload}${checksum}`;
@@ -713,17 +731,17 @@ export default async function handler(req, res) {
       }
 
       // 8. Generate KHQR payload & PENDING payment row
-      const md5Hash = crypto
-        .createHash("md5")
-        .update(`${orderNumber}-${serverTotal}-${Date.now()}`)
-        .digest("hex");
-
       const khqrString = generateKhqrPayload(
         BAKONG_ACCOUNT_ID,
         BAKONG_MERCHANT_NAME,
         serverTotal,
         orderNumber
       );
+
+      const md5Hash = crypto
+        .createHash("md5")
+        .update(khqrString)
+        .digest("hex");
 
       await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
         method: "POST",

@@ -6,9 +6,9 @@ import { telegramService } from "./telegramService";
 const env = (import.meta as any).env || {};
 
 // Server-side Bakong proxy route (Tokens and private keys remain strictly on the server)
-const BAKONG_ACCOUNT_ID = env.VITE_BAKONG_ACCOUNT_ID || "rayou_va@aclb";
-const BAKONG_MERCHANT_NAME = env.VITE_BAKONG_MERCHANT_NAME || "STEAV PARIS";
-const BAKONG_PHONE = env.VITE_BAKONG_PHONE || "+855 23 888 999";
+const BAKONG_ACCOUNT_ID = env.VITE_BAKONG_ACCOUNT_ID || "rayou_va@bkrt";
+const BAKONG_MERCHANT_NAME = env.VITE_BAKONG_MERCHANT_NAME || "Rayou Va";
+const BAKONG_PHONE = env.VITE_BAKONG_PHONE || "0968350317";
 
 export interface KhqrCreatePayload {
   amount: number;
