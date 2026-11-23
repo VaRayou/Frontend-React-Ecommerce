@@ -1989,7 +1989,13 @@ export function ManageProducts() {
                               <img
                                 src={imgUrl}
                                 alt="Thumbnail"
+                                crossOrigin="anonymous"
+                                loading="lazy"
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = DEFAULT_IMAGE;
+                                }}
                               />
                               {formData.image === imgUrl && (
                                 <span className="absolute bottom-1 left-1 bg-black text-[#D6FF00] text-[9px] font-black uppercase px-1 rounded">
@@ -2155,7 +2161,13 @@ export function ManageProducts() {
                         DEFAULT_IMAGE
                       }
                       alt={formData.name || "Preview"}
+                      crossOrigin="anonymous"
+                      loading="lazy"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = DEFAULT_IMAGE;
+                      }}
                     />
 
                     {/* Badge Overlay */}
