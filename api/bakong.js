@@ -2,14 +2,11 @@ export const config = {
   regions: ["sin1"],
 };
 
-const BAKONG_FALLBACK_TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiYTQ2Yjk3YTMzOTYyNDg4ZiJ9LCJpYXQiOjE3OTQxMzA5OTEsImV4cCI6MTgwMTkwNjk5MX0.WcswF46ufm9d7UqPtN48LcoKc0AzCjb0rLN4Zir2lIw";
-
-// Server-side environment configuration (Authenticated serverless proxy)
+// Server-side environment configuration (Strict fail-closed security — set BAKONG_API_TOKEN in Vercel)
 const BAKONG_API_TOKEN = (
   process.env.BAKONG_API_TOKEN ||
   process.env.VITE_BAKONG_API_TOKEN ||
-  BAKONG_FALLBACK_TOKEN
+  ""
 ).trim();
 const BAKONG_API_URL = (
   process.env.BAKONG_API_URL || "https://api-bakong.nbc.gov.kh"
@@ -20,7 +17,11 @@ const ALLOWED_ORIGINS = new Set([
   "https://youngsteav.site",
   "https://www.youngsteav.site",
   ...(process.env.NODE_ENV !== "production"
-    ? ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
+    ? [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+      ]
     : []),
 ]);
 
@@ -42,7 +43,10 @@ const MAX_REQUESTS_PER_WINDOW = 60;
 
 function isRateLimited(ip) {
   const now = Date.now();
-  const record = rateLimitMap.get(ip) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+  const record = rateLimitMap.get(ip) || {
+    count: 0,
+    resetAt: now + RATE_LIMIT_WINDOW_MS,
+  };
   if (now > record.resetAt) {
     record.count = 1;
     record.resetAt = now + RATE_LIMIT_WINDOW_MS;
@@ -67,7 +71,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
+    "Content-Type, Authorization, X-Requested-With",
   );
 
   if (req.method === "OPTIONS") {
@@ -83,16 +87,20 @@ export default async function handler(req, res) {
     res.setHeader("Retry-After", "60");
     return res.status(429).json({
       responseCode: 1,
-      responseMessage: "Rate limit exceeded. Please wait 60 seconds before retrying.",
+      responseMessage:
+        "Rate limit exceeded. Please wait 60 seconds before retrying.",
     });
   }
 
   // Fail-closed enforcement: Server MUST have BAKONG_API_TOKEN configured
   if (!BAKONG_API_TOKEN) {
-    console.error("[CRITICAL] BAKONG_API_TOKEN environment variable is not configured on server.");
+    console.error(
+      "[CRITICAL] BAKONG_API_TOKEN environment variable is not configured on server.",
+    );
     return res.status(500).json({
       responseCode: 1,
-      responseMessage: "Bakong gateway is temporarily unavailable due to missing server configuration.",
+      responseMessage:
+        "Bakong gateway is temporarily unavailable due to missing server configuration.",
     });
   }
 

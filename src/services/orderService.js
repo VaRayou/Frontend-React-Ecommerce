@@ -618,12 +618,14 @@ export const orderService = {
               ...current.filter((o) => o.id !== normalized.id && o.orderNumber !== normalized.orderNumber),
             ]);
             window.dispatchEvent(new Event("atelier_order_updated"));
-            telegramService
-              .sendOrderAlert({
-                ...normalized,
-                transactionId: orderData.transactionId || "",
-              })
-              .catch(() => {});
+            if (!apiJson.telegram_notified) {
+              telegramService
+                .sendOrderAlert({
+                  ...normalized,
+                  transactionId: orderData.transactionId || "",
+                })
+                .catch(() => {});
+            }
             return normalized;
           }
         }

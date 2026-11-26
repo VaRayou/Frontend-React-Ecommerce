@@ -56,6 +56,59 @@ const STOREFRONT_URL = (
   process.env.VITE_STOREFRONT_URL || "https://www.youngsteav.site"
 ).replace(/^https:\/\/youngsteav\.site/i, "https://www.youngsteav.site");
 
+// In-memory sliding window rate limiter for public sendMessage (prevents bot spam)
+const tgRateLimitMap = new Map();
+function isTgRateLimited(ip, maxRequests = 8, windowMs = 60000) {
+  const now = Date.now();
+  const record = tgRateLimitMap.get(ip) || { count: 0, resetAt: now + windowMs };
+  if (now > record.resetAt) {
+    record.count = 1;
+    record.resetAt = now + windowMs;
+    tgRateLimitMap.set(ip, record);
+    return false;
+  }
+  record.count += 1;
+  tgRateLimitMap.set(ip, record);
+  return record.count > maxRequests;
+}
+
+const ADMIN_EMAILS = new Set([
+  "controller@steav.com",
+  "admin@steav.com",
+  "rayou@steav.com",
+  "catalog@steav.com",
+  "manager@steav.com",
+  "controller@atelier.com",
+  "admin@atelier.com",
+  "rayou@atelier.com",
+]);
+
+async function verifyAdminAuth(req) {
+  const authHeader = String(req.headers.authorization || "");
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  if (!token) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return false;
+    const user = await res.json();
+    const email = String(user?.email || "").toLowerCase().trim();
+    const role = String(user?.app_metadata?.role || "").toLowerCase().trim();
+    return (
+      role.includes("admin") ||
+      role.includes("controller") ||
+      role.includes("catalog") ||
+      ADMIN_EMAILS.has(email)
+    );
+  } catch {
+    return false;
+  }
+}
+
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -491,7 +544,21 @@ export default async function handler(req, res) {
   const actionToken = String(body.bot_token || "").trim();
   const botToken = actionToken || BOT_TOKEN;
 
-  // 1. Admin Settings & Storefront Proxy Actions (avoids CSP blocks on api.telegram.org)
+  // 1. Admin-Only Settings Proxy Actions (Require verified Admin JWT)
+  if (
+    body.action === "verifyBotToken" ||
+    body.action === "detectChatId" ||
+    body.action === "enableWebhook"
+  ) {
+    const isAdmin = await verifyAdminAuth(req);
+    if (!isAdmin) {
+      return res.status(401).json({
+        ok: false,
+        error: "Unauthorized: Admin authentication required for bot configuration.",
+      });
+    }
+  }
+
   if (body.action === "verifyBotToken") {
     if (!botToken) {
       return res.status(400).json({ ok: false, description: "Missing Telegram Bot Token." });
@@ -610,8 +677,19 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Telegram service not configured on server. Set TELEGRAM_BOT_TOKEN in Vercel Environment Variables." });
   }
 
-  // 2. Support Internal Store Notifications (e.g. New Order alerts triggered from storefront / backend)
+  // 2. Support Internal Store Notifications (Origin-locked & IP rate-limited against spam)
   if (body.action === "notify_order" || body.action === "sendMessage") {
+    if (process.env.NODE_ENV === "production" && !isAllowedOrigin(origin)) {
+      return res.status(403).json({ error: "Forbidden origin." });
+    }
+    const clientIp =
+      (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+      req.socket?.remoteAddress ||
+      "unknown";
+    if (isTgRateLimited(clientIp)) {
+      res.setHeader("Retry-After", "60");
+      return res.status(429).json({ error: "Telegram notification rate limit exceeded." });
+    }
     const targetChatId = body.chat_id || DEFAULT_CHAT_ID;
     const messageText = body.text || "";
     if (!targetChatId || !messageText) {

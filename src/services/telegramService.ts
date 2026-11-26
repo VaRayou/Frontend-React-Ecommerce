@@ -1,4 +1,17 @@
+import { supabase } from "./supabase";
+
 const env = (import.meta as any).env || {};
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.access_token) {
+      headers.Authorization = `Bearer ${data.session.access_token}`;
+    }
+  } catch {}
+  return headers;
+}
 
 const DEFAULT_BOT_TOKEN = "";
 const DEFAULT_CHAT_ID = "";
@@ -138,9 +151,10 @@ export const telegramService = {
     if (replyMarkup) bodyPayload.reply_markup = replyMarkup;
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(bodyPayload),
       });
       const data = await res.json().catch(() => ({}));
@@ -168,9 +182,10 @@ export const telegramService = {
   ): Promise<{ ok: boolean; username?: string; firstName?: string; description?: string }> => {
     const cleanToken = String(botToken || "").trim();
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           action: "verifyBotToken",
           ...(cleanToken ? { bot_token: cleanToken } : {}),
@@ -210,9 +225,10 @@ export const telegramService = {
   }> => {
     const cleanToken = String(botToken || "").trim();
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           action: "detectChatId",
           ...(cleanToken ? { bot_token: cleanToken } : {}),
@@ -254,9 +270,10 @@ export const telegramService = {
     ).trim();
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           action: "enableWebhook",
           ...(token ? { bot_token: token } : {}),

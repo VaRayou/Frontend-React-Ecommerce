@@ -20,14 +20,11 @@ const SUPABASE_SERVICE_ROLE_KEY = (
   process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 ).trim();
 
-// Bakong Configuration (Server-Side Only)
-const BAKONG_FALLBACK_TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiYTQ2Yjk3YTMzOTYyNDg4ZiJ9LCJpYXQiOjE3OTQxMzA5OTEsImV4cCI6MTgwMTkwNjk5MX0.WcswF46ufm9d7UqPtN48LcoKc0AzCjb0rLN4Zir2lIw";
-
+// Bakong Configuration (Server-Side Only — set BAKONG_API_TOKEN in Vercel)
 const BAKONG_API_TOKEN = (
   process.env.BAKONG_API_TOKEN ||
   process.env.VITE_BAKONG_API_TOKEN ||
-  BAKONG_FALLBACK_TOKEN
+  ""
 ).trim();
 const BAKONG_API_URL = (
   process.env.BAKONG_API_URL || "https://api-bakong.nbc.gov.kh"
@@ -781,6 +778,52 @@ export default async function handler(req, res) {
         }),
       });
 
+      // 9. Server-side Telegram Order Notification (Guaranteed delivery even if browser closes)
+      let telegramNotified = false;
+      const tgToken = (process.env.TELEGRAM_BOT_TOKEN || process.env.VITE_TELEGRAM_BOT_TOKEN || "").trim();
+      const tgChatId = String(process.env.TELEGRAM_CHAT_ID || process.env.VITE_TELEGRAM_CHAT_ID || "1389246582").trim();
+      if (tgToken && tgChatId) {
+        try {
+          const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          const itemsSummary = validatedLineItems
+            .slice(0, 8)
+            .map((li) => `  • <b>${esc(li.product_name)}</b> ×${li.quantity} ($${Number(li.price * li.quantity).toFixed(2)})`)
+            .join("\n");
+          const payBadge = isVerifiedPaid ? "✅ PAID (Verified)" : "⏳ PENDING";
+          const alertText =
+            `🛍 <b>NEW ORDER #${esc(orderNumber)}</b>\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `<b>Patron:</b> ${esc(customerName)}\n` +
+            `<b>Email:</b> ${esc(customerEmail)}\n` +
+            `<b>Phone:</b> <code>${esc(customerPhone || "N/A")}</code>\n` +
+            `<b>Method:</b> ${esc(paymentMethod)} — <b>${payBadge}</b>\n` +
+            `<b>Total:</b> <b>$${Number(serverTotal).toFixed(2)} USD</b>\n` +
+            (itemsSummary ? `\n<b>Items:</b>\n${itemsSummary}\n` : "") +
+            `━━━━━━━━━━━━━━━━━━━━━━`;
+          const tgRes = await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: tgChatId,
+              text: alertText,
+              parse_mode: "HTML",
+              disable_web_page_preview: true,
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    { text: "🚚 Mark Shipped", callback_data: `ship:${orderNumber}` },
+                    { text: "✅ Delivered", callback_data: `deliver:${orderNumber}` },
+                  ],
+                  [{ text: "🔍 Track Order", callback_data: `track:${orderNumber}` }],
+                ],
+              },
+            }),
+          });
+          const tgJson = await tgRes.json().catch(() => ({}));
+          telegramNotified = Boolean(tgJson?.ok);
+        } catch {}
+      }
+
       return res.status(200).json({
         success: true,
         order_number: orderNumber,
@@ -791,6 +834,7 @@ export default async function handler(req, res) {
         currency: "USD",
         payment_status: orderPayload.payment_status,
         order_status: orderPayload.order_status,
+        telegram_notified: telegramNotified,
         order: {
           ...newOrder,
           order_items: insertedItemRows,
