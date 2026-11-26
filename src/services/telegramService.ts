@@ -124,10 +124,6 @@ export const telegramService = {
       console.warn("[Security Alert] Telegram alert dropped: Rate limit of 15 msg/min reached.");
       return { ok: false, description: "Anti-flood protection: Throttled to prevent bot abuse." };
     }
-    if (now - lastSentTimestamp < MIN_INTERVAL_MS) {
-      console.warn("[Security Alert] Telegram alert throttled: Minimum 1.2s dispatch interval required.");
-      return { ok: false, description: "Anti-flood protection: Rapid message throttled." };
-    }
 
     lastSentTimestamp = now;
     sentTimestamps.push(now);

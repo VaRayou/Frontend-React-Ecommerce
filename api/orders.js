@@ -13,7 +13,7 @@ const SUPABASE_URL = (
 const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_ANON_KEY ||
-  "";
+  "sb_publishable_UGc-TpOB6-ONOpUNlqYFhA_XuyDiSbv";
 
 // Trusted server-only Service Role Key (Bypasses RLS strictly for server-side re-pricing, stock decrement, & payment verification)
 const SUPABASE_SERVICE_ROLE_KEY = (
@@ -656,10 +656,32 @@ export default async function handler(req, res) {
       const serverTax = 0;
       const serverTotal = Math.max(0, Math.round((serverSubtotal + serverShippingFee + serverTax - serverDiscount) * 100) / 100);
 
-      // 5. Generate secure order reference
-      const orderNumber = `STEAV-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      // 5. Generate secure order reference (preserve valid ATL/STEAV ref if provided)
+      const clientOrderNum = String(body.order_number || body.orderNumber || "").trim();
+      const orderNumber =
+        clientOrderNum && /^(ATL|STEAV)-\d{4}-[A-Z0-9]{4,10}$/i.test(clientOrderNum)
+          ? clientOrderNum
+          : `ATL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      // 6. Insert order record with PENDING status. NEVER accept "Paid" from client!
+      // Verify if a verified PAID transaction exists for this order/transactionId
+      const clientTxnId = String(body.transactionId || body.transaction_id || "").trim();
+      let isVerifiedPaid = false;
+      if (clientTxnId) {
+        try {
+          const payCheckRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/payments?or=(order_number.eq.${encodeURIComponent(orderNumber)},transaction_id.eq.${encodeURIComponent(clientTxnId)})&status=eq.PAID&select=id,status`,
+            { headers: getDbHeaders() }
+          );
+          if (payCheckRes.ok) {
+            const paidRows = await payCheckRes.json();
+            if (Array.isArray(paidRows) && paidRows.length > 0) {
+              isVerifiedPaid = true;
+            }
+          }
+        } catch {}
+      }
+
+      // 6. Insert order record
       const orderPayload = {
         order_number: orderNumber,
         customer_name: customerName,
@@ -674,8 +696,8 @@ export default async function handler(req, res) {
         total: serverTotal,
         currency: "USD",
         payment_method: paymentMethod,
-        payment_status: "PENDING",
-        order_status: "Pending",
+        payment_status: isVerifiedPaid ? "Paid" : "PENDING",
+        order_status: isVerifiedPaid ? "Processing" : "Pending",
         notes: body.notes ? String(body.notes).slice(0, 300) : "",
       };
 
@@ -698,6 +720,7 @@ export default async function handler(req, res) {
       const newOrder = Array.isArray(insertedOrders) ? insertedOrders[0] : insertedOrders;
 
       // 7. Insert order items & decrement stock atomically
+      let insertedItemRows = [];
       if (newOrder?.id) {
         const itemRows = validatedLineItems.map((li) => ({
           order_id: newOrder.id,
@@ -709,6 +732,7 @@ export default async function handler(req, res) {
           color: li.color,
           image: li.image,
         }));
+        insertedItemRows = itemRows;
 
         await fetch(`${SUPABASE_URL}/rest/v1/order_items`, {
           method: "POST",
@@ -765,12 +789,16 @@ export default async function handler(req, res) {
         shipping_fee: serverShippingFee,
         total: serverTotal,
         currency: "USD",
-        payment_status: "PENDING",
-        order_status: "Pending",
+        payment_status: orderPayload.payment_status,
+        order_status: orderPayload.order_status,
+        order: {
+          ...newOrder,
+          order_items: insertedItemRows,
+        },
         payment: {
           md5_hash: md5Hash,
           qr_string: khqrString,
-          status: "PENDING",
+          status: orderPayload.payment_status,
           amount: serverTotal,
         },
       });

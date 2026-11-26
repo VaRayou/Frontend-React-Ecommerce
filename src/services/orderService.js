@@ -355,7 +355,11 @@ export const orderService = {
 
       // If direct Supabase returns 0 rows (e.g. anon JWT or session dropped), query /api/orders
       try {
-        const apiRes = await fetch("/api/orders");
+        const { data: sess } = await supabase.auth.getSession();
+        const accessToken = sess?.session?.access_token;
+        const apiRes = await fetch("/api/orders", {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        });
         if (apiRes.ok) {
           const apiJson = await apiRes.json();
           if (apiJson?.success && Array.isArray(apiJson.orders) && apiJson.orders.length > 0) {
@@ -587,8 +591,8 @@ export const orderService = {
         currency: orderData.currency || "USD",
         payment_method:
           orderData.paymentMethod || orderData.payment_method || "Bakong KHQR",
-        payment_status: "PENDING",
-        order_status: "Pending",
+        payment_status: orderData.transactionId ? "Paid" : "PENDING",
+        order_status: orderData.transactionId ? "Processing" : "Pending",
         notes: orderData.notes || "",
       };
 
@@ -600,6 +604,7 @@ export const orderService = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...orderRow,
+            transactionId: orderData.transactionId || "",
             items: rawItems,
           }),
         });
