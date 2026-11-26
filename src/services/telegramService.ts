@@ -115,13 +115,6 @@ export const telegramService = {
     const token = (overrideToken !== undefined ? overrideToken : cfg.botToken).trim();
     const chatId = (overrideChatId !== undefined ? overrideChatId : cfg.chatId).trim();
 
-    if (!token || !chatId) {
-      return {
-        ok: false,
-        description: "Missing Telegram Bot Token or Chat ID.",
-      };
-    }
-
     // Rate Limiting & Anti-Flood Enforcement
     const now = Date.now();
     while (sentTimestamps.length > 0 && sentTimestamps[0] < now - 60000) {
@@ -140,25 +133,19 @@ export const telegramService = {
     sentTimestamps.push(now);
 
     const bodyPayload: Record<string, any> = {
-      chat_id: chatId,
+      action: "sendMessage",
       text,
       parse_mode: "HTML",
-      disable_web_page_preview: true,
     };
-    if (replyMarkup) {
-      bodyPayload.reply_markup = replyMarkup;
-    }
+    if (token) bodyPayload.bot_token = token;
+    if (chatId) bodyPayload.chat_id = chatId;
+    if (replyMarkup) bodyPayload.reply_markup = replyMarkup;
 
     try {
       const res = await fetch("/api/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "sendMessage",
-          chat_id: chatId,
-          text,
-          parse_mode: "HTML",
-        }),
+        body: JSON.stringify(bodyPayload),
       });
       const data = await res.json().catch(() => ({}));
       if (data && data.ok) {
@@ -166,7 +153,7 @@ export const telegramService = {
       }
       return {
         ok: false,
-        description: data?.description || data?.error || `Telegram notification dispatched`,
+        description: data?.description || data?.error || `Telegram gateway error (${res.status})`,
       };
     } catch (err: any) {
       console.warn("[TelegramService] Server send notice:", err?.message || err);
@@ -178,42 +165,46 @@ export const telegramService = {
   },
 
   /**
-   * Verifies a Bot Token via getMe and returns the bot's username and name.
+   * Verifies a Bot Token via getMe (proxied through /api/telegram) and returns the bot's username and name.
    */
   verifyBotToken: async (
-    botToken: string
+    botToken?: string
   ): Promise<{ ok: boolean; username?: string; firstName?: string; description?: string }> => {
     const cleanToken = String(botToken || "").trim();
-    if (!cleanToken) {
-      return { ok: false, description: "Please enter a Bot Token from @BotFather." };
-    }
     try {
-      const res = await fetch(`https://api.telegram.org/bot${cleanToken}/getMe`);
-      const data = await res.json();
-      if (data?.ok && data.result) {
+      const res = await fetch("/api/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verifyBotToken",
+          ...(cleanToken ? { bot_token: cleanToken } : {}),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data?.ok) {
         return {
           ok: true,
-          username: data.result.username,
-          firstName: data.result.first_name,
+          username: data.username,
+          firstName: data.firstName,
         };
       }
       return {
         ok: false,
-        description: data?.description || "Invalid Telegram Bot Token.",
+        description: data?.description || data?.error || "Invalid Telegram Bot Token.",
       };
     } catch (err: any) {
       return {
         ok: false,
-        description: err?.message || "Could not connect to Telegram API.",
+        description: err?.message || "Could not connect to Telegram gateway.",
       };
     }
   },
 
   /**
-   * Auto-detects the most recent Chat ID by querying /getUpdates on the Bot Token.
+   * Auto-detects the most recent Chat ID by querying /getUpdates via /api/telegram.
    */
   detectChatId: async (
-    botToken: string
+    botToken?: string
   ): Promise<{
     ok: boolean;
     chatId?: string;
@@ -222,61 +213,29 @@ export const telegramService = {
     description?: string;
   }> => {
     const cleanToken = String(botToken || "").trim();
-    if (!cleanToken) {
-      return { ok: false, description: "Please enter your Telegram Bot Token first." };
-    }
-
     try {
-      const meCheck = await telegramService.verifyBotToken(cleanToken);
-      if (!meCheck.ok) {
-        return { ok: false, description: meCheck.description };
-      }
-
-      // Temporarily clear webhook (preserving pending updates) so /getUpdates never throws 409 Conflict
-      await fetch(
-        `https://api.telegram.org/bot${cleanToken}/deleteWebhook?drop_pending_updates=false`
-      ).catch(() => {});
-
-      const res = await fetch(
-        `https://api.telegram.org/bot${cleanToken}/getUpdates?limit=20&allowed_updates=["message","channel_post","my_chat_member"]`
-      );
-      const data = await res.json();
-      if (!data?.ok || !Array.isArray(data.result)) {
+      const res = await fetch("/api/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "detectChatId",
+          ...(cleanToken ? { bot_token: cleanToken } : {}),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data?.ok && data.chatId) {
+        telegramService.enableInteractiveWebhook(cleanToken || undefined).catch(() => {});
         return {
-          ok: false,
-          botUsername: meCheck.username,
-          description: data?.description || "Could not fetch updates from Telegram.",
+          ok: true,
+          chatId: String(data.chatId),
+          chatTitle: data.chatTitle,
+          botUsername: data.botUsername,
         };
       }
-
-      for (let i = data.result.length - 1; i >= 0; i--) {
-        const upd = data.result[i];
-        const chat =
-          upd?.message?.chat ||
-          upd?.channel_post?.chat ||
-          upd?.my_chat_member?.chat ||
-          upd?.edited_message?.chat;
-        if (chat && chat.id) {
-          const title =
-            chat.title ||
-            [chat.first_name, chat.last_name].filter(Boolean).join(" ") ||
-            chat.username ||
-            "Telegram User";
-          // Re-enable interactive webhook in background
-          telegramService.enableInteractiveWebhook(cleanToken).catch(() => {});
-          return {
-            ok: true,
-            chatId: String(chat.id),
-            chatTitle: title,
-            botUsername: meCheck.username,
-          };
-        }
-      }
-
       return {
         ok: false,
-        botUsername: meCheck.username,
-        description: `Connected to @${meCheck.username}, but no recent messages found. Open @${meCheck.username} in Telegram, tap Start (or send "hi"), then click Auto-Detect again!`,
+        botUsername: data?.botUsername,
+        description: data?.description || data?.error || "Could not fetch updates from Telegram.",
       };
     } catch (err: any) {
       return {
@@ -288,7 +247,7 @@ export const telegramService = {
 
   /**
    * Registers the 2-way interactive Vercel webhook (/api/telegram) and slash commands
-   * (/stats, /orders, /lowstock, /help) with Telegram BotFather API.
+   * (/stats, /orders, /lowstock, /help) via server-side /api/telegram proxy.
    */
   enableInteractiveWebhook: async (
     overrideToken?: string
@@ -297,44 +256,23 @@ export const telegramService = {
     const token = String(
       overrideToken !== undefined ? overrideToken : cfg.botToken
     ).trim();
-    if (!token) {
-      return { ok: false, description: "Missing Telegram Bot Token." };
-    }
-
-    const webhookUrl = `${WEBHOOK_BASE_URL}/api/telegram?token=${encodeURIComponent(
-      token
-    )}`;
 
     try {
-      await fetch(`https://api.telegram.org/bot${token}/setMyCommands`, {
+      const res = await fetch("/api/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          commands: [
-            { command: "stats", description: "Live revenue, order & stock KPIs" },
-            { command: "orders", description: "Manage latest 5 orders with 1-tap actions" },
-            { command: "track", description: "Track live order status by Order ID, phone, or email" },
-            { command: "lowstock", description: "Audit low-stock & out-of-stock SKUs" },
-            { command: "help", description: "Show interactive merchant command menu" },
-          ],
-        }),
-      }).catch(() => {});
-
-      const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: webhookUrl,
-          allowed_updates: ["message", "callback_query"],
+          action: "enableWebhook",
+          ...(token ? { bot_token: token } : {}),
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (data?.ok) {
-        return { ok: true, webhookUrl };
+        return { ok: true, webhookUrl: data.webhookUrl };
       }
       return {
         ok: false,
-        description: data?.description || "Failed to register Telegram webhook.",
+        description: data?.description || data?.error || "Failed to register Telegram webhook.",
       };
     } catch (err: any) {
       return {
@@ -350,7 +288,7 @@ export const telegramService = {
   sendOrderAlert: async (orderData: any): Promise<boolean> => {
     if (!orderData) return false;
     const cfg = getStoredTelegramConfig();
-    if (!cfg.orderNotification || !cfg.botToken || !cfg.chatId) return false;
+    if (!cfg.orderNotification) return false;
 
     const orderNum =
       orderData.orderNumber || orderData.order_number || orderData.id || "N/A";
@@ -468,7 +406,7 @@ export const telegramService = {
     customerName?: string;
   }): Promise<boolean> => {
     const cfg = getStoredTelegramConfig();
-    if (!cfg.orderNotification || !cfg.botToken || !cfg.chatId) return false;
+    if (!cfg.orderNotification) return false;
 
     const dedupeKey = `khqr:${params.orderNumber}:${params.transactionId || "paid"}`;
     if (sentAlertsCache.has(dedupeKey)) return true;
@@ -525,7 +463,7 @@ export const telegramService = {
     customerName?: string
   ): Promise<boolean> => {
     const cfg = getStoredTelegramConfig();
-    if (!cfg.orderNotification || !cfg.botToken || !cfg.chatId) return false;
+    if (!cfg.orderNotification) return false;
 
     const icon =
       newStatus === "Delivered"
@@ -591,9 +529,6 @@ export const telegramService = {
 
     if (!opts.forceSend && !cfg.stockAlertNotification) {
       return { ok: false, description: "Low-stock notifications are disabled in settings." };
-    }
-    if (!cfg.botToken || !cfg.chatId) {
-      return { ok: false, description: "Missing Telegram Bot Token or Chat ID." };
     }
 
     const remaining = Math.max(0, Number(opts.remainingStock ?? 0));

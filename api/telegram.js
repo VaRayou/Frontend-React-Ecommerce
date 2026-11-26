@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 export const config = {
   regions: ["sin1"],
 };
@@ -9,11 +11,15 @@ const SUPABASE_ANON_KEY =
   "sb_publishable_UGc-TpOB6-ONOpUNlqYFhA_XuyDiSbv";
 
 const BOT_TOKEN = (
-  process.env.TELEGRAM_BOT_TOKEN || ""
+  process.env.TELEGRAM_BOT_TOKEN ||
+  process.env.VITE_TELEGRAM_BOT_TOKEN ||
+  ""
 ).trim();
 
 const DEFAULT_CHAT_ID = String(
-  process.env.TELEGRAM_CHAT_ID || ""
+  process.env.TELEGRAM_CHAT_ID ||
+  process.env.VITE_TELEGRAM_CHAT_ID ||
+  "1389246582"
 ).trim();
 
 const AUTHORIZED_CHAT_IDS = new Set(
@@ -475,18 +481,134 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const botToken = BOT_TOKEN;
-  if (!botToken) {
-    console.error("[CRITICAL] TELEGRAM_BOT_TOKEN environment variable is not configured on server.");
-    return res.status(500).json({ error: "Telegram service not configured on server." });
-  }
-
   const body =
     typeof req.body === "string"
       ? JSON.parse(req.body || "{}")
       : req.body || {};
 
-  // 1. Support Internal Store Notifications (e.g. New Order alerts triggered from backend / trusted origin)
+  const actionToken = String(body.bot_token || "").trim();
+  const botToken = actionToken || BOT_TOKEN;
+
+  // 1. Admin Settings & Storefront Proxy Actions (avoids CSP blocks on api.telegram.org)
+  if (body.action === "verifyBotToken") {
+    if (!botToken) {
+      return res.status(400).json({ ok: false, description: "Missing Telegram Bot Token." });
+    }
+    try {
+      const meRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+      const meData = await meRes.json();
+      if (meData?.ok && meData.result) {
+        return res.status(200).json({
+          ok: true,
+          username: meData.result.username,
+          firstName: meData.result.first_name,
+        });
+      }
+      return res.status(200).json({
+        ok: false,
+        description: meData?.description || "Invalid Telegram Bot Token.",
+      });
+    } catch (e) {
+      return res.status(502).json({ ok: false, description: e.message || "Failed to contact Telegram API." });
+    }
+  }
+
+  if (body.action === "detectChatId") {
+    if (!botToken) {
+      return res.status(400).json({ ok: false, description: "Missing Telegram Bot Token." });
+    }
+    try {
+      const meRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+      const meData = await meRes.json();
+      if (!meData?.ok || !meData.result) {
+        return res.status(200).json({ ok: false, description: meData?.description || "Invalid Telegram Bot Token." });
+      }
+      await fetch(`https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=false`).catch(() => {});
+      const updRes = await fetch(
+        `https://api.telegram.org/bot${botToken}/getUpdates?limit=20&allowed_updates=["message","channel_post","my_chat_member"]`
+      );
+      const updData = await updRes.json();
+      if (!updData?.ok || !Array.isArray(updData.result)) {
+        return res.status(200).json({
+          ok: false,
+          botUsername: meData.result.username,
+          description: updData?.description || "Could not fetch updates from Telegram.",
+        });
+      }
+      for (let i = updData.result.length - 1; i >= 0; i--) {
+        const upd = updData.result[i];
+        const chat =
+          upd?.message?.chat ||
+          upd?.channel_post?.chat ||
+          upd?.my_chat_member?.chat ||
+          upd?.edited_message?.chat;
+        if (chat && chat.id) {
+          const title =
+            chat.title ||
+            [chat.first_name, chat.last_name].filter(Boolean).join(" ") ||
+            chat.username ||
+            "Telegram User";
+          return res.status(200).json({
+            ok: true,
+            chatId: String(chat.id),
+            chatTitle: title,
+            botUsername: meData.result.username,
+          });
+        }
+      }
+      return res.status(200).json({
+        ok: false,
+        botUsername: meData.result.username,
+        description: `Connected to @${meData.result.username}, but no recent messages found. Open @${meData.result.username} in Telegram, tap Start (or send "hi"), then click Auto-Detect again!`,
+      });
+    } catch (e) {
+      return res.status(502).json({ ok: false, description: e.message || "Failed querying Telegram getUpdates." });
+    }
+  }
+
+  if (body.action === "enableWebhook") {
+    if (!botToken) {
+      return res.status(400).json({ ok: false, description: "Missing Telegram Bot Token." });
+    }
+    const webhookUrl = `${STOREFRONT_URL.replace(/\/$/, "")}/api/telegram`;
+    const derivedSecret = (
+      process.env.TELEGRAM_WEBHOOK_SECRET ||
+      crypto.createHash("sha256").update(`${botToken}:steav-webhook-secret`).digest("hex").slice(0, 32)
+    ).trim();
+    try {
+      await tgApi(botToken, "setMyCommands", {
+        commands: [
+          { command: "stats", description: "Live revenue, order & stock KPIs" },
+          { command: "orders", description: "Manage latest 5 orders with 1-tap actions" },
+          { command: "track", description: "Track live order status by Order ID, phone, or email" },
+          { command: "lowstock", description: "Audit low-stock & out-of-stock SKUs" },
+          { command: "help", description: "Show interactive merchant command menu" },
+        ],
+      }).catch(() => {});
+
+      const whRes = await tgApi(botToken, "setWebhook", {
+        url: webhookUrl,
+        secret_token: derivedSecret,
+        allowed_updates: ["message", "callback_query"],
+      });
+      if (whRes?.ok) {
+        return res.status(200).json({ ok: true, webhookUrl });
+      }
+      return res.status(200).json({
+        ok: false,
+        description: whRes?.description || "Failed to register Telegram webhook.",
+      });
+    } catch (e) {
+      return res.status(502).json({ ok: false, description: e.message || "Network error setting Telegram webhook." });
+    }
+  }
+
+  if (!botToken) {
+    console.error("[CRITICAL] TELEGRAM_BOT_TOKEN environment variable is not configured on server.");
+    return res.status(500).json({ error: "Telegram service not configured on server. Set TELEGRAM_BOT_TOKEN in Vercel Environment Variables." });
+  }
+
+  // 2. Support Internal Store Notifications (e.g. New Order alerts triggered from storefront / backend)
   if (body.action === "notify_order" || body.action === "sendMessage") {
     const targetChatId = body.chat_id || DEFAULT_CHAT_ID;
     const messageText = body.text || "";
@@ -495,23 +617,27 @@ export default async function handler(req, res) {
     }
 
     try {
-      const tgResult = await tgApi(botToken, "sendMessage", {
+      const payload = {
         chat_id: targetChatId,
         text: messageText,
         parse_mode: body.parse_mode || "HTML",
-      });
+        disable_web_page_preview: true,
+      };
+      if (body.reply_markup) {
+        payload.reply_markup = body.reply_markup;
+      }
+      const tgResult = await tgApi(botToken, "sendMessage", payload);
       return res.status(200).json(tgResult);
     } catch (e) {
       return res.status(500).json({ error: e.message || "Failed to dispatch Telegram message" });
     }
   }
 
-  // 2. Incoming Telegram Webhook Validation (Strict Header & Fail-Closed)
-  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.warn("[Security Alert] Rejecting Telegram webhook: TELEGRAM_WEBHOOK_SECRET is not configured on server.");
-    return res.status(403).json({ error: "Webhook secret token is not configured on server." });
-  }
+  // 3. Incoming Telegram Webhook Validation (Strict Header using env secret or derived token secret)
+  const webhookSecret = (
+    process.env.TELEGRAM_WEBHOOK_SECRET ||
+    crypto.createHash("sha256").update(`${botToken}:steav-webhook-secret`).digest("hex").slice(0, 32)
+  ).trim();
 
   const secretHeader = req.headers["x-telegram-bot-api-secret-token"];
   if (secretHeader !== webhookSecret) {
