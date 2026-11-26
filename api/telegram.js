@@ -52,7 +52,9 @@ function isAllowedOrigin(origin) {
   }
 }
 
-const STOREFRONT_URL = process.env.VITE_STOREFRONT_URL || "https://youngsteav.site";
+const STOREFRONT_URL = (
+  process.env.VITE_STOREFRONT_URL || "https://www.youngsteav.site"
+).replace(/^https:\/\/youngsteav\.site/i, "https://www.youngsteav.site");
 
 function escapeHtml(str) {
   return String(str ?? "")
