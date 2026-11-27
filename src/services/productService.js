@@ -252,47 +252,34 @@ export const productService = {
     return getProductsStorage();
   },
 
-  // Upload product image with automatic client-side compression
+  // Upload product image with automatic client-side compression (Storage only — never base64 in DB)
   uploadImage: async (file) => {
-    try {
-      await ensureAdminSession();
-      const fileToUpload = await compressImageForUpload(file);
-      const fileExt = fileToUpload.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-      const filePath = `uploads/${fileName}`;
+    await ensureAdminSession();
+    const fileToUpload = await compressImageForUpload(file);
+    const fileExt = fileToUpload.name.split(".").pop() || "webp";
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
 
-      const { data, error } = await supabase.storage
-        .from("products")
-        .upload(filePath, fileToUpload, {
-          cacheControl: "31536000",
-          upsert: true,
-        });
+    const { data, error } = await supabase.storage
+      .from("products")
+      .upload(filePath, fileToUpload, {
+        cacheControl: "31536000",
+        upsert: true,
+      });
 
-      if (!error && data?.path) {
-        const { data: urlData } = supabase.storage
-          .from("products")
-          .getPublicUrl(data.path);
-        if (urlData?.publicUrl) return urlData.publicUrl;
-      }
-    } catch (e) {
-      console.warn("Supabase bucket upload note:", e.message);
+    if (error || !data?.path) {
+      throw new Error(
+        error?.message || "Supabase Storage upload failed. Inline base64 is disabled to protect database egress.",
+      );
     }
 
-    // 2. DataURL fallback with canvas compression guarantee (< 50 KB)
-    return new Promise(async (resolve, reject) => {
-      try {
-        const compressed = await compressImageForUpload(file);
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(compressed);
-      } catch {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      }
-    });
+    const { data: urlData } = supabase.storage
+      .from("products")
+      .getPublicUrl(data.path);
+    if (!urlData?.publicUrl) {
+      throw new Error("Could not resolve public Storage URL for uploaded image.");
+    }
+    return urlData.publicUrl;
   },
 
   // Get all products directly from Supabase (with in-flight deduplication & fast SWR caching)
@@ -433,6 +420,15 @@ export const productService = {
   createProduct: async (productData) => {
     try {
       await ensureAdminSession();
+      const assertNoBase64 = (val) => {
+        if (typeof val === "string" && val.startsWith("data:image/") && val.length > 4096) {
+          throw new Error("Inline base64 images are disabled to protect database egress. Upload to Storage or use an https:// URL.");
+        }
+      };
+      assertNoBase64(productData.image);
+      if (Array.isArray(productData.images)) {
+        productData.images.forEach(assertNoBase64);
+      }
 
       let categoryId = productData.categoryId || productData.category_id;
       if (!categoryId && productData.category) {

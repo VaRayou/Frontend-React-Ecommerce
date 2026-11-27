@@ -648,24 +648,11 @@ export function ManageProducts() {
       });
       showNotification("Product image uploaded successfully!");
     } catch (err) {
-      console.warn(
-        "Upload to backend media failed, falling back to local base64 preview:",
-        err,
+      console.error("Image upload to Storage failed:", err);
+      showNotification(
+        err?.message || "Failed to upload image to Storage. Please try again or use a Web URL.",
+        "error",
       );
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const b64 = e.target.result;
-        setFormData((prev) => {
-          const nextImgs = Array.from(new Set([...(prev.images || []), b64]));
-          return {
-            ...prev,
-            image: prev.image || b64,
-            images: nextImgs,
-          };
-        });
-        showNotification("Image loaded successfully!");
-      };
-      reader.readAsDataURL(file);
     } finally {
       setUploadingImage(false);
     }
