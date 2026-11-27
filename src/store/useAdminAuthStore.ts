@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "../services/supabase";
+import { supabaseAuth } from "../services/supabaseAuth";
 
 export interface AdminUser {
   id: string;
@@ -51,12 +52,15 @@ export const useAdminAuthStore = create<AdminAuthState>()(
           };
         }
 
-        // Authenticate strictly with Supabase Cloud Auth (0ms Cold Start, Signed Cryptographic JWT)
+        // Authenticate strictly with Supabase Cloud Auth via server-side brute-force protection
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: cleanEmail,
-            password,
-          });
+          const { data: existingSess } = await supabase.auth.getSession();
+          const alreadyMatching =
+            existingSess?.session?.user?.email?.toLowerCase() === cleanEmail;
+
+          const { data, error } = alreadyMatching
+            ? { data: { user: existingSess.session.user }, error: null }
+            : await supabaseAuth.signInWithRateLimit(cleanEmail, password, true);
 
           if (error) {
             return {

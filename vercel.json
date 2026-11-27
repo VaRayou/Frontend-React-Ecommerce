@@ -62,6 +62,38 @@
   ],
   "rewrites": [
     {
+      "source": "/.env",
+      "destination": "/api/security?action=trap&path=/.env"
+    },
+    {
+      "source": "/.env.:rest*",
+      "destination": "/api/security?action=trap&path=/.env.:rest*"
+    },
+    {
+      "source": "/.git/:rest*",
+      "destination": "/api/security?action=trap&path=/.git/:rest*"
+    },
+    {
+      "source": "/wp-config.php",
+      "destination": "/api/security?action=trap&path=/wp-config.php"
+    },
+    {
+      "source": "/config.php",
+      "destination": "/api/security?action=trap&path=/config.php"
+    },
+    {
+      "source": "/phpinfo.php",
+      "destination": "/api/security?action=trap&path=/phpinfo.php"
+    },
+    {
+      "source": "/database.sql",
+      "destination": "/api/security?action=trap&path=/database.sql"
+    },
+    {
+      "source": "/backup",
+      "destination": "/api/security?action=trap&path=/backup"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

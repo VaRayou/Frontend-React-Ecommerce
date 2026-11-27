@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { recordSecurityEvent } from "./_lib/securityMonitor.js";
 
 export const config = {
   regions: ["sin1"],
@@ -402,6 +403,20 @@ export default async function handler(req, res) {
         // Allow within 0.01 margin of floating point rounding
         if (Math.abs(paidAmount - expectedAmount) > 0.05 && expectedAmount > 0) {
           console.error(`[Fraud Alert] Payment amount mismatch for MD5 ${cleanMd5}: Expected ${expectedAmount}, received ${paidAmount}`);
+          await recordSecurityEvent({
+            req,
+            eventType: "PAYMENT_AMOUNT_MISMATCH",
+            severity: "CRITICAL",
+            endpoint: "/api/orders?action=verify_payment",
+            details: {
+              order_number: payment.order_number || orderNumber,
+              expected_amount: expectedAmount,
+              paid_amount: paidAmount,
+            },
+            detectionReason: `Bakong settled amount ($${paidAmount}) does not match order total ($${expectedAmount})`,
+            actionTaken: "Payment settlement blocked (400)",
+            notify: true,
+          });
           return res.status(400).json({
             success: false,
             is_paid: false,

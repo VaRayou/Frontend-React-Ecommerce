@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { recordSecurityEvent } from "./_lib/securityMonitor.js";
 
 export const config = {
   regions: ["sin1"],
@@ -552,6 +553,16 @@ export default async function handler(req, res) {
   ) {
     const isAdmin = await verifyAdminAuth(req);
     if (!isAdmin) {
+      await recordSecurityEvent({
+        req,
+        eventType: "UNAUTHORIZED_ADMIN_ACCESS",
+        severity: "HIGH",
+        endpoint: "/api/telegram",
+        details: { action: body.action },
+        detectionReason: `Unauthenticated or non-admin attempt to invoke ${body.action}`,
+        actionTaken: "Rejected (401)",
+        notify: true,
+      });
       return res.status(401).json({
         ok: false,
         error: "Unauthorized: Admin authentication required for bot configuration.",
@@ -722,6 +733,16 @@ export default async function handler(req, res) {
   const secretHeader = req.headers["x-telegram-bot-api-secret-token"];
   if (secretHeader !== webhookSecret) {
     console.warn("[Security Alert] Unauthorized Telegram webhook invocation attempt without matching secret header.");
+    await recordSecurityEvent({
+      req,
+      eventType: "INVALID_WEBHOOK_SIGNATURE",
+      severity: "HIGH",
+      endpoint: "/api/telegram",
+      details: { has_secret_header: Boolean(secretHeader) },
+      detectionReason: "Telegram webhook request missing or invalid secret token header",
+      actionTaken: "Rejected (403)",
+      notify: true,
+    });
     return res.status(403).json({ error: "Unauthorized webhook token." });
   }
 

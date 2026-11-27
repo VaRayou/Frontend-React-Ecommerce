@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { User, Order } from "../types";
 import { supabase } from "../services/supabase";
+import { supabaseAuth } from "../services/supabaseAuth";
 import { useAdminAuthStore } from "./useAdminAuthStore";
 
 interface AuthState {
@@ -42,10 +43,11 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: cleanEmail,
+          const { data, error } = await supabaseAuth.signInWithRateLimit(
+            cleanEmail,
             password,
-          });
+            false
+          );
 
           if (!error && data?.user) {
             const u = data.user;

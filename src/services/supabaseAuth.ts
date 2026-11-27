@@ -28,6 +28,42 @@ export const supabaseAuth = {
     return data;
   },
 
+  // Sign In via server-side rate-limited security proxy (preserves Supabase Auth session)
+  signInWithRateLimit: async (
+    email: string,
+    password: string,
+    isAdminAttempt: boolean = false
+  ) => {
+    try {
+      const res = await fetch("/api/security?action=login_proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, isAdminAttempt }),
+      });
+
+      // Local Vite dev fallback if serverless /api/security is unavailable
+      if (res.status === 404 || res.status === 405) {
+        return supabase.auth.signInWithPassword({ email, password });
+      }
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || !payload?.access_token || !payload?.refresh_token) {
+        return {
+          data: { user: null, session: null },
+          error: { message: payload?.error || "Invalid login credentials." },
+        };
+      }
+
+      const { data, error } = await supabase.auth.setSession({
+        access_token: payload.access_token,
+        refresh_token: payload.refresh_token,
+      });
+      return { data, error };
+    } catch {
+      return supabase.auth.signInWithPassword({ email, password });
+    }
+  },
+
   // Sign In existing patron or admin
   signIn: async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({

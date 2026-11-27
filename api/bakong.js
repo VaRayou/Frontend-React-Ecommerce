@@ -1,3 +1,5 @@
+import { recordSecurityEvent } from "./_lib/securityMonitor.js";
+
 export const config = {
   regions: ["sin1"],
 };
@@ -85,6 +87,16 @@ export default async function handler(req, res) {
     "unknown";
   if (isRateLimited(clientIp)) {
     res.setHeader("Retry-After", "60");
+    await recordSecurityEvent({
+      req,
+      eventType: "API_ABUSE_RATE_LIMIT",
+      severity: "MEDIUM",
+      endpoint: "/api/bakong",
+      details: { limit_per_min: MAX_REQUESTS_PER_WINDOW },
+      detectionReason: `Bakong endpoint rate limit (${MAX_REQUESTS_PER_WINDOW}/min) exceeded`,
+      actionTaken: "Rate limited (429)",
+      notify: true,
+    });
     return res.status(429).json({
       responseCode: 1,
       responseMessage:

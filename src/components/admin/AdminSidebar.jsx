@@ -13,6 +13,7 @@ import {
   ChevronRight,
   QrCode,
   Tag,
+  ShieldAlert,
 } from "lucide-react";
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -121,6 +122,12 @@ export function AdminSidebar({
     {
       header: "CONFIGURATION",
       items: [
+        {
+          title: "Security Monitor",
+          path: "/admin/security",
+          icon: ShieldAlert,
+          roles: ["Super Administrator"],
+        },
         {
           title: "Store Settings",
           path: "/admin/settings",

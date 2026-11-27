@@ -33,6 +33,7 @@ const ManageUsers = lazy(() => import("../pages/admin/ManageUsers"));
 const ManageOrders = lazy(() => import("../pages/admin/ManageOrders"));
 const ManagePayments = lazy(() => import("../pages/admin/ManagePayments"));
 const ManageCoupons = lazy(() => import("../pages/admin/ManageCoupons"));
+const SecurityMonitor = lazy(() => import("../pages/admin/SecurityMonitor"));
 const Settings = lazy(() => import("../pages/admin/Settings"));
 
 export const AppRoutes: React.FC = () => {
@@ -114,6 +115,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="orders" element={<ManageOrders />} />
           <Route path="payments" element={<ManagePayments />} />
           <Route path="coupons" element={<ManageCoupons />} />
+          <Route path="security" element={<SecurityMonitor />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>

@@ -28,6 +28,7 @@ const ROLE_ALLOWED_PATHS = {
     "/admin/payments",
     "/admin/coupons",
     "/admin/users",
+    "/admin/security",
     "/admin/settings",
   ],
   "Store Controller": [
